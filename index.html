@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>社工師國考練習系統 - 豪華開發版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --ink:#2c2c2c; --paper:#f4f1ea; --gold:#d4a373; --accent:#dc2626; }
+        body { background: var(--paper); font-family: "Microsoft JhengHei", sans-serif; margin: 0; }
+        .nav-active { color: var(--accent); border-bottom: 2px solid var(--accent); font-weight: bold; }
+        .option-card { border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; background: white; margin-bottom: 12px; width: 100%; text-align: left; display: block; }
+        .option-card:hover { border-color: #9ca3af; background: #f9fafb; }
+        .correct { border-color: #22c55e !important; background: #f0fdf4 !important; color: #166534; font-weight: bold; }
+        .wrong { border-color: #ef4444 !important; background: #fef2f2 !important; color: #991b1b; }
+        #devHeader, #devTools, #aiArea { display: none; }
+    </style>
+</head>
+<body class="pb-20">
+    <header class="bg-[#2c2c2c] text-white p-4 shadow-xl">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-[var(--gold)] text-white px-2 py-1 rounded font-bold">社工</div>
+                <h1 class="text-lg font-bold">社工師考試練習</h1>
+            </div>
+            <div id="devHeader" class="flex items-center space-x-3">
+                <button onclick="exportJson()" class="bg-blue-600 text-white text-[11px] px-3 py-1 rounded">📤 導出 JSON</button>
+                <span class="text-yellow-400 text-xs font-bold">🔑 開發模式</span>
+            </div>
+            <div class="text-right">
+                <div class="text-xl font-mono"><span id="qIdx" class="text-yellow-400">0</span> — <span id="qTotal">0</span></div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-10 flex space-x-6 p-3 justify-center">
+        <button class="nav-active">📝 練習</button>
+        <button class="text-gray-500">📋 模擬考</button>
+        <button class="text-gray-500">❌ 錯題</button>
+        <button class="text-gray-500">📊 統計</button>
+    </nav>
+
+    <main class="container mx-auto mt-6 p-4 max-w-2xl">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div id="qSubj" class="text-blue-600 text-xs font-bold mb-2">載入中...</div>
+            <h2 id="qText" class="text-2xl font-bold text-gray-800 mb-8">正在同步 800 題資料...</h2>
+            <div id="qOpts"></div>
+            <div id="aiArea" class="mt-8 pt-6 border-t border-dashed">
+                <button onclick="requestAiExp()" class="w-full bg-yellow-400 font-bold py-3 rounded-xl shadow-sm">✨ 生成本題 AI 解析</button>
+                <div id="expArea" class="mt-4 p-4 bg-yellow-50 rounded-lg text-sm hidden border-l-4 border-yellow-400"></div>
+            </div>
+        </div>
+        <div class="mt-8 flex justify-between">
+            <button id="nextBtn" onclick="nextQ()" disabled class="bg-gray-800 text-white px-10 py-3 rounded-xl font-bold disabled:opacity-30">下一題 →</button>
+            <button onclick="resetDB()" class="text-xs text-red-400">🗑️ 清空快取</button>
+        </div>
+    </header>
+
+    <script>
+        const isDev = new URLSearchParams(window.location.search).get('mode') === 'dev';
+        if (isDev) {
+            document.getElementById('devHeader').style.display = 'flex';
+            document.getElementById('aiArea').style.display = 'block';
+        }
+
+        let DB = JSON.parse(localStorage.getItem('sw_db')) || [];
+        let curIdx = 0;
+        let answered = false;
+
+        async function syncCloud() {
+            try {
+                const res = await fetch('https://raw.githubusercontent.com/chwenjaan/sw-data/main/questions.json?t=' + Date.now());
+                DB = await res.json();
+                localStorage.setItem('sw_db', JSON.stringify(DB));
+                render();
+            } catch(e) { console.error("同步失敗"); }
+        }
+
+        function render() {
+            if(DB.length === 0) return;
+            const q = DB[curIdx];
+            document.getElementById('qIdx').innerText = curIdx + 1;
+            document.getElementById('qTotal').innerText = DB.length;
+            document.getElementById('qSubj').innerText = `[${q.subject}] ${q.year||''}`;
+            document.getElementById('qText').innerText = q.q;
+            document.getElementById('qOpts').innerHTML = q.opts.map((o, i) => `<button class="option-card" onclick="check(${i})" id="opt${i}">${'ABCD'[i]}. ${o}</button>`).join('');
+            const exp = document.getElementById('expArea');
+            if(q.exp) { exp.innerHTML = "<b>詳解：</b><br>" + q.exp; exp.classList.remove('hidden'); }
+            else { exp.classList.add('hidden'); }
+            document.getElementById('nextBtn').disabled = true;
+            answered = false;
+        }
+
+        function check(i) {
+            if(answered) return;
+            answered = true;
+            const q = DB[curIdx];
+            document.getElementById('opt'+i).classList.add(i === q.ans ? 'correct' : 'wrong');
+            document.getElementById('opt'+q.ans).classList.add('correct');
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        async function requestAiExp() {
+            const q = DB[curIdx];
+            try {
+                const model = await window.ai.languageModel.create();
+                q.exp = await model.prompt(`解析考題。答案是${'ABCD'[q.ans]}。題目：${q.q}`);
+                localStorage.setItem('sw_db', JSON.stringify(DB));
+                render();
+            } catch(e) { alert("AI 啟動失敗"); }
+        }
+
+        function nextQ() { curIdx++; render(); window.scrollTo(0,0); }
+        function exportJson() {
+            const blob = new Blob([JSON.stringify(DB, null, 2)], {type: "application/json"});
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `updated_questions.json`;
+            link.click();
+        }
+        function resetDB() { localStorage.clear(); location.reload(); }
+        syncCloud();
+    </script>
+</body>
+</html>
