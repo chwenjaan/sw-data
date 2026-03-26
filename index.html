@@ -667,7 +667,7 @@ let DB = {
   stats: JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'),
   wrong: JSON.parse(localStorage.getItem('swpwa_w')||'[]'),
 };
-// ===== 版本控制（升版自動清除舊題庫，移到 DB 讀取之後避免競態）=====
+// 版本控制：升版才清題庫（放在 DB 讀取之後，避免先清後讀的競態）
 if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
   DB.questions = [];
   localStorage.removeItem('swpwa_q');
@@ -1375,8 +1375,7 @@ async function requestEssayAI(id){
 
   const formatted = response
     .replace(/【(.+?)】/g,'<div style="font-weight:700;color:var(--gold2);margin-top:14px;margin-bottom:4px">【$1】</div>')
-    .replace(/
-/g,'<br>');
+    .replace(/\n/g,'<br>');
   textDiv.innerHTML = formatted;
 
   // 儲存按鈕
@@ -1589,7 +1588,6 @@ async function init(){
       document.getElementById('loadingMsg').textContent='❌ 載入失敗，請確認網路連線後重新整理';
       document.getElementById('loadingBar').style.background='var(--red)';
       document.getElementById('loadingBar').style.width='100%';
-      // 讓用戶看到錯誤訊息後自動關閉載入畫面，不卡死
       setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); }, 2000);
     }
   }
