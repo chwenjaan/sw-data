@@ -226,6 +226,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     <button class="tab-btn" onclick="switchTab('wrong',this)">❌ 錯題</button>
     <button class="tab-btn" onclick="switchTab('aisearch',this)">🔍 搜尋</button>
     <button class="tab-btn" onclick="switchTab('stats',this)">📊 統計</button>
+    <button class="tab-btn" onclick="switchTab('essay',this)">✍️ 申論</button>
     <button class="tab-btn dev-only" onclick="switchTab('manage',this)">⚙️ 題庫</button>
   </div>
 </div>
@@ -401,6 +402,30 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
   <div id="qListWrap" style="display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
 </div>
 
+
+<!-- ESSAY -->
+<div class="panel" id="panel-essay">
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+    <span class="sec-title" style="margin-bottom:0">歷屆申論題</span>
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <select id="essayFilterSubj" onchange="renderEssayList()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit">
+        <option value="">全部科目</option>
+        <option>社會工作</option><option>社會工作直接服務</option>
+        <option>社會政策與社會立法</option><option>人類行為與社會環境</option><option>社會工作研究方法</option>
+      </select>
+      <select id="essayFilterYear" onchange="renderEssayList()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit">
+        <option value="">全部年度</option>
+      </select>
+    </div>
+  </div>
+  <div id="essayList" style="display:flex;flex-direction:column;gap:8px"></div>
+  <div id="essayEmpty" class="empty-state" style="display:none">
+    <div class="icon">✍️</div>
+    <div style="font-size:14px;font-weight:500">尚無申論題</div>
+    <div style="font-size:12px;margin-top:4px">請開發者從題庫匯入申論題</div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <!-- ADD/EDIT MODAL -->
@@ -506,7 +531,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制（升版會自動清除舊題庫）=====
-const DB_VERSION = '20260326_v5';
+const DB_VERSION = '20260326_v6';
 if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
   localStorage.removeItem('swpwa_q');
   localStorage.setItem('swpwa_dbver', DB_VERSION);
@@ -676,8 +701,9 @@ function switchTab(tab,el){
   if(tab==='wrong')renderWrong();
   if(tab==='stats')renderStats();
   if(tab==='manage'){populateFilterSelects();renderQList();}
+  if(tab==='essay'){populateEssayYearFilter();renderEssayList();}
 }
-function switchTabByName(t){const tabs=['practice','exam','wrong','aisearch','stats','manage'];const i=tabs.indexOf(t);const btn=document.querySelectorAll('.tab-btn')[i];switchTab(t,btn);}
+function switchTabByName(t){const tabs=['practice','exam','wrong','aisearch','stats','essay','manage'];const i=tabs.indexOf(t);const btn=document.querySelectorAll('.tab-btn')[i];switchTab(t,btn);}
 
 // ===== SUBJECT & YEAR FILTER =====
 function buildSubjFilter(){
@@ -1223,6 +1249,155 @@ async function requestAiExp(){
   const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
   window.open(url, '_blank');
   showToast('已開啟 Claude.ai 新分頁');
+}
+
+
+// ===== ESSAY（申論題）=====
+function getEssays(){
+  return DB.questions.filter(q=>q.type==='essay');
+}
+
+function renderEssayList(){
+  const fs = document.getElementById('essayFilterSubj')?.value||'';
+  const fy = document.getElementById('essayFilterYear')?.value||'';
+  let items = getEssays().filter(q=>{
+    if(fs && q.subject!==fs) return false;
+    if(fy && q.year!==fy) return false;
+    return true;
+  });
+
+  const list = document.getElementById('essayList');
+  const empty = document.getElementById('essayEmpty');
+
+  if(!items.length){ list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  list.innerHTML = items.map(q=>{
+    const col = COLORS[q.subject]||'#888';
+    const hasExp = q.exp && q.exp.trim();
+    return `<div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px var(--shadow)">
+      <div style="padding:14px 16px">
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+          <span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#eef3fb;color:${col};font-weight:500">${q.subject}</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:3px;background:var(--cream);color:var(--gray)">${q.year||''}</span>
+          <span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#fff3e0;color:#e67e22">${q.score||25}分</span>
+          ${hasExp?'<span style="font-size:10px;color:var(--green);margin-left:auto">✓ 有解析</span>':'<span style="font-size:10px;color:var(--gray);margin-left:auto">尚無解析</span>'}
+        </div>
+        <div style="font-size:14px;line-height:1.8;color:var(--ink);margin-bottom:10px">${q.q}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${hasExp?`<button class="btn btn-outline btn-sm" onclick="toggleEssayExp(this)" style="font-size:11px">📖 查看解析</button>`:''}
+          ${IS_DEV&&!hasExp?`<button class="btn btn-gold btn-sm" onclick="requestEssayAI('${q.id}')" style="font-size:11px">🤖 AI 解析</button>`:''}
+          ${IS_DEV&&hasExp?`<button class="btn btn-outline btn-sm" onclick="requestEssayAI('${q.id}')" style="font-size:11px;color:var(--gold)">🤖 重新解析</button>`:''}
+        </div>
+      </div>
+      ${hasExp?`<div class="essay-exp" style="display:none;padding:14px 16px;border-top:1px solid var(--border);background:#fffcf0">
+        <div style="font-size:11px;font-weight:600;color:var(--gold);margin-bottom:8px;letter-spacing:.5px">AI 解析</div>
+        <div style="font-size:13px;line-height:1.9;color:#4a4030;white-space:pre-wrap">${q.exp}</div>
+      </div>`:''}
+      <div class="essay-ai-result" id="essay-ai-${q.id.replace(/[^a-z0-9]/gi,'_')}" style="display:none;padding:14px 16px;border-top:1px solid var(--border);background:linear-gradient(135deg,#1a1a2e,#2c2c4a)">
+        <div style="font-size:11px;color:rgba(245,240,232,.5);margin-bottom:8px">🤖 AI 解析結果</div>
+        <div class="essay-ai-text" style="font-size:13px;line-height:1.9;color:rgba(245,240,232,.9)"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleEssayExp(btn){
+  const card = btn.closest('div[style*="background:white"]');
+  const expDiv = card.querySelector('.essay-exp');
+  if(!expDiv) return;
+  const isOpen = expDiv.style.display !== 'none';
+  expDiv.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '📖 查看解析' : '📖 收起解析';
+}
+
+async function requestEssayAI(id){
+  const q = DB.questions.find(x=>x.id===id);
+  if(!q) return;
+
+  const safeId = id.replace(/[^a-z0-9]/gi,'_');
+  const resultDiv = document.getElementById('essay-ai-'+safeId);
+  const textDiv = resultDiv?.querySelector('.essay-ai-text');
+  if(!resultDiv||!textDiv) return;
+
+  const prompt = `你是社工師考試的專業解題老師，請用繁體中文針對以下申論題提供完整解析。
+
+【題目資訊】
+科目：${q.subject}
+年度：${q.year||''}
+配分：${q.score||25}分
+題目：${q.q}
+
+請依以下結構回答：
+
+【考點說明】
+說明這題主要考哪些知識點和能力。
+
+【理論基礎】
+列出作答時應引用的相關理論、學者或概念框架。
+
+【答題關鍵詞】
+列出5-8個必須出現在答案中的關鍵詞。
+
+【結構化參考答案】
+提供完整、有條理的參考答案（依配分展開，約${(q.score||25)*20}字）。
+
+【評分重點提示】
+說明閱卷老師通常看重哪些面向，如何拿高分。`;
+
+  resultDiv.style.display = 'block';
+  textDiv.innerHTML = '<span style="opacity:.6;font-size:12px">⏳ AI 解析中，請稍候…</span>';
+
+  const chromeAI = window.LanguageModel || window.ai?.languageModel;
+  let response = '';
+
+  if(chromeAI){
+    try{
+      const avail = await chromeAI.availability?.() || await chromeAI.capabilities?.();
+      const isAvail = typeof avail==='string'?avail!=='no':avail?.available!=='no';
+      if(isAvail){
+        const session = await chromeAI.create();
+        response = await session.prompt(prompt);
+        session.destroy();
+      }
+    }catch(e){ console.log('Chrome AI error:',e); }
+  }
+
+  if(!response){
+    // 開新分頁給 Claude
+    window.open('https://claude.ai/new?q='+encodeURIComponent(prompt),'_blank');
+    resultDiv.style.display='none';
+    showToast('已開啟 Claude.ai，解析完成後手動貼入');
+    return;
+  }
+
+  const formatted = response
+    .replace(/【(.+?)】/g,'<div style="font-weight:700;color:var(--gold2);margin-top:14px;margin-bottom:4px">【$1】</div>')
+    .replace(/
+/g,'<br>');
+  textDiv.innerHTML = formatted;
+
+  // 儲存按鈕
+  const saveBtn = document.createElement('button');
+  saveBtn.style.cssText='margin-top:12px;font-size:11px;padding:6px 14px;border-radius:5px;border:1px solid rgba(201,168,76,.4);background:rgba(201,168,76,.15);color:var(--gold2);cursor:pointer;font-family:inherit;width:100%';
+  saveBtn.textContent='💾 儲存解析並上傳 GitHub';
+  saveBtn.onclick=async()=>{
+    const idx=DB.questions.findIndex(x=>x.id===id);
+    if(idx>=0){DB.questions[idx].exp=response;save();}
+    saveBtn.textContent='⏳ 上傳中…';saveBtn.disabled=true;
+    await pushToGitHub();
+    saveBtn.textContent='✅ 已儲存並同步';
+    renderEssayList();
+    showToast('✅ 申論解析已儲存並上傳');
+  };
+  textDiv.appendChild(saveBtn);
+}
+
+function populateEssayYearFilter(){
+  const sel = document.getElementById('essayFilterYear');
+  if(!sel) return;
+  const years = [...new Set(getEssays().map(q=>q.year).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+  sel.innerHTML = '<option value="">全部年度</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
 }
 
 // ===== AI SEARCH =====
