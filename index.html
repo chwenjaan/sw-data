@@ -530,12 +530,8 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== 版本控制（升版會自動清除舊題庫）=====
+// ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
 const DB_VERSION = '20260326_v6';
-if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
-  localStorage.removeItem('swpwa_q');
-  localStorage.setItem('swpwa_dbver', DB_VERSION);
-}
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -671,6 +667,12 @@ let DB = {
   stats: JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'),
   wrong: JSON.parse(localStorage.getItem('swpwa_w')||'[]'),
 };
+// ===== 版本控制（升版自動清除舊題庫，移到 DB 讀取之後避免競態）=====
+if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
+  DB.questions = [];
+  localStorage.removeItem('swpwa_q');
+  localStorage.setItem('swpwa_dbver', DB_VERSION);
+}
 function save(){
   try{
     localStorage.setItem('swpwa_q',JSON.stringify(DB.questions));
@@ -1587,6 +1589,8 @@ async function init(){
       document.getElementById('loadingMsg').textContent='❌ 載入失敗，請確認網路連線後重新整理';
       document.getElementById('loadingBar').style.background='var(--red)';
       document.getElementById('loadingBar').style.width='100%';
+      // 讓用戶看到錯誤訊息後自動關閉載入畫面，不卡死
+      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); }, 2000);
     }
   }
 }
