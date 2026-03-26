@@ -531,7 +531,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260326_v6';
+const DB_VERSION = '20260326_v9';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -675,7 +675,9 @@ if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
 }
 function save(){
   try{
-    localStorage.setItem('swpwa_q',JSON.stringify(DB.questions));
+    // 申論題不存 localStorage（太大），只存選擇題
+    const mcOnly = DB.questions.filter(q=>q.type!=='essay');
+    localStorage.setItem('swpwa_q',JSON.stringify(mcOnly));
     localStorage.setItem('swpwa_s',JSON.stringify(DB.stats));
     localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong));
   }catch(e){showToast('儲存空間不足，請清除部分資料');}
@@ -688,9 +690,9 @@ let editId=null,selAns=-1;
 
 // ===== UTILS =====
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function getPool(s){return(s==='全部'||s==='all')?[...DB.questions]:DB.questions.filter(q=>q.subject===s);}
+function getPool(s){const qs=DB.questions.filter(q=>q.type!=='essay');return(s==='全部'||s==='all')?[...qs]:qs.filter(q=>q.subject===s);}
 function uniqueSubjs(){
-  const s=new Set(DB.questions.map(q=>q.subject));
+  const s=new Set(DB.questions.filter(q=>q.type!=='essay').map(q=>q.subject));
   return['全部',...Object.keys(COLORS).filter(k=>s.has(k)),...[...s].filter(k=>!COLORS[k])];
 }
 
@@ -1198,7 +1200,7 @@ function updateHeader(){
   const s=DB.stats;
   document.getElementById('hTotal').textContent=s.total;
   document.getElementById('hAcc').textContent=s.total>0?Math.round(s.correct/s.total*100)+'%':'—';
-  document.getElementById('hBank').textContent=DB.questions.length;
+  document.getElementById('hBank').textContent=DB.questions.filter(q=>q.type!=='essay').length;
 }
 
 // ===== AI EXPLAIN =====
