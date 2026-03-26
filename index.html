@@ -531,7 +531,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260326_v6';
+const DB_VERSION = '20260326_v7';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -1520,24 +1520,32 @@ if('serviceWorker' in navigator){
 
 // ===== GITHUB SYNC =====
 async function fetchFromGitHub(showLoading=true){
-  try{
-    if(showLoading){
-      document.getElementById('loadingMsg').textContent='從 GitHub 載入題庫中…';
-      document.getElementById('loadingBar').style.width='30%';
+  // 嘗試順序：1.相對路徑（同站）2.raw.githubusercontent 3.jsDelivr CDN
+  const urls = [
+    './question.json?t=' + Date.now(),
+    GITHUB_URL + '?t=' + Date.now(),
+    `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main/${GITHUB_FILE}?t=${Date.now()}`,
+  ];
+  for(let i=0; i<urls.length; i++){
+    try{
+      if(showLoading){
+        document.getElementById('loadingMsg').textContent='從 GitHub 載入題庫中…'+(i>0?` (嘗試備用來源${i})` :'');
+        document.getElementById('loadingBar').style.width=(30+i*20)+'%';
+      }
+      const resp = await fetch(urls[i]);
+      if(!resp.ok) throw new Error('HTTP '+resp.status);
+      if(showLoading) document.getElementById('loadingBar').style.width='70%';
+      const qs = await resp.json();
+      if(!Array.isArray(qs)||!qs.length) throw new Error('資料格式錯誤');
+      DB.questions = qs;
+      save();
+      if(showLoading) document.getElementById('loadingBar').style.width='100%';
+      return qs.length;
+    }catch(e){
+      console.error(`GitHub載入失敗 (來源${i+1}):`, e);
     }
-    const resp = await fetch(GITHUB_URL + '?t=' + Date.now());
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    if(showLoading) document.getElementById('loadingBar').style.width='70%';
-    const qs = await resp.json();
-    if(!Array.isArray(qs)||!qs.length) throw new Error('資料格式錯誤');
-    DB.questions = qs;
-    save();
-    if(showLoading) document.getElementById('loadingBar').style.width='100%';
-    return qs.length;
-  }catch(e){
-    console.error('GitHub載入失敗:', e);
-    return null;
   }
+  return null;
 }
 
 async function syncFromGitHub(){
@@ -1588,7 +1596,7 @@ async function init(){
       document.getElementById('loadingMsg').textContent='❌ 載入失敗，請確認網路連線後重新整理';
       document.getElementById('loadingBar').style.background='var(--red)';
       document.getElementById('loadingBar').style.width='100%';
-      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); }, 2000);
+      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); }, 3000);
     }
   }
 }
