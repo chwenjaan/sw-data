@@ -26,7 +26,7 @@ html,body{height:100%;overflow-x:hidden;}
 body{
   font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif;
   background:var(--paper);color:var(--ink);
-  padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);
+  padding-top:var(--safe-top);padding-bottom:calc(var(--safe-bottom) + 60px);
 }
 .serif{font-family:'Georgia','Songti TC','SimSun',serif;}
 
@@ -91,7 +91,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .exp.show{display:block;animation:fu .2s ease;}
 
 .action-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;padding-bottom:max(16px,env(safe-area-inset-bottom));}
-.btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;min-height:44px;}
+.btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;min-height:44px;user-select:none;-webkit-user-select:none;position:relative;z-index:10;}
 .btn-primary{background:var(--ink);color:var(--paper);}
 .btn-gold{background:var(--gold);color:white;}
 .btn-outline{background:white;color:var(--ink);border:1.5px solid var(--border);}
