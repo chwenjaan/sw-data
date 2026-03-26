@@ -274,9 +274,9 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
       </div>
     </div>
     <div class="action-row">
-      <button class="btn btn-primary" id="nextBtn" onclick="nextQ()" disabled>下一題 →</button>
-      <button class="btn btn-outline" onclick="skipQ()">跳過</button>
-      <button class="btn btn-outline" onclick="reshuffleQ()" style="margin-left:auto;font-size:11px">重新出題</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="safeTap(nextQ)" disabled>下一題 →</button>
+      <button class="btn btn-outline" onclick="safeTap(skipQ)">跳過</button>
+      <button class="btn btn-outline" onclick="safeTap(reshuffleQ)" style="margin-left:auto;font-size:11px">重新出題</button>
     </div>
   </div>
 </div>
@@ -692,6 +692,15 @@ function save(){
 let P={pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null};
 let E={pool:[],idx:0,answers:[],timerID:null,secsLeft:60,timeLimit:60};
 let editId=null,selAns=-1;
+
+// ===== 防抖動點擊 =====
+let _lastTap = 0;
+function safeTap(fn){
+  const now = Date.now();
+  if(now - _lastTap < 300) return;
+  _lastTap = now;
+  fn();
+}
 
 // ===== UTILS =====
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
