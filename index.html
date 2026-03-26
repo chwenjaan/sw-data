@@ -531,7 +531,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260326_v8';
+const DB_VERSION = '20260326_v6';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -1519,20 +1519,14 @@ if('serviceWorker' in navigator){
 }
 
 // ===== GITHUB SYNC =====
-async function fetchFromGitHub(showLoading=true){
-  // 嘗試順序：1.相對路徑（同站）2.raw.githubusercontent 3.jsDelivr CDN
-  const urls = [
-    './question.json?t=' + Date.now(),
-    GITHUB_URL + '?t=' + Date.now(),
-    `https://cdn.jsdelivr.net/gh/${GITHUB_REPO}@main/${GITHUB_FILE}?t=${Date.now()}`,
-  ];
-  for(let i=0; i<urls.length; i++){
+async function fetchFromGitHub(showLoading=true, retries=3){
+  for(let attempt=1; attempt<=retries; attempt++){
     try{
       if(showLoading){
-        document.getElementById('loadingMsg').textContent='從 GitHub 載入題庫中…'+(i>0?` (嘗試備用來源${i})` :'');
-        document.getElementById('loadingBar').style.width=(30+i*20)+'%';
+        document.getElementById('loadingMsg').textContent=`從 GitHub 載入題庫中…${attempt>1?' (重試'+attempt+'/'+retries+')':''}`;
+        document.getElementById('loadingBar').style.width=(20+attempt*15)+'%';
       }
-      const resp = await fetch(urls[i]);
+      const resp = await fetch(GITHUB_URL + '?t=' + Date.now());
       if(!resp.ok) throw new Error('HTTP '+resp.status);
       if(showLoading) document.getElementById('loadingBar').style.width='70%';
       const qs = await resp.json();
@@ -1542,7 +1536,10 @@ async function fetchFromGitHub(showLoading=true){
       if(showLoading) document.getElementById('loadingBar').style.width='100%';
       return qs.length;
     }catch(e){
-      console.error(`GitHub載入失敗 (來源${i+1}):`, e);
+      console.error(`GitHub載入失敗 (第${attempt}次):`, e);
+      if(attempt < retries){
+        await new Promise(r=>setTimeout(r, 1500*attempt)); // 等待後重試
+      }
     }
   }
   return null;
@@ -1569,29 +1566,28 @@ async function init(){
     document.getElementById('loadingMsg').textContent='載入快取題庫…';
     document.getElementById('loadingBar').style.width='60%';
     // ★ 啟動時自動清理髒資料
-    try{
-      cleanData();
-      buildSubjFilter();populateExamSubjs();loadPractice();renderQList();updateHeader();
-      applyDevMode();
-    }catch(e){ console.error('init cache error:',e); }
+    const fixed = cleanData();
+    buildSubjFilter();populateExamSubjs();loadPractice();renderQList();updateHeader();
+    applyDevMode();
+    if(fixed > 0) setTimeout(()=>showToast(`🔧 自動修復 ${fixed} 筆資料`), 800);
     setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); },300);
     // 背景靜默更新
     fetchFromGitHub(false).then(count=>{
       if(count){
-        try{ cleanData(); buildSubjFilter();populateExamSubjs();renderQList();updateHeader(); }catch(e){}
+        const f2 = cleanData();
+        buildSubjFilter();populateExamSubjs();renderQList();updateHeader();
       }
     });
   } else {
     document.getElementById('loadingMsg').textContent='首次使用，載入題庫中…';
     const count = await fetchFromGitHub(true);
     if(count){
-      try{
-        document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
-        document.getElementById('loadingBar').style.width='100%';
-        cleanData();
-        buildSubjFilter();populateExamSubjs();loadPractice();renderQList();updateHeader();
-        applyDevMode();
-      }catch(e){ console.error('init error:',e); }
+      // ★ 首次載入後也清理
+      const fixed = cleanData();
+      document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
+      document.getElementById('loadingBar').style.width='100%';
+      buildSubjFilter();populateExamSubjs();loadPractice();renderQList();updateHeader();
+      applyDevMode();
       setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); },600);
     } else {
       document.getElementById('loadingMsg').textContent='❌ 載入失敗，請確認網路連線後重新整理';
