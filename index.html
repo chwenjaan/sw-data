@@ -21,7 +21,7 @@
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 html,body{height:100%;overflow-x:hidden;}
 body{
   font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif;
@@ -91,7 +91,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .exp.show{display:block;animation:fu .2s ease;}
 
 .action-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
-.btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;}
+.btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;min-height:44px;}
 .btn-primary{background:var(--ink);color:var(--paper);}
 .btn-gold{background:var(--gold);color:white;}
 .btn-outline{background:white;color:var(--ink);border:1.5px solid var(--border);}
@@ -817,7 +817,7 @@ function nextQ(){
   if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();}
   else{showToast('🎉 完成本輪！');DB.stats.sessions++;save();reshuffleQ();}
 }
-function skipQ(){if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();}}
+function skipQ(){if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();}else{showToast('已是最後一題');}}
 function startPracticeTimer(){
   P.seconds=0;
   P.timerID=setInterval(()=>{
