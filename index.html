@@ -531,15 +531,20 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260326_v9';
+const DB_VERSION = '20260326_v10';
 
 // ===== 重置題庫 =====
-function resetQuestionBank(){
+async function resetQuestionBank(){
   if(!confirm('確定重置題庫？\n將清除本機題目，重新從 GitHub 載入最新版本。\n（統計和錯題紀錄會保留）')) return;
   localStorage.removeItem('swpwa_q');
   localStorage.removeItem('swpwa_dbver');
-  showToast('正在重新載入…');
-  setTimeout(()=>location.reload(), 800);
+  showToast('正在清除快取並重新載入…');
+  // 清除 Service Worker 快取
+  try{
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  }catch(e){}
+  setTimeout(()=>location.reload(true), 500);
 }
 
 // ===== GITHUB 設定 =====
