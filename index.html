@@ -1255,9 +1255,10 @@ async function requestAiExp(){
       }
     }catch(e){ console.log('Chrome AI error:', e); }
   }
-  const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
-  window.open(url, '_blank');
-  showToast('已開啟 Claude.ai 新分頁');
+  // Chrome AI 不支援時顯示提示
+  btn.disabled = false;
+  btn.textContent = '🤖 AI 解析這題';
+  showToast('❌ 此裝置不支援 Chrome 內建 AI，請使用 Chrome 瀏覽器並開啟 AI 功能');
 }
 
 
