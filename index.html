@@ -506,7 +506,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制（升版會自動清除舊題庫）=====
-const DB_VERSION = '20260326_v4';
+const DB_VERSION = '20260326_v5';
 if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
   localStorage.removeItem('swpwa_q');
   localStorage.setItem('swpwa_dbver', DB_VERSION);
@@ -774,7 +774,7 @@ function pickAns(i){
   }
   badge.style.display='flex';
   if(q.exp){const e=document.getElementById('exp');e.innerHTML=`<strong>解析：</strong>${q.exp}`;e.classList.add('show');}
-  if(IS_DEV) document.getElementById('aiExpArea').style.display='block';
+  if(IS_DEV && !q.exp) document.getElementById('aiExpArea').style.display='block';
   document.getElementById('nextBtn').disabled=false;
   updateHeader();
 }
@@ -1206,11 +1206,13 @@ async function requestAiExp(){
           const saveBtn = document.createElement('button');
           saveBtn.style.cssText='margin-top:8px;font-size:11px;padding:5px 12px;border-radius:5px;border:1px solid rgba(201,168,76,.4);background:rgba(201,168,76,.15);color:var(--gold2);cursor:pointer;font-family:inherit;width:100%';
           saveBtn.textContent='💾 儲存解析到題庫';
-          saveBtn.onclick=()=>{
+          saveBtn.onclick=async()=>{
             const idx=DB.questions.findIndex(x=>x.id===q.id);
             if(idx>=0){DB.questions[idx].exp=response;save();}
-            saveBtn.textContent='✅ 已儲存';saveBtn.disabled=true;
-            showToast('解析已儲存');
+            saveBtn.textContent='⏳ 儲存並上傳中…';saveBtn.disabled=true;
+            showToast('解析已儲存，自動上傳 GitHub…');
+            await pushToGitHub();
+            saveBtn.textContent='✅ 已儲存並同步';
           };
           textDiv.appendChild(saveBtn);
         }
