@@ -30,6 +30,10 @@ body{
 }
 .serif{font-family:'Georgia','Songti TC','SimSun',serif;}
 
+@keyframes fadeOutLoading{
+  from{opacity:1;pointer-events:all;}
+  to{opacity:0;pointer-events:none;visibility:hidden;}
+}
 /* HEADER */
 header{background:var(--ink);color:var(--paper);position:relative;overflow:hidden;}
 header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(201,168,76,.05) 20px,rgba(201,168,76,.05) 21px);}
@@ -210,7 +214,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 </header>
 
 <!-- 載入中畫面 -->
-<div id="loadingScreen" style="position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:var(--paper)">
+<div id="loadingScreen" style="position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:var(--paper);animation:fadeOutLoading 1s ease 5s forwards">
   <div style="font-size:36px;margin-bottom:16px">📚</div>
   <div style="font-size:16px;font-weight:600;margin-bottom:8px">社工師考試練習</div>
   <div id="loadingMsg" style="font-size:12px;color:rgba(245,240,232,.5);margin-bottom:20px">從 GitHub 載入題庫中…</div>
@@ -532,7 +536,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v5';
+const DB_VERSION = '20260327_v6';
 
 // ===== 重置題庫 =====
 function setGeminiKeyPrompt(){
@@ -1697,58 +1701,35 @@ async function syncFromGitHub(){
 // ===== INIT =====
 async function init(){
   const loading = document.getElementById('loadingScreen');
-  // 強制逾時：10秒後一定關閉 loading
-  const forceClose = setTimeout(()=>{
-    loading.style.opacity='0'; loading.style.transition='opacity .4s';
-    setTimeout(()=>{ loading.style.display='none'; },400);
-    try{ buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode(); }catch(e){}
-  }, 10000);
+  const closeLoading = ()=>{
+    loading.style.animation='none';
+    loading.style.opacity='0';
+    loading.style.transition='opacity .4s';
+    setTimeout(()=>{ loading.style.display='none'; }, 400);
+  };
+
+  const render = ()=>{
+    try{
+      cleanData();
+      buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode();
+    }catch(e){ console.error('render error:',e); }
+  };
 
   if(DB.questions.length > 0){
-    document.getElementById('loadingMsg').textContent='載入快取題庫…';
-    document.getElementById('loadingBar').style.width='60%';
-    // 先關 loading，再背景處理
-    clearTimeout(forceClose);
-    loading.style.opacity='0'; loading.style.transition='opacity .4s';
-    setTimeout(()=>{ loading.style.display='none'; }, 400);
-    setTimeout(()=>{
-      try{
-        const fixed = cleanData();
-        buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode();
-        if(fixed > 0) showToast(`🔧 自動修復 ${fixed} 筆資料`);
-      }catch(e){ console.error('init cache error:',e); }
-    }, 500);
-    // 背景靜默更新
+    closeLoading();
+    setTimeout(render, 100);
     fetchFromGitHub(false).then(count=>{
-      if(count){
-        const f2 = cleanData();
-        buildSubjFilter();populateExamSubjs();renderQList();updateHeader();
-      }
+      if(count) setTimeout(render, 100);
     });
   } else {
-    document.getElementById('loadingMsg').textContent='首次使用，載入題庫中…';
     const count = await fetchFromGitHub(true);
     if(count){
       document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
       document.getElementById('loadingBar').style.width='100%';
-      clearTimeout(forceClose);
-      loading.style.opacity='0'; loading.style.transition='opacity .4s';
-      setTimeout(()=>{ loading.style.display='none'; }, 400);
-      setTimeout(()=>{
-        try{
-          cleanData();
-          buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode();
-        }catch(e){ console.error('init render error:',e); }
-      }, 500);
-    } else {
-      document.getElementById('loadingMsg').textContent='❌ 載入失敗，請確認網路連線後重新整理';
-      document.getElementById('loadingBar').style.background='var(--red)';
-      document.getElementById('loadingBar').style.width='100%';
-      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); }, 3000);
     }
+    closeLoading();
+    setTimeout(render, 100);
   }
 }
 init();
 </script>
-</body>
-</html>
