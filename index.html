@@ -537,7 +537,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v23';
+const DB_VERSION = '20260327_v24';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -1643,25 +1643,40 @@ async function syncFromGitHub(){
 }
 
 // ===== INIT =====
+function runStep(steps, i=0){
+  if(i >= steps.length) return;
+  setTimeout(()=>{ 
+    try{ steps[i](); }catch(e){ console.error('step',i,e); }
+    runStep(steps, i+1); 
+  }, 30);
+}
+
 async function init(){
   const loading = document.getElementById('loadingScreen');
   const closeLoading = ()=>{
     loading.style.animation='none';
     loading.style.opacity='0';
     loading.style.transition='opacity .5s';
-    setTimeout(()=>{ loading.style.display='none'; },500);
+    setTimeout(()=>{ loading.style.display='none'; }, 500);
   };
 
   document.getElementById('loadingMsg').textContent='載入題庫中…';
   const count = await fetchFromGitHub(true);
+  
   if(count){
     document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
     document.getElementById('loadingBar').style.width='100%';
   }
+  
+  // 先關 loading，再分步執行耗時操作
   closeLoading();
-  setTimeout(()=>{
-    try{ buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode(); }catch(e){ console.error(e); }
-  }, 300);
+  runStep([
+    ()=> buildSubjFilter(),
+    ()=> populateExamSubjs(),
+    ()=> loadPractice(),
+    ()=> updateHeader(),
+    ()=> applyDevMode(),
+  ]);
 }
 init();
 
