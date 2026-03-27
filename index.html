@@ -574,8 +574,13 @@ function getGeminiKey(){ return localStorage.getItem('swpwa_geminikey')||''; }
 function setGeminiKey(k){ localStorage.setItem('swpwa_geminikey', k); }
 
 async function pushToGitHub(){
-  let token = getGithubToken() || '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';
-  if(!getGithubToken()) setGithubToken(token);
+  let token = getGithubToken();
+  if(!token){
+    token = prompt('請輸入 GitHub Token（只需輸入一次）：');
+    if(!token) return;
+    setGithubToken(token.trim());
+    token = token.trim();
+  }
   if(!confirm(`確定將目前 ${DB.questions.length} 道題目上傳到 GitHub？\n這會覆蓋 GitHub 上的 question.json`)) return;
   showToast('⏳ 上傳中…');
   try{
