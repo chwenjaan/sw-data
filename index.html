@@ -241,7 +241,6 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 <!-- PRACTICE -->
 <div class="panel active" id="panel-practice">
   <div class="subj-bar" id="subjFilter"></div>
-  <!-- 年度篩選 -->
   <div id="yearFilterBar" style="padding:6px 12px 0;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none"></div>
   <div id="noBank" class="empty-state" style="display:none">
     <div class="icon">📂</div>
@@ -264,7 +263,6 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
       <div class="opts" id="qOpts"></div>
       <div class="rbadge" id="rbadge"></div>
       <div class="exp" id="exp"></div>
-      <!-- AI 解析區域 -->
       <div id="aiExpArea" class="ai-exp-area" style="display:none;margin-top:10px;position:relative;z-index:10;">
         <button class="btn btn-gold" id="aiExpBtn" onclick="requestAiExp()" style="width:100%;font-size:13px">
           🤖 AI 解析這題
@@ -393,7 +391,6 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     </div>
   </div>
 
-  <!-- 考卷選擇 -->
   <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
     <select id="filterPaper" onchange="renderQList()" style="flex:1;min-width:200px;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit">
       <option value="">— 選擇考卷 —</option>
@@ -403,10 +400,8 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     <span id="filterCount" style="font-size:11px;color:var(--gray);white-space:nowrap"></span>
   </div>
 
-  <!-- 題目清單 -->
   <div id="qListWrap" style="display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
 </div>
-
 
 <!-- ESSAY -->
 <div class="panel" id="panel-essay">
@@ -535,7 +530,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
+// ===== 版本控制常數 =====
 const DB_VERSION = '20260327_v29';
 
 // ===== 重置題庫 =====
@@ -553,7 +548,6 @@ const GITHUB_FILE = 'question.json';
 const GITHUB_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${GITHUB_FILE}`;
 const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
 
-// 解析獨立檔
 const EXP_FILE = 'explanations.json';
 const EXP_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${EXP_FILE}`;
 const EXP_API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${EXP_FILE}`;
@@ -563,12 +557,12 @@ function setGithubToken(t){ localStorage.setItem('swpwa_ghtoken', t); }
 function getGeminiKey(){ return localStorage.getItem('swpwa_geminikey')||''; }
 function setGeminiKey(k){ localStorage.setItem('swpwa_geminikey', k); }
 
-// ===== 解析檔：從 GitHub 載入並 merge 進題庫 =====
+// ===== 解析檔載入 =====
 async function fetchExplanations(){
   try{
     const resp = await fetch(EXP_URL + '?t=' + Date.now());
-    if(!resp.ok) return; // 檔案不存在也沒關係
-    const exps = await resp.json(); // { id: "解析內容", ... }
+    if(!resp.ok) return;
+    const exps = await resp.json();
     let merged = 0;
     DB.questions.forEach(q => {
       if(exps[q.id] && !q.exp){
@@ -580,7 +574,6 @@ async function fetchExplanations(){
   }catch(e){ console.log('explanations.json 未找到或格式錯誤，略過'); }
 }
 
-// ===== 儲存單筆解析到 GitHub explanations.json =====
 async function saveExpToGitHub(qId, expText){
   let token = getGithubToken();
   if(!token){
@@ -589,7 +582,6 @@ async function saveExpToGitHub(qId, expText){
     setGithubToken(token.trim());
   }
   try{
-    // 先讀現有的 explanations.json（取 sha 和現有內容）
     let existingExps = {}, sha = null;
     const info = await fetch(EXP_API, {
       headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
@@ -598,16 +590,11 @@ async function saveExpToGitHub(qId, expText){
     if(info.ok){
       const infoData = await info.json();
       sha = infoData.sha;
-      // 解碼現有內容
       try{ existingExps = JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){}
     }
-    // 更新這一筆
     existingExps[qId] = expText;
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(existingExps, null, 2))));
-    const body = {
-      message: `新增解析 ${new Date().toLocaleDateString('zh-TW')} (共${Object.keys(existingExps).length}筆)`,
-      content
-    };
+    const body = { message: `新增解析 ${new Date().toLocaleDateString('zh-TW')} (共${Object.keys(existingExps).length}筆)`, content };
     if(sha) body.sha = sha;
     const res = await fetch(EXP_API, {
       method: 'PUT',
@@ -619,35 +606,21 @@ async function saveExpToGitHub(qId, expText){
   }catch(e){ showToast('❌ 上傳失敗，請確認網路連線'); console.error(e); return false; }
 }
 
-// ===== 批次上傳解析（累積 5 筆觸發，關閉前 beforeunload 補傳）=====
 const BATCH_COUNT = 5;
+function getPendingExps(){ try{ return JSON.parse(localStorage.getItem('swpwa_pending_exps')||'{}'); }catch(e){ return {}; } }
+function setPendingExps(obj){ try{ localStorage.setItem('swpwa_pending_exps', JSON.stringify(obj)); }catch(e){} }
 
-function getPendingExps(){
-  try{ return JSON.parse(localStorage.getItem('swpwa_pending_exps')||'{}'); }catch(e){ return {}; }
-}
-function setPendingExps(obj){
-  try{ localStorage.setItem('swpwa_pending_exps', JSON.stringify(obj)); }catch(e){}
-}
-
-// 解析完成後呼叫：存本機 + 加入待上傳佇列
 function autoSaveExp(qId, expText){
-  // 1. 存進題目本機資料
   const idx = DB.questions.findIndex(x=>x.id===qId);
   if(idx>=0){ DB.questions[idx].exp = expText; save(); }
-
-  // 2. 加入待上傳佇列
   const pending = getPendingExps();
   pending[qId] = expText;
   setPendingExps(pending);
-
   const count = Object.keys(pending).length;
   showToast(`💾 解析已存本機（待上傳 ${count}／${BATCH_COUNT} 筆）`);
-
-  // 3. 累積達標就立刻上傳
   if(count >= BATCH_COUNT) flushPendingExps('累積');
 }
 
-// 實際上傳待上傳佇列
 async function flushPendingExps(reason=''){
   const pending = getPendingExps();
   if(!Object.keys(pending).length) return;
@@ -675,14 +648,11 @@ async function flushPendingExps(reason=''){
       headers:{ 'Authorization':`token ${token}`, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' },
       body: JSON.stringify(body)
     });
-    if(res.ok){
-      setPendingExps({});
-      showToast(`☁️ 已批次上傳 ${Object.keys(pending).length} 筆解析`);
-    } else { console.warn('⚠ 批次上傳失敗', res.status); }
+    if(res.ok){ setPendingExps({}); showToast(`☁️ 已批次上傳 ${Object.keys(pending).length} 筆解析`); }
+    else { console.warn('⚠ 批次上傳失敗', res.status); }
   }catch(e){ console.warn('⚠ 批次上傳例外', e); }
 }
 
-// 下次開啟時補傳上次未傳完的
 async function flushPendingOnStart(){
   const pending = getPendingExps();
   if(!Object.keys(pending).length) return;
@@ -692,26 +662,19 @@ async function flushPendingOnStart(){
   await flushPendingExps('啟動補傳');
 }
 
-// 關閉前嘗試上傳（注意：瀏覽器對 beforeunload 的非同步請求支援有限，僅作最後嘗試）
 window.addEventListener('beforeunload', (e)=>{
   const pending = getPendingExps();
   if(!Object.keys(pending).length) return;
   const token = getGithubToken();
   if(!token) return;
-  // 用 keepalive fetch 讓請求在頁面關閉後仍能送出
-  // 因為 explanations.json 需要先讀 sha 才能寫，無法在 beforeunload 完成完整流程
-  // 所以這裡只做一件事：把 pending 資料標記，確保本機已有，下次開啟必定補傳
   console.log(`📌 頁面關閉前，${Object.keys(pending).length} 筆解析保留本機，下次開啟自動補傳`);
 });
 
-
-// ===== 一鍵遷移：把 question.json 裡的 exp 搬到 explanations.json =====
 async function migrateExpsToFile(){
   if(!IS_DEV){ showToast('需要開發者模式'); return; }
   const withExp = DB.questions.filter(q => q.exp && q.exp.trim());
   if(!withExp.length){ showToast('題庫中沒有任何解析可遷移'); return; }
   if(!confirm(`找到 ${withExp.length} 筆題庫內建解析。\n將整合進 explanations.json 上傳到 GitHub。\n（不會刪除 question.json 裡的 exp 欄位，兩邊都保留）\n\n確定繼續？`)) return;
-
   showToast('⏳ 遷移中…');
   let token = getGithubToken();
   if(!token){
@@ -719,9 +682,7 @@ async function migrateExpsToFile(){
     if(!token) return;
     setGithubToken(token.trim());
   }
-
   try{
-    // 先讀現有 explanations.json（可能已有部分資料）
     let existingExps = {}, sha = null;
     const info = await fetch(EXP_API, {
       headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
@@ -732,8 +693,6 @@ async function migrateExpsToFile(){
       sha = infoData.sha;
       try{ existingExps = JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){}
     }
-
-    // 合併：題庫的 exp 優先填入，但不覆蓋已存在的解析
     let added = 0;
     withExp.forEach(q => {
       if(!existingExps[q.id]){
@@ -741,29 +700,20 @@ async function migrateExpsToFile(){
         added++;
       }
     });
-
     const total = Object.keys(existingExps).length;
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(existingExps, null, 2))));
-    const body = {
-      message: `遷移解析 ${new Date().toLocaleDateString('zh-TW')} (共${total}筆)`,
-      content
-    };
+    const body = { message: `遷移解析 ${new Date().toLocaleDateString('zh-TW')} (共${total}筆)`, content };
     if(sha) body.sha = sha;
-
     const res = await fetch(EXP_API, {
       method: 'PUT',
       headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
-
-    if(res.ok){
-      showToast(`✅ 遷移完成！新增 ${added} 筆，共 ${total} 筆解析`);
-    } else {
-      const err = await res.json();
-      showToast('❌ 上傳失敗：' + (err.message||res.status));
-    }
+    if(res.ok){ showToast(`✅ 遷移完成！新增 ${added} 筆，共 ${total} 筆解析`); }
+    else { const err = await res.json(); showToast('❌ 上傳失敗：' + (err.message||res.status)); }
   }catch(e){ showToast('❌ 遷移失敗，請確認網路連線'); console.error(e); }
 }
+
 async function callGeminiAPI(prompt){
   const key = getGeminiKey();
   if(!key) return null;
@@ -809,16 +759,9 @@ async function pushToGitHub(){
         content, sha
       })
     });
-    if(res.ok){
-      showToast(`✅ 已上傳 ${DB.questions.length} 題到 GitHub！`);
-    } else {
-      const err = await res.json();
-      showToast('❌ 上傳失敗：' + (err.message||res.status));
-    }
-  } catch(e){
-    showToast('❌ 上傳失敗，請確認網路連線');
-    console.error(e);
-  }
+    if(res.ok){ showToast(`✅ 已上傳 ${DB.questions.length} 題到 GitHub！`); }
+    else { const err = await res.json(); showToast('❌ 上傳失敗：' + (err.message||res.status)); }
+  } catch(e){ showToast('❌ 上傳失敗，請確認網路連線'); console.error(e); }
 }
 
 // ===== COLORS =====
@@ -830,14 +773,29 @@ const COLORS = {
   '社會工作研究方法':'#16a085'
 };
 
-// ===== 已知科目清單（用於資料清理）=====
+// ===== 已知科目清單 =====
 const KNOWN_SUBJS = ['社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法','社會工作'];
 
-// ===== 資料清理（修復髒的 subject/year 欄位）=====
+// ===== 提取題號輔助函數 =====
+function extractQuestionNumber(q) {
+  if(q.no && typeof q.no === 'number') return q.no;
+  if(q.no && typeof q.no === 'string') {
+    const num = parseInt(q.no, 10);
+    if(!isNaN(num)) return num;
+  }
+  if(q.id) {
+    const match = q.id.match(/_(\d{1,3})$/);
+    if(match) return parseInt(match[1], 10);
+    const match2 = q.id.match(/_(\d{1,3})_/);
+    if(match2) return parseInt(match2[1], 10);
+  }
+  return null;
+}
+
+// ===== 資料清理 =====
 function cleanData(){
   let fixed = 0;
   DB.questions.forEach(q => {
-    // 修復 subject：只有在科目名稱「不是」已知科目時才修正（避免把直接服務改成社會工作）
     if(q.subject && !KNOWN_SUBJS.includes(q.subject)){
       for(const ks of KNOWN_SUBJS){
         if(q.subject.includes(ks)){
@@ -847,11 +805,17 @@ function cleanData(){
         }
       }
     }
-    // 修復 year：去掉 YEAR:/SRC:/src: 等雜訊，只保留「NNN年...」
     if(q.year && (q.year.includes('SRC:') || q.year.includes('YEAR:') || q.year.includes('src:'))){
       const ym = q.year.match(/(\d+年(?:第[一二三四五六]次)?(?:第?\d次)?)/);
-      q.year = ym ? ym[1] : '';
+      if(ym) q.year = ym[1];
       fixed++;
+    }
+    if(!q.no && q.id){
+      const num = extractQuestionNumber(q);
+      if(num !== null) {
+        q.no = num;
+        fixed++;
+      }
     }
   });
   if(fixed > 0){ save(); }
@@ -894,7 +858,6 @@ let DB = {
   stats: (()=>{ try{ return JSON.parse(localStorage.getItem('swpwa_s')||'{}'); }catch(e){ return {}; } })() || {"total":0,"correct":0,"bySubj":{},"sessions":0},
   wrong: (()=>{ try{ return JSON.parse(localStorage.getItem('swpwa_w')||'[]'); }catch(e){ return []; } })(),
 };
-// 版本控制
 function save(){
   try{ localStorage.setItem('swpwa_s',JSON.stringify(DB.stats)); }catch(e){}
   try{ localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong)); }catch(e){}
@@ -905,7 +868,6 @@ let P={pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',y
 let E={pool:[],idx:0,answers:[],timerID:null,secsLeft:60,timeLimit:60};
 let editId=null,selAns=-1;
 
-// ===== 防抖動點擊（手機觸控）=====
 let _lastTap = 0;
 function safeTap(fn){
   const now = Date.now();
@@ -914,7 +876,6 @@ function safeTap(fn){
   fn();
 }
 
-// ===== UTILS =====
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function getPool(s){return(s==='全部'||s==='all')?[...DB.questions]:DB.questions.filter(q=>q.subject===s);}
 function uniqueSubjs(){
@@ -922,7 +883,6 @@ function uniqueSubjs(){
   return['全部',...Object.keys(COLORS).filter(k=>s.has(k)),...[...s].filter(k=>!COLORS[k])];
 }
 
-// ===== TAB =====
 function switchTab(tab,el){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -935,7 +895,6 @@ function switchTab(tab,el){
 }
 function switchTabByName(t){const tabs=['practice','exam','wrong','aisearch','stats','essay','manage'];const i=tabs.indexOf(t);const btn=document.querySelectorAll('.tab-btn')[i];switchTab(t,btn);}
 
-// ===== SUBJECT & YEAR FILTER =====
 function buildSubjFilter(){
   document.getElementById('subjFilter').innerHTML=uniqueSubjs().map(s=>
     `<button class="subj-btn${s==='全部'?' active':''}" onclick="filterSubj('${s}',this)">${s}</button>`
@@ -969,7 +928,6 @@ function populateExamSubjs(){
     uniqueSubjs().filter(s=>s!=='全部').map(s=>`<option value="${s}">${s}</option>`).join('');
 }
 
-// ===== PRACTICE =====
 function loadPractice(){
   let pool = getPool(P.subj);
   if(P.year) pool = pool.filter(q=>q.year===P.year);
@@ -1031,19 +989,16 @@ function pickAns(i){
     P.streak=0;recordStat(q.subject,false);addWrong(q,i);
   }
   badge.style.display='flex';
-  // 從 DB 取最新版題目（避免 pool 物件過時，例如儲存解析後 exp 仍為空）
   const freshQ = DB.questions.find(x=>x.id===q.id) || q;
   if(freshQ.exp){
     const e=document.getElementById('exp');
     e.innerHTML=`<strong>解析：</strong>${freshQ.exp}`;
-    // 不自動展開，改用按鈕切換
     const expToggle = document.getElementById('expToggleBtn');
     if(expToggle){ expToggle.style.display='inline-flex'; expToggle.textContent='📖 查看解析'; }
   }
   if(!freshQ.exp && IS_DEV) document.getElementById('aiExpArea').style.display='block';
   document.getElementById('nextBtn').disabled=false;
   updateHeader();
-  // 自動捲到按鈕讓手機容易點到
   setTimeout(()=>{
     const btn = document.getElementById('nextBtn');
     if(btn) btn.scrollIntoView({behavior:'smooth', block:'nearest'});
@@ -1070,7 +1025,6 @@ function startPracticeTimer(){
   },1000);
 }
 
-// ===== EXAM =====
 function startExam(){
   const s=document.getElementById('examSubj').value;
   E.timeLimit=parseInt(document.getElementById('examTime').value);
@@ -1149,7 +1103,6 @@ function reviewExam(){
 }
 function resetExam(){document.getElementById('examResult').style.display='none';document.getElementById('examStart').style.display='block';}
 
-// ===== WRONG =====
 function addWrong(q,myAns){
   const ex=DB.wrong.findIndex(w=>w.id===q.id);
   if(ex>=0){DB.wrong[ex].myAns=myAns;DB.wrong[ex].count=(DB.wrong[ex].count||1)+1;}
@@ -1183,7 +1136,6 @@ function practiceWrong(){
 }
 function clearWrong(){if(!confirm('確定清除所有錯題？'))return;DB.wrong=[];save();renderWrong();showToast('錯題已清除');}
 
-// ===== STATS =====
 function recordStat(subj,ok){
   DB.stats.total++;if(ok)DB.stats.correct++;
   if(!DB.stats.bySubj[subj])DB.stats.bySubj[subj]={total:0,correct:0};
@@ -1204,28 +1156,36 @@ function renderStats(){
 }
 function clearStats(){if(!confirm('確定重置統計？'))return;DB.stats={total:0,correct:0,bySubj:{},sessions:0};save();renderStats();showToast('統計已重置');}
 
-// ===== MANAGE =====
+// ===== MANAGE (修正版) =====
 function populateFilterSelects(){
   const fp = document.getElementById('filterPaper');
   if(!fp) return;
   const sel = fp.value;
 
-  // 收集所有考卷（year + subject 組合），按年度倒序、科目順序排列
-  const subjOrder = Object.keys(COLORS);
-  const papers = [...new Map(
-    DB.questions
-      .filter(q => q.year && q.subject)
-      .map(q => [`${q.year}||${q.subject}`, { year: q.year, subject: q.subject }])
-  ).values()].sort((a, b) => {
-    const yr = b.year.localeCompare(a.year);
-    if(yr !== 0) return yr;
-    const ia = subjOrder.indexOf(a.subject), ib = subjOrder.indexOf(b.subject);
-    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  const subjOrder = ['社會工作', '社會工作直接服務', '社會政策與社會立法', '人類行為與社會環境', '社會工作研究方法'];
+  const paperMap = new Map();
+  DB.questions.forEach(q => {
+    if(q.year && q.subject){
+      const key = `${q.year}||${q.subject}`;
+      if(!paperMap.has(key)){
+        paperMap.set(key, { year: q.year, subject: q.subject });
+      }
+    }
+  });
+  
+  const papers = Array.from(paperMap.values()).sort((a, b) => {
+    const yrCompare = b.year.localeCompare(a.year);
+    if(yrCompare !== 0) return yrCompare;
+    const ia = subjOrder.indexOf(a.subject);
+    const ib = subjOrder.indexOf(b.subject);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
   });
 
   fp.innerHTML = '<option value="">— 選擇考卷 —</option>' +
     papers.map(p => `<option value="${p.year}||${p.subject}">${p.year}　${p.subject}</option>`).join('');
-  if(sel) fp.value = sel;
+  if(sel && [...fp.options].some(opt => opt.value === sel)) {
+    fp.value = sel;
+  }
 }
 
 function renderQList(){
@@ -1236,19 +1196,19 @@ function renderQList(){
   let items = DB.questions.filter(q => {
     if(fy && q.year !== fy) return false;
     if(fs && q.subject !== fs) return false;
-    if(kw && !q.q.toLowerCase().includes(kw) && !(q.opts||[]).join(' ').toLowerCase().includes(kw)) return false;
+    if(kw && !q.q.toLowerCase().includes(kw) && 
+       !(q.opts || []).join(' ').toLowerCase().includes(kw) && 
+       !(q.exp || '').toLowerCase().includes(kw)) return false;
     return true;
   });
 
-  // 按題庫儲存順序（不打亂），保留原始題號順序
-  // 若有 no 欄位則用，否則維持 DB 順序
-  if(fy && fs){
-    items.sort((a, b) => (a.no||0) - (b.no||0) || DB.questions.indexOf(a) - DB.questions.indexOf(b));
-  }
-
-  document.getElementById('bankCount').textContent = '共' + DB.questions.length + '題';
+  const bankCount = DB.questions.length;
+  document.getElementById('bankCount').textContent = `共 ${bankCount} 題`;
   const wrap = document.getElementById('qListWrap');
-  document.getElementById('filterCount').textContent = items.length !== DB.questions.length ? `顯示 ${items.length} 題` : '';
+  const filterCountSpan = document.getElementById('filterCount');
+  if(filterCountSpan){
+    filterCountSpan.textContent = items.length !== bankCount ? `顯示 ${items.length} 題` : '';
+  }
 
   if(!paperVal && !kw){
     wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">請選擇考卷，或輸入關鍵字搜尋</div>';
@@ -1259,7 +1219,19 @@ function renderQList(){
     return;
   }
 
-  // 標題
+  const subjOrder = ['社會工作', '社會工作直接服務', '社會政策與社會立法', '人類行為與社會環境', '社會工作研究方法'];
+  items.sort((a, b) => {
+    const yearCompare = (b.year || '').localeCompare(a.year || '');
+    if(yearCompare !== 0) return yearCompare;
+    const ia = subjOrder.indexOf(a.subject);
+    const ib = subjOrder.indexOf(b.subject);
+    if(ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    const aNo = extractQuestionNumber(a);
+    const bNo = extractQuestionNumber(b);
+    if(aNo !== null && bNo !== null && aNo !== bNo) return aNo - bNo;
+    return (a.id || '').localeCompare(b.id || '');
+  });
+
   let html = '';
   if(fy && fs){
     const col = COLORS[fs] || '#888';
@@ -1272,17 +1244,19 @@ function renderQList(){
 
   items.forEach((q, idx) => {
     const ansLetters = correctLetters(q);
-    const no = q.no || (idx + 1);
-    html += `<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:background .15s"
+    const qNo = extractQuestionNumber(q) || (idx + 1);
+    const isMulti = Array.isArray(q.ans) && q.ans.length > 1;
+    
+    html += `<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:background .15s;margin-bottom:8px"
       onclick="expandQ(this,'${q.id.replace(/'/g, "\\'")}')" id="qcard_${q.id.replace(/[^a-z0-9]/gi,'_')}">
       <div style="display:flex;align-items:flex-start;gap:8px">
-        <span style="flex-shrink:0;min-width:28px;height:28px;background:var(--cream);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gray)">${no}</span>
+        <span style="flex-shrink:0;min-width:32px;height:28px;background:var(--cream);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gray)">${qNo}</span>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;line-height:1.7;color:var(--ink)">${q.q}</div>
           <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="font-size:11px;background:#eafaf1;color:var(--green);padding:2px 8px;border-radius:4px;font-weight:600">答：${ansLetters}</span>
-            ${Array.isArray(q.ans) && q.ans.length > 1 ? `<span style="font-size:10px;background:#fff3e0;color:#e67e22;padding:2px 6px;border-radius:4px">官方更正</span>` : ''}
-            ${q.exp ? `<span style="font-size:10px;color:var(--gold)">✓ 有解析</span>` : ''}
+            ${isMulti ? `<span style="font-size:10px;background:#fff3e0;color:#e67e22;padding:2px 6px;border-radius:4px">官方更正</span>` : ''}
+            ${q.exp && q.exp.trim() ? `<span style="font-size:10px;color:var(--gold)">✓ 有解析</span>` : ''}
           </div>
         </div>
         ${IS_DEV ? `<button class="btn btn-gold btn-sm" style="flex-shrink:0;font-size:10px" onclick="event.stopPropagation();openEdit('${q.id.replace(/'/g, "\\'")}')">✏️ 編輯</button>` : ''}
@@ -1294,7 +1268,7 @@ function renderQList(){
             <span style="font-size:12px">${o}</span>
           </div>`).join('')}
         </div>
-        ${q.exp ? `<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>` : ''}
+        ${q.exp && q.exp.trim() ? `<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>` : ''}
       </div>
     </div>`;
   });
@@ -1363,7 +1337,6 @@ function deleteQById(id){
   showToast('已刪除');
 }
 
-// ===== IMPORT（修復版）=====
 function openImport(){document.getElementById('importText').value='';document.getElementById('importPreview').textContent='';openModal('importModal');}
 function openBkImport(){document.getElementById('bkFile').value='';openModal('bkModal');}
 
@@ -1377,18 +1350,13 @@ function parseImport(text, defSubj){
     };
     const q = get('Q'), a = get('A'), b = get('B'), c = get('C'), d = get('D');
     const ansRaw = get('ANS').toUpperCase();
-
-    // ★ 修復：subject 只保留已知科目名稱，去除多餘雜訊
     let subj = get('SUBJ') || defSubj;
     for(const ks of KNOWN_SUBJS){
       if(subj.includes(ks)){ subj = ks; break; }
     }
-
-    // ★ 修復：year 只保留「NNN年第N次」格式，去除後面的 SRC 等雜訊
     let year = get('YEAR');
     const ym = year.match(/(\d+年(?:第[一二三四五六]次)?(?:第?\d次)?)/);
     if(ym) year = ym[1];
-
     if(!q || !a || !b || !c || !d || !ansRaw){ errors.push(`第${bi+1}題格式不完整`); return; }
     const ansIdxs = [...ansRaw].map(ch => 'ABCD'.indexOf(ch)).filter(i => i >= 0);
     if(!ansIdxs.length){ errors.push(`第${bi+1}題答案錯誤`); return; }
@@ -1445,16 +1413,13 @@ function doBkImport(){
   r.readAsText(f);
 }
 
-// ===== MODAL =====
 function openModal(id){document.getElementById(id).classList.add('show');}
 function closeModal(id){document.getElementById(id).classList.remove('show');}
 document.addEventListener('click',e=>{if(e.target.classList.contains('modal-bg'))e.target.classList.remove('show');});
 
-// ===== TOAST =====
 let toastT;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2300);}
 
-// ===== HEADER =====
 function updateHeader(){
   const s=DB.stats;
   document.getElementById('hTotal').textContent=s.total;
@@ -1462,7 +1427,6 @@ function updateHeader(){
   document.getElementById('hBank').textContent=DB.questions.length;
 }
 
-// ===== AI EXPLAIN =====
 async function requestAiExp(){
   const q = P.pool[P.idx];
   if(!q) return;
@@ -1508,8 +1472,6 @@ ${q.q}
   textDiv.innerHTML = '<span style="opacity:.6;font-size:12px">AI 分析中，請稍候…</span>';
 
   let response = null;
-
-  // 使用 Gemini API
   if(getGeminiKey()) response = await callGeminiAPI(prompt);
 
   if(!response){
@@ -1530,12 +1492,9 @@ ${q.q}
     .replace(/\n/g,'<br>');
   textDiv.innerHTML = `<p>${formatted}</p><div style="margin-top:8px;font-size:10px;opacity:.5;text-align:right">由 AI 生成</div>`;
   btn.textContent = '✅ 解析完成';
-  // 自動存本機並排入批次上傳
   autoSaveExp(q.id, response);
 }
 
-
-// ===== ESSAY（申論題）=====
 function getEssays(){
   return DB.questions.filter(q=>q.type==='essay');
 }
@@ -1642,14 +1601,11 @@ async function requestEssayAI(id){
   textDiv.innerHTML = '<span style="opacity:.6;font-size:12px">⏳ AI 解析中，請稍候…</span>';
 
   let response = '';
-
-  // 使用 Gemini API
   if(getGeminiKey()){
     response = await callGeminiAPI(prompt) || '';
   }
 
   if(!response){
-    // 沒有 Gemini Key 或 API 失敗
     resultDiv.style.display='none';
     if(!getGeminiKey()){
       const k = prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）');
@@ -1664,8 +1620,6 @@ async function requestEssayAI(id){
     .replace(/【(.+?)】/g,'<div style="font-weight:700;color:var(--gold2);margin-top:14px;margin-bottom:4px">【$1】</div>')
     .replace(/\n/g,'<br>');
   textDiv.innerHTML = formatted;
-
-  // 自動存本機並排入批次上傳
   autoSaveExp(id, response);
   renderEssayList();
 }
@@ -1677,7 +1631,6 @@ function populateEssayYearFilter(){
   sel.innerHTML = '<option value="">全部年度</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
 }
 
-// ===== AI SEARCH =====
 const KEYWORD_MAP = {
   '充權':['充權','增能','empowerment','自決','掌控','賦權'],
   '危機介入':['危機','crisis','介入','干預','緊急','危急'],
@@ -1794,7 +1747,6 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
 }
 
-// ===== GITHUB SYNC =====
 async function fetchFromGitHub(showLoading=true, retries=3){
   for(let attempt=1; attempt<=retries; attempt++){
     try{
@@ -1806,7 +1758,6 @@ async function fetchFromGitHub(showLoading=true, retries=3){
       if(!resp.ok) throw new Error('HTTP '+resp.status);
       if(showLoading) document.getElementById('loadingBar').style.width='70%';
       const text = await resp.text();
-      // 用 Worker 在背景解析大型 JSON，不卡主執行緒
       const qs = await new Promise((resolve, reject)=>{
         try{
           const blob = new Blob([`self.onmessage=e=>{try{postMessage({ok:true,d:JSON.parse(e.data)});}catch(x){postMessage({ok:false});}};`],{type:'application/javascript'});
@@ -1823,7 +1774,7 @@ async function fetchFromGitHub(showLoading=true, retries=3){
     }catch(e){
       console.error(`GitHub載入失敗 (第${attempt}次):`, e);
       if(attempt < retries){
-        await new Promise(r=>setTimeout(r, 1500*attempt)); // 等待後重試
+        await new Promise(r=>setTimeout(r, 1500*attempt));
       }
     }
   }
@@ -1834,17 +1785,15 @@ async function syncFromGitHub(){
   showToast('正在從 GitHub 同步…');
   const count = await fetchFromGitHub(false);
   if(count){
-    // 同步後也執行資料清理，並重新載入解析
     const fixed = cleanData();
     await fetchExplanations();
-    buildSubjFilter();populateExamSubjs();renderQList();updateHeader();
+    buildSubjFilter();populateExamSubjs();populateFilterSelects();renderQList();updateHeader();
     showToast(`✅ 同步完成，共 ${count} 題${fixed>0?'，修復'+fixed+'筆':''}`);
   } else {
     showToast('❌ 同步失敗，請確認網路連線');
   }
 }
 
-// ===== INIT =====
 function runStep(steps, i=0){
   if(i >= steps.length) return;
   setTimeout(()=>{ 
@@ -1868,11 +1817,12 @@ async function init(){
   if(count){
     document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
     document.getElementById('loadingBar').style.width='100%';
-    // 載入解析檔（背景 merge，不阻塞 UI）
     await fetchExplanations();
   }
   
-  // 先關 loading，再分步執行耗時操作
+  const fixedCount = cleanData();
+  if(fixedCount > 0) console.log(`修復了 ${fixedCount} 筆資料`);
+  
   closeLoading();
   runStep([
     ()=> buildSubjFilter(),
@@ -1880,7 +1830,9 @@ async function init(){
     ()=> loadPractice(),
     ()=> updateHeader(),
     ()=> applyDevMode(),
-    ()=> flushPendingOnStart(),  // 補傳上次未上傳的解析
+    ()=> flushPendingOnStart(),
+    ()=> populateFilterSelects(),
+    ()=> renderQList()
   ]);
 }
 init();
