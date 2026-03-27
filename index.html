@@ -537,7 +537,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v27';
+const DB_VERSION = '20260327_v28';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -692,7 +692,7 @@ let DB = {
   stats: (()=>{ try{ return JSON.parse(localStorage.getItem('swpwa_s')||'{}'); }catch(e){ return {}; } })() || {"total":0,"correct":0,"bySubj":{},"sessions":0},
   wrong: (()=>{ try{ return JSON.parse(localStorage.getItem('swpwa_w')||'[]'); }catch(e){ return []; } })(),
 };
-// 版本控制（已移除題庫快取，每次從 GitHub 拉）
+// 版本控制
 function save(){
   try{ localStorage.setItem('swpwa_s',JSON.stringify(DB.stats)); }catch(e){}
   try{ localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong)); }catch(e){}
@@ -1659,14 +1659,29 @@ function showGeminiModal(){
     m = document.createElement('div');
     m.id = 'gModal';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
-    m.innerHTML = `<div style="background:white;border-radius:14px;padding:22px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.3)">
-      <div style="font-size:16px;font-weight:700;margin-bottom:6px">🔑 Gemini API Key</div>
-      <div style="font-size:12px;color:#888;margin-bottom:14px">前往 aistudio.google.com 免費申請</div>
-      <input id="gKeyIn" type="text" placeholder="AIzaSy..." style="width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:14px;outline:none;">
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button onclick="document.getElementById('gModal').style.display='none'" style="padding:9px 18px;border:1.5px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;">取消</button>
-        <button onclick="var v=document.getElementById('gKeyIn').value.trim();if(v){localStorage.setItem('swpwa_geminikey',v);document.getElementById('gModal').style.display='none';alert('已儲存');}else{alert('請輸入Key');};" style="padding:9px 18px;border:none;border-radius:8px;background:#2980b9;color:white;font-size:13px;cursor:pointer;">儲存</button>
-      </div></div>`;
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = '取消';
+    cancelBtn.style.cssText = 'padding:9px 18px;border:1.5px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;';
+    cancelBtn.onclick = ()=>{ m.style.display='none'; };
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = '儲存';
+    saveBtn.style.cssText = 'padding:9px 18px;border:none;border-radius:8px;background:#2980b9;color:white;font-size:13px;cursor:pointer;';
+    saveBtn.onclick = ()=>{
+      const v = document.getElementById('gKeyIn').value.trim();
+      if(v){ localStorage.setItem('swpwa_geminikey',v); m.style.display='none'; showToast('✅ Gemini Key 已儲存'); }
+      else { showToast('請輸入 Key'); }
+    };
+    const inp = document.createElement('input');
+    inp.id='gKeyIn'; inp.type='text'; inp.placeholder='AIzaSy...';
+    inp.style.cssText='width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;box-sizing:border-box;margin-bottom:14px;outline:none;';
+    const btnRow = document.createElement('div');
+    btnRow.style.cssText='display:flex;gap:8px;justify-content:flex-end;';
+    btnRow.appendChild(cancelBtn); btnRow.appendChild(saveBtn);
+    const inner = document.createElement('div');
+    inner.style.cssText='background:white;border-radius:14px;padding:22px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.3);';
+    inner.innerHTML='<div style="font-size:16px;font-weight:700;margin-bottom:6px">🔑 Gemini API Key</div><div style="font-size:12px;color:#888;margin-bottom:14px">前往 aistudio.google.com 免費申請</div>';
+    inner.appendChild(inp); inner.appendChild(btnRow);
+    m.appendChild(inner);
     document.body.appendChild(m);
   }
   const cur = localStorage.getItem('swpwa_geminikey')||'';
