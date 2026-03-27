@@ -180,7 +180,7 @@ let _lastTap = 0;
 function safeTap(fn){ const now=Date.now(); if(now-_lastTap<300)return; _lastTap=now; fn(); }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function getPool(s){return(s==='全部'||s==='all')?[...DB.questions]:DB.questions.filter(q=>q.subject===s);}
-function uniqueSubjs(){const s=new Set(DB.questions.map(q=>q.subject));return['全部',...Object.keys(COLORS).filter(k=>s.has(k)),...[...s].filter(k=>!COLORS[k]]);}
+function uniqueSubjs(){const s=new Set(DB.questions.map(q=>q.subject));const colored=Object.keys(COLORS).filter(k=>s.has(k));const others=[...s].filter(k=>!COLORS[k]);return['全部',...colored,...others];}
 function getCorrectIdxs(q){return Array.isArray(q.ans)?q.ans:[q.ans];}
 function isCorrect(q,i){return getCorrectIdxs(q).includes(i);}
 function correctLetters(q){return getCorrectIdxs(q).map(i=>'ABCD'[i]).join('或');}
