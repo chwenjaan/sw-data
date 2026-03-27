@@ -368,6 +368,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     <button class="btn btn-outline btn-sm dev-only" onclick="syncFromGitHub()" style="color:var(--blue)">🔄 從 GitHub 同步</button>
     <button class="btn btn-outline btn-sm dev-only" onclick="clearStats()" style="color:var(--gray)">重置統計</button>
     <button class="btn btn-outline btn-sm" onclick="resetQuestionBank()" style="color:var(--red)">🔄 重置題庫</button>
+    <button class="btn btn-outline btn-sm dev-only" onclick="setGeminiKeyPrompt()" style="color:var(--blue)">🔑 Gemini Key</button>
     <button class="btn btn-outline btn-sm" id="devModeBtn" onclick="IS_DEV?exitDev():toggleDev()" style="color:var(--gray);font-size:10px">⚙️</button>
   </div>
 </div>
@@ -532,7 +533,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v15';
+const DB_VERSION = '20260327_v16';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -551,6 +552,25 @@ const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHU
 
 function getGithubToken(){ return localStorage.getItem('swpwa_ghtoken')||''; }
 function setGithubToken(t){ localStorage.setItem('swpwa_ghtoken', t); }
+function getGeminiKey(){ return localStorage.getItem('swpwa_geminikey')||''; }
+function setGeminiKey(k){ localStorage.setItem('swpwa_geminikey', k); }
+
+
+// ===== GEMINI API =====
+async function callGeminiAPI(prompt){
+  const key = getGeminiKey();
+  if(!key) return null;
+  try{
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:800}}) }
+    );
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const data = await resp.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+  }catch(e){ console.error('Gemini error:',e); return null; }
+}
 
 async function pushToGitHub(){
   if(!IS_DEV){ showToast('需要開發者模式'); return; }
@@ -1234,48 +1254,65 @@ async function requestAiExp(){
   const resultDiv = document.getElementById('aiExpResult');
   const textDiv = document.getElementById('aiExpText');
   const ansLetter = 'ABCD'[Array.isArray(q.ans)?q.ans[0]:q.ans];
-  const prompt = `請用繁體中文解析這道社工師考試題目。說明為何正確答案是${ansLetter}，以及其他選項錯誤的原因。約150字。\n\n題目：${q.q}\nA. ${q.opts[0]}\nB. ${q.opts[1]}\nC. ${q.opts[2]}\nD. ${q.opts[3]}\n正確答案：${ansLetter}. ${q.opts[Array.isArray(q.ans)?q.ans[0]:q.ans]}\n科目：${q.subject}${q.exp?'\n參考：'+q.exp:''}`;
-  const chromeAI = window.LanguageModel || window.ai?.languageModel;
-  if(chromeAI){
-    try{
-      const avail = await chromeAI.availability?.() || await chromeAI.capabilities?.();
-      const isAvail = typeof avail === 'string' ? avail !== 'no' : avail?.available !== 'no';
-      if(isAvail){
-        btn.disabled = true;
-        btn.textContent = '⏳ 分析中…';
-        resultDiv.style.display = 'block';
-        textDiv.innerHTML = '<span style="opacity:.6;font-size:12px">Chrome AI 分析中，請稍候…</span>';
-        const session = await chromeAI.create();
-        const response = await session.prompt(prompt);
-        session.destroy();
-        const formatted = response
-          .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-          .replace(/\n\n/g,'</p><p style="margin-top:8px">')
-          .replace(/\n/g,'<br>');
-        textDiv.innerHTML = `<p>${formatted}</p>
-          <div style="margin-top:8px;font-size:10px;opacity:.5;text-align:right">由 Chrome 內建 AI 生成</div>`;
-        btn.textContent = '✅ 解析完成';
-        if(!q.exp){
-          const saveBtn = document.createElement('button');
-          saveBtn.style.cssText='margin-top:8px;font-size:11px;padding:5px 12px;border-radius:5px;border:1px solid rgba(201,168,76,.4);background:rgba(201,168,76,.15);color:var(--gold2);cursor:pointer;font-family:inherit;width:100%';
-          saveBtn.textContent='💾 儲存解析到題庫';
-          saveBtn.onclick=async()=>{
-            const idx=DB.questions.findIndex(x=>x.id===q.id);
-            if(idx>=0){DB.questions[idx].exp=response;save();}
-            saveBtn.textContent='⏳ 儲存並上傳中…';saveBtn.disabled=true;
-            showToast('解析已儲存，自動上傳 GitHub…');
-            await pushToGitHub();
-            saveBtn.textContent='✅ 已儲存並同步';
-          };
-          textDiv.appendChild(saveBtn);
+  const prompt = `你是社工師考試的專業解題老師，請用繁體中文解析以下選擇題（約150字）。\n\n題目：${q.q}\nA. ${q.opts[0]}\nB. ${q.opts[1]}\nC. ${q.opts[2]}\nD. ${q.opts[3]}\n正確答案：${ansLetter}. ${q.opts[Array.isArray(q.ans)?q.ans[0]:q.ans]}\n科目：${q.subject}\n\n請說明為何${ansLetter}是正確答案，以及其他選項錯誤原因。若你認為答案可能有誤請直接說明，不要強行解釋。`;
+
+  btn.disabled = true;
+  btn.textContent = '⏳ 分析中…';
+  resultDiv.style.display = 'block';
+  textDiv.innerHTML = '<span style="opacity:.6;font-size:12px">AI 分析中，請稍候…</span>';
+
+  let response = null;
+
+  // 優先用 Gemini API
+  if(getGeminiKey()) response = await callGeminiAPI(prompt);
+
+  // 備用 Chrome AI
+  if(!response){
+    const chromeAI = window.LanguageModel || window.ai?.languageModel;
+    if(chromeAI){
+      try{
+        const avail = await chromeAI.availability?.() || await chromeAI.capabilities?.();
+        const isAvail = typeof avail==='string'?avail!=='no':avail?.available!=='no';
+        if(isAvail){
+          const session = await chromeAI.create();
+          response = await session.prompt(prompt);
+          session.destroy();
         }
-        return;
-      }
-    }catch(e){ console.log('Chrome AI error:', e); }
+      }catch(e){}
+    }
   }
-  const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
-  window.open(url, '_blank');
-  showToast('已開啟 Claude.ai 新分頁');
+
+  if(!response){
+    btn.disabled = false;
+    btn.textContent = '🤖 AI 解析這題';
+    resultDiv.style.display = 'none';
+    if(!getGeminiKey()){
+      const k = prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）');
+      if(k&&k.trim()){ setGeminiKey(k.trim()); showToast('✅ Key 已儲存，請再按一次 AI 解析'); }
+    } else { showToast('❌ AI 解析失敗，請確認 API Key'); }
+    return;
+  }
+
+  const formatted = response
+    .replace(/【(.+?)】/g,'<strong style="color:var(--gold)">【$1】</strong>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\n\n/g,'</p><p style="margin-top:8px">')
+    .replace(/\n/g,'<br>');
+  textDiv.innerHTML = `<p>${formatted}</p><div style="margin-top:8px;font-size:10px;opacity:.5;text-align:right">由 AI 生成</div>`;
+  btn.textContent = '✅ 解析完成';
+  if(!q.exp){
+    const saveBtn = document.createElement('button');
+    saveBtn.style.cssText='margin-top:8px;font-size:11px;padding:5px 12px;border-radius:5px;border:1px solid rgba(201,168,76,.4);background:rgba(201,168,76,.15);color:var(--gold2);cursor:pointer;font-family:inherit;width:100%';
+    saveBtn.textContent='💾 儲存解析到題庫';
+    saveBtn.onclick=async()=>{
+      const idx=DB.questions.findIndex(x=>x.id===q.id);
+      if(idx>=0){DB.questions[idx].exp=response;save();}
+      saveBtn.textContent='⏳ 上傳中…';saveBtn.disabled=true;
+      await pushToGitHub();
+      saveBtn.textContent='✅ 已儲存並同步';
+    };
+    textDiv.appendChild(saveBtn);
+  }
 }
 
 
