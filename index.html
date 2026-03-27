@@ -90,7 +90,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .exp{display:none;margin-top:10px;padding:12px 14px;border-left:3px solid var(--gold);background:#fffcf0;border-radius:0 6px 6px 0;font-size:13px;line-height:1.8;color:#4a4030;}
 .exp.show{display:block;animation:fu .2s ease;}
 
-.action-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.action-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;position:relative;z-index:50;}
 .btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;min-height:44px;user-select:none;-webkit-user-select:none;}
 .btn-primary{background:var(--ink);color:var(--paper);}
 .btn-gold{background:var(--gold);color:white;}
@@ -261,7 +261,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
       <div class="rbadge" id="rbadge"></div>
       <div class="exp" id="exp"></div>
       <!-- AI 解析區域 -->
-      <div id="aiExpArea" class="ai-exp-area" style="display:none;margin-top:10px">
+      <div id="aiExpArea" class="ai-exp-area" style="display:none;margin-top:10px;position:relative;z-index:10;">
         <button class="btn btn-gold" id="aiExpBtn" onclick="requestAiExp()" style="width:100%;font-size:13px">
           🤖 AI 解析這題
         </button>
@@ -532,7 +532,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v14';
+const DB_VERSION = '20260327_v15';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -822,9 +822,14 @@ function pickAns(i){
   }
   badge.style.display='flex';
   if(q.exp){const e=document.getElementById('exp');e.innerHTML=`<strong>解析：</strong>${q.exp}`;e.classList.add('show');}
-  if(IS_DEV && !q.exp) document.getElementById('aiExpArea').style.display='block';
+  if(!q.exp) document.getElementById('aiExpArea').style.display='block';
   document.getElementById('nextBtn').disabled=false;
   updateHeader();
+  // 自動捲到按鈕讓手機容易點到
+  setTimeout(()=>{
+    const btn = document.getElementById('nextBtn');
+    if(btn) btn.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 200);
 }
 function nextQ(){
   if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();}
