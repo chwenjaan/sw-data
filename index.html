@@ -182,7 +182,7 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 function getPool(s){return(s==='全部'||s==='all')?[...DB.questions]:DB.questions.filter(q=>q.subject===s);}
 function uniqueSubjs(){
   const s = new Set(DB.questions.map(q=>q.subject));
-  return ['全部', ...Object.keys(COLORS).filter(k=>s.has(k)), ...[...s].filter(k=>!COLORS[k]])];
+  return ['全部', ...Object.keys(COLORS).filter(k=>s.has(k)), ...[...s].filter(k=> !COLORS[k]);
 }
 function getCorrectIdxs(q){return Array.isArray(q.ans)?q.ans:[q.ans];}
 function isCorrect(q,i){return getCorrectIdxs(q).includes(i);}
