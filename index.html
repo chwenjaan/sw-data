@@ -680,7 +680,6 @@ function exitDev(){
   applyDevMode(); showToast('已切換為一般使用者模式');
 }
 function applyDevMode(){
-  document.querySelectorAll('.ai-exp-area').forEach(el=>el.style.display=IS_DEV?'block':'none');
   document.querySelectorAll('.dev-only').forEach(el=>el.style.display=IS_DEV?'':'none');
   const devBadge = document.getElementById('devBadge');
   if(devBadge) devBadge.style.display = IS_DEV ? 'flex' : 'none';
@@ -827,8 +826,10 @@ function pickAns(i){
     P.streak=0;recordStat(q.subject,false);addWrong(q,i);
   }
   badge.style.display='flex';
-  if(q.exp){const e=document.getElementById('exp');e.innerHTML=`<strong>解析：</strong>${q.exp}`;e.classList.add('show');}
-  if(!q.exp) document.getElementById('aiExpArea').style.display='block';
+  // 從 DB 取最新版題目（避免 pool 物件過時，例如儲存解析後 exp 仍為空）
+  const freshQ = DB.questions.find(x=>x.id===q.id) || q;
+  if(freshQ.exp){const e=document.getElementById('exp');e.innerHTML=`<strong>解析：</strong>${freshQ.exp}`;e.classList.add('show');}
+  if(!freshQ.exp && IS_DEV) document.getElementById('aiExpArea').style.display='block';
   document.getElementById('nextBtn').disabled=false;
   updateHeader();
   // 自動捲到按鈕讓手機容易點到
