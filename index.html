@@ -30,6 +30,10 @@ body{
 }
 .serif{font-family:'Georgia','Songti TC','SimSun',serif;}
 
+@keyframes fadeOutLoading{
+  0%{opacity:1;pointer-events:all}
+  100%{opacity:0;pointer-events:none;visibility:hidden}
+}
 /* HEADER */
 header{background:var(--ink);color:var(--paper);position:relative;overflow:hidden;}
 header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(201,168,76,.05) 20px,rgba(201,168,76,.05) 21px);}
@@ -210,7 +214,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 </header>
 
 <!-- 載入中畫面 -->
-<div id="loadingScreen" style="position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:var(--paper)">
+<div id="loadingScreen" style="position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:var(--paper);animation:fadeOutLoading 1s ease 8s forwards">
   <div style="font-size:36px;margin-bottom:16px">📚</div>
   <div style="font-size:16px;font-weight:600;margin-bottom:8px">社工師考試練習</div>
   <div id="loadingMsg" style="font-size:12px;color:rgba(245,240,232,.5);margin-bottom:20px">從 GitHub 載入題庫中…</div>
@@ -533,7 +537,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v20';
+const DB_VERSION = '20260327_v21';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
