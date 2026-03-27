@@ -363,12 +363,12 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     <div class="sec-title">各科正確率</div>
     <div id="subjStats"><div style="color:var(--gray);font-size:13px">尚無作答資料</div></div>
   </div>
-  <div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+  <div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;position:relative;z-index:20;">
     <button class="btn btn-outline btn-sm dev-only" onclick="pushToGitHub()" style="color:var(--green)">☁️ 上傳到 GitHub</button>
     <button class="btn btn-outline btn-sm dev-only" onclick="syncFromGitHub()" style="color:var(--blue)">🔄 從 GitHub 同步</button>
     <button class="btn btn-outline btn-sm dev-only" onclick="clearStats()" style="color:var(--gray)">重置統計</button>
     <button class="btn btn-outline btn-sm" onclick="resetQuestionBank()" style="color:var(--red)">🔄 重置題庫</button>
-    <button class="btn btn-outline btn-sm dev-only" onclick="setGeminiKeyPrompt()" style="color:var(--blue)">🔑 Gemini Key</button>
+    <button class="btn btn-outline btn-sm" onclick="setGeminiKeyPrompt()" style="color:var(--blue)">🔑 Gemini Key</button>
     <button class="btn btn-outline btn-sm" id="devModeBtn" onclick="IS_DEV?exitDev():toggleDev()" style="color:var(--gray);font-size:10px">⚙️</button>
   </div>
 </div>
@@ -533,7 +533,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v16';
+const DB_VERSION = '20260327_v17';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
