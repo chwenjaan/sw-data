@@ -532,7 +532,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v2';
+const DB_VERSION = '20260327_v3';
 
 // ===== 重置題庫 =====
 function setGeminiKeyPrompt(){
@@ -1646,18 +1646,12 @@ function practiceAiSearch(){
   showToast('已載入 '+pool.length+' 道相關題目');
 }
 
+// 清除所有 Service Worker 和快取，確保每次都拿最新版
 if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{
+    regs.forEach(r=>r.unregister());
+  });
   caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
-  const swCode=`
-    const CACHE='swpwa-v3';
-    self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.add(self.location.href))));
-    self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
-      if(res.status===200){const clone=res.clone();caches.open(CACHE).then(c=>c.put(e.request,clone));}
-      return res;
-    }).catch(()=>caches.match(e.request)))));
-  `;
-  const blob=new Blob([swCode],{type:'application/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
 }
 
 // ===== GITHUB SYNC =====
