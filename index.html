@@ -281,6 +281,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     <div class="action-row">
       <button class="btn btn-primary" id="nextBtn" onclick="safeTap(nextQ)" disabled>下一題 →</button>
       <button class="btn btn-outline" onclick="safeTap(skipQ)">跳過</button>
+      <button class="btn btn-outline btn-sm" id="expToggleBtn" onclick="toggleExp()" style="display:none;color:var(--gold);border-color:var(--gold)">📖 查看解析</button>
       <button class="btn btn-outline" onclick="safeTap(reshuffleQ)" style="margin-left:auto;font-size:11px">重新出題</button>
     </div>
   </div>
@@ -554,10 +555,71 @@ const GITHUB_FILE = 'question.json';
 const GITHUB_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${GITHUB_FILE}`;
 const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
 
+// 解析獨立檔
+const EXP_FILE = 'explanations.json';
+const EXP_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${EXP_FILE}`;
+const EXP_API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${EXP_FILE}`;
+
 function getGithubToken(){ return localStorage.getItem('swpwa_ghtoken')||''; }
 function setGithubToken(t){ localStorage.setItem('swpwa_ghtoken', t); }
 function getGeminiKey(){ return localStorage.getItem('swpwa_geminikey')||''; }
 function setGeminiKey(k){ localStorage.setItem('swpwa_geminikey', k); }
+
+// ===== 解析檔：從 GitHub 載入並 merge 進題庫 =====
+async function fetchExplanations(){
+  try{
+    const resp = await fetch(EXP_URL + '?t=' + Date.now());
+    if(!resp.ok) return; // 檔案不存在也沒關係
+    const exps = await resp.json(); // { id: "解析內容", ... }
+    let merged = 0;
+    DB.questions.forEach(q => {
+      if(exps[q.id] && !q.exp){
+        q.exp = exps[q.id];
+        merged++;
+      }
+    });
+    if(merged > 0) console.log(`✅ 已 merge ${merged} 筆解析`);
+  }catch(e){ console.log('explanations.json 未找到或格式錯誤，略過'); }
+}
+
+// ===== 儲存單筆解析到 GitHub explanations.json =====
+async function saveExpToGitHub(qId, expText){
+  let token = getGithubToken();
+  if(!token){
+    token = prompt('請輸入 GitHub Personal Access Token：');
+    if(!token) return false;
+    setGithubToken(token.trim());
+  }
+  try{
+    // 先讀現有的 explanations.json（取 sha 和現有內容）
+    let existingExps = {}, sha = null;
+    const info = await fetch(EXP_API, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if(info.status === 401){ localStorage.removeItem('swpwa_ghtoken'); showToast('❌ Token 錯誤，請重新輸入'); return false; }
+    if(info.ok){
+      const infoData = await info.json();
+      sha = infoData.sha;
+      // 解碼現有內容
+      try{ existingExps = JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){}
+    }
+    // 更新這一筆
+    existingExps[qId] = expText;
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(existingExps, null, 2))));
+    const body = {
+      message: `新增解析 ${new Date().toLocaleDateString('zh-TW')} (共${Object.keys(existingExps).length}筆)`,
+      content
+    };
+    if(sha) body.sha = sha;
+    const res = await fetch(EXP_API, {
+      method: 'PUT',
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if(res.ok){ showToast(`✅ 解析已上傳（共${Object.keys(existingExps).length}筆）`); return true; }
+    else { const err = await res.json(); showToast('❌ 上傳失敗：'+(err.message||res.status)); return false; }
+  }catch(e){ showToast('❌ 上傳失敗，請確認網路連線'); console.error(e); return false; }
+}
 
 
 // ===== GEMINI API =====
@@ -797,6 +859,8 @@ function renderPQ(){
   document.getElementById('exp').className='exp';
   document.getElementById('aiExpArea').style.display='none';
   document.getElementById('aiExpResult').style.display='none';
+  const expToggle = document.getElementById('expToggleBtn');
+  if(expToggle){ expToggle.style.display='none'; expToggle.textContent='📖 查看解析'; }
   if(document.getElementById('aiExpBtn')){
     document.getElementById('aiExpBtn').disabled=false;
     document.getElementById('aiExpBtn').textContent='🤖 AI 解析這題';
@@ -828,7 +892,13 @@ function pickAns(i){
   badge.style.display='flex';
   // 從 DB 取最新版題目（避免 pool 物件過時，例如儲存解析後 exp 仍為空）
   const freshQ = DB.questions.find(x=>x.id===q.id) || q;
-  if(freshQ.exp){const e=document.getElementById('exp');e.innerHTML=`<strong>解析：</strong>${freshQ.exp}`;e.classList.add('show');}
+  if(freshQ.exp){
+    const e=document.getElementById('exp');
+    e.innerHTML=`<strong>解析：</strong>${freshQ.exp}`;
+    // 不自動展開，改用按鈕切換
+    const expToggle = document.getElementById('expToggleBtn');
+    if(expToggle){ expToggle.style.display='inline-flex'; expToggle.textContent='📖 查看解析'; }
+  }
   if(!freshQ.exp && IS_DEV) document.getElementById('aiExpArea').style.display='block';
   document.getElementById('nextBtn').disabled=false;
   updateHeader();
@@ -843,6 +913,13 @@ function nextQ(){
   else{showToast('🎉 完成本輪！');DB.stats.sessions++;save();reshuffleQ();}
 }
 function skipQ(){if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();}}
+function toggleExp(){
+  const e = document.getElementById('exp');
+  const btn = document.getElementById('expToggleBtn');
+  const isOpen = e.classList.contains('show');
+  e.classList.toggle('show', !isOpen);
+  btn.textContent = isOpen ? '📖 查看解析' : '📖 收起解析';
+}
 function startPracticeTimer(){
   P.seconds=0;
   P.timerID=setInterval(()=>{
@@ -1309,8 +1386,8 @@ ${q.q}
       const idx=DB.questions.findIndex(x=>x.id===q.id);
       if(idx>=0){DB.questions[idx].exp=response;save();}
       saveBtn.textContent='⏳ 上傳中…';saveBtn.disabled=true;
-      await pushToGitHub();
-      saveBtn.textContent='✅ 已儲存並同步';
+      const ok = await saveExpToGitHub(q.id, response);
+      saveBtn.textContent = ok ? '✅ 已儲存並同步' : '❌ 上傳失敗（已存本機）';
     };
     textDiv.appendChild(saveBtn);
   }
@@ -1455,10 +1532,10 @@ async function requestEssayAI(id){
     const idx=DB.questions.findIndex(x=>x.id===id);
     if(idx>=0){DB.questions[idx].exp=response;save();}
     saveBtn.textContent='⏳ 上傳中…';saveBtn.disabled=true;
-    await pushToGitHub();
-    saveBtn.textContent='✅ 已儲存並同步';
+    const ok = await saveExpToGitHub(id, response);
+    saveBtn.textContent = ok ? '✅ 已儲存並同步' : '❌ 上傳失敗（已存本機）';
     renderEssayList();
-    showToast('✅ 申論解析已儲存並上傳');
+    if(ok) showToast('✅ 申論解析已儲存並上傳');
   };
   textDiv.appendChild(saveBtn);
 }
@@ -1627,8 +1704,9 @@ async function syncFromGitHub(){
   showToast('正在從 GitHub 同步…');
   const count = await fetchFromGitHub(false);
   if(count){
-    // 同步後也執行資料清理
+    // 同步後也執行資料清理，並重新載入解析
     const fixed = cleanData();
+    await fetchExplanations();
     buildSubjFilter();populateExamSubjs();renderQList();updateHeader();
     showToast(`✅ 同步完成，共 ${count} 題${fixed>0?'，修復'+fixed+'筆':''}`);
   } else {
@@ -1660,6 +1738,8 @@ async function init(){
   if(count){
     document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
     document.getElementById('loadingBar').style.width='100%';
+    // 載入解析檔（背景 merge，不阻塞 UI）
+    await fetchExplanations();
   }
   
   // 先關 loading，再分步執行耗時操作
