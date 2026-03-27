@@ -622,6 +622,93 @@ async function saveExpToGitHub(qId, expText){
   }catch(e){ showToast('❌ 上傳失敗，請確認網路連線'); console.error(e); return false; }
 }
 
+// ===== 批次上傳解析（累積 5 筆 或 閒置 5 分鐘，擇先觸發）=====
+const BATCH_COUNT = 5;           // 累積幾筆就上傳
+const BATCH_DELAY = 5 * 60000;  // 閒置幾毫秒後上傳
+let _batchTimer = null;
+
+function getPendingExps(){
+  try{ return JSON.parse(localStorage.getItem('swpwa_pending_exps')||'{}'); }catch(e){ return {}; }
+}
+function setPendingExps(obj){
+  try{ localStorage.setItem('swpwa_pending_exps', JSON.stringify(obj)); }catch(e){}
+}
+
+// 解析完成後呼叫這個：存本機 + 加入待上傳佇列
+function autoSaveExp(qId, expText){
+  // 1. 存進題目本機資料
+  const idx = DB.questions.findIndex(x=>x.id===qId);
+  if(idx>=0){ DB.questions[idx].exp = expText; save(); }
+
+  // 2. 加入待上傳佇列
+  const pending = getPendingExps();
+  pending[qId] = expText;
+  setPendingExps(pending);
+
+  const count = Object.keys(pending).length;
+  showToast(`💾 解析已存本機（待上傳 ${count} 筆）`);
+
+  // 3. 重設閒置計時器
+  clearTimeout(_batchTimer);
+  _batchTimer = setTimeout(()=> flushPendingExps('閒置'), BATCH_DELAY);
+
+  // 4. 累積達標就立刻上傳
+  if(count >= BATCH_COUNT) flushPendingExps('累積');
+}
+
+// 實際上傳待上傳佇列
+async function flushPendingExps(reason=''){
+  clearTimeout(_batchTimer);
+  const pending = getPendingExps();
+  if(!Object.keys(pending).length) return;
+  const token = getGithubToken();
+  if(!token){
+    console.log('無 Token，解析留在本機待下次上傳');
+    return;
+  }
+  console.log(`⏳ 批次上傳解析（${reason}，共 ${Object.keys(pending).length} 筆）`);
+  try{
+    let existingExps = {}, sha = null;
+    const info = await fetch(EXP_API, {
+      headers:{ 'Authorization':`token ${token}`, 'Accept':'application/vnd.github.v3+json' }
+    });
+    if(info.status===401){ localStorage.removeItem('swpwa_ghtoken'); return; }
+    if(info.ok){
+      const infoData = await info.json();
+      sha = infoData.sha;
+      try{ existingExps = JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){}
+    }
+    // 合併待上傳
+    Object.assign(existingExps, pending);
+    const total = Object.keys(existingExps).length;
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(existingExps, null, 2))));
+    const body = { message:`批次上傳解析 ${new Date().toLocaleDateString('zh-TW')} (共${total}筆)`, content };
+    if(sha) body.sha = sha;
+    const res = await fetch(EXP_API, {
+      method:'PUT',
+      headers:{ 'Authorization':`token ${token}`, 'Accept':'application/vnd.github.v3+json', 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    });
+    if(res.ok){
+      setPendingExps({});  // 清空佇列
+      showToast(`☁️ 已批次上傳 ${Object.keys(pending).length} 筆解析`);
+      console.log(`✅ 批次上傳成功，共 ${total} 筆`);
+    } else {
+      console.warn('⚠ 批次上傳失敗', res.status);
+    }
+  }catch(e){ console.warn('⚠ 批次上傳例外', e); }
+}
+
+// 下次開啟時補傳上次未傳完的
+async function flushPendingOnStart(){
+  const pending = getPendingExps();
+  if(!Object.keys(pending).length) return;
+  const token = getGithubToken();
+  if(!token) return;
+  console.log(`🔄 啟動時補傳 ${Object.keys(pending).length} 筆未上傳解析`);
+  await flushPendingExps('啟動補傳');
+}
+
 
 // ===== 一鍵遷移：把 question.json 裡的 exp 搬到 explanations.json =====
 async function migrateExpsToFile(){
@@ -1437,19 +1524,8 @@ ${q.q}
     .replace(/\n/g,'<br>');
   textDiv.innerHTML = `<p>${formatted}</p><div style="margin-top:8px;font-size:10px;opacity:.5;text-align:right">由 AI 生成</div>`;
   btn.textContent = '✅ 解析完成';
-  if(!q.exp){
-    const saveBtn = document.createElement('button');
-    saveBtn.style.cssText='margin-top:8px;font-size:11px;padding:5px 12px;border-radius:5px;border:1px solid rgba(201,168,76,.4);background:rgba(201,168,76,.15);color:var(--gold2);cursor:pointer;font-family:inherit;width:100%';
-    saveBtn.textContent='💾 儲存解析到題庫';
-    saveBtn.onclick=async()=>{
-      const idx=DB.questions.findIndex(x=>x.id===q.id);
-      if(idx>=0){DB.questions[idx].exp=response;save();}
-      saveBtn.textContent='⏳ 上傳中…';saveBtn.disabled=true;
-      const ok = await saveExpToGitHub(q.id, response);
-      saveBtn.textContent = ok ? '✅ 已儲存並同步' : '❌ 上傳失敗（已存本機）';
-    };
-    textDiv.appendChild(saveBtn);
-  }
+  // 自動存本機並排入批次上傳
+  autoSaveExp(q.id, response);
 }
 
 
@@ -1583,20 +1659,9 @@ async function requestEssayAI(id){
     .replace(/\n/g,'<br>');
   textDiv.innerHTML = formatted;
 
-  // 儲存按鈕
-  const saveBtn = document.createElement('button');
-  saveBtn.style.cssText='margin-top:12px;font-size:11px;padding:6px 14px;border-radius:5px;border:1px solid rgba(201,168,76,.4);background:rgba(201,168,76,.15);color:var(--gold2);cursor:pointer;font-family:inherit;width:100%';
-  saveBtn.textContent='💾 儲存解析並上傳 GitHub';
-  saveBtn.onclick=async()=>{
-    const idx=DB.questions.findIndex(x=>x.id===id);
-    if(idx>=0){DB.questions[idx].exp=response;save();}
-    saveBtn.textContent='⏳ 上傳中…';saveBtn.disabled=true;
-    const ok = await saveExpToGitHub(id, response);
-    saveBtn.textContent = ok ? '✅ 已儲存並同步' : '❌ 上傳失敗（已存本機）';
-    renderEssayList();
-    if(ok) showToast('✅ 申論解析已儲存並上傳');
-  };
-  textDiv.appendChild(saveBtn);
+  // 自動存本機並排入批次上傳
+  autoSaveExp(id, response);
+  renderEssayList();
 }
 
 function populateEssayYearFilter(){
@@ -1809,6 +1874,7 @@ async function init(){
     ()=> loadPractice(),
     ()=> updateHeader(),
     ()=> applyDevMode(),
+    ()=> flushPendingOnStart(),  // 補傳上次未上傳的解析
   ]);
 }
 init();
