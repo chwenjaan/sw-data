@@ -537,7 +537,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v22';
+const DB_VERSION = '20260327_v23';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -689,19 +689,10 @@ function applyDevMode(){
 // ===== DB =====
 let DB = {
   questions: [],
-  stats: JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'),
-  wrong: JSON.parse(localStorage.getItem('swpwa_w')||'[]'),
+  stats: (()=>{ try{ return JSON.parse(localStorage.getItem('swpwa_s')||'{}'); }catch(e){ return {}; } })() || {"total":0,"correct":0,"bySubj":{},"sessions":0},
+  wrong: (()=>{ try{ return JSON.parse(localStorage.getItem('swpwa_w')||'[]'); }catch(e){ return []; } })(),
 };
-// 版本控制：升版才清題庫
-if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
-  localStorage.removeItem('swpwa_q');
-  localStorage.setItem('swpwa_dbver', DB_VERSION);
-}
-
-// 用 Web Worker 在背景解析大型 JSON，不阻塞主執行緒
-function loadQuestionsAsync(callback){
-  const raw = localStorage.getItem('swpwa_q');
-  if(!raw){ callback([]); return; }
+// 版本控制（已移除題庫快取，每次從 GitHub 拉）
   const workerCode = `
     self.onmessage = function(e){
       try{
@@ -739,12 +730,8 @@ function loadQuestionsAsync(callback){
   }
 }
 function save(){
-  try{
-    const mcOnly = DB.questions.filter(q=>q.type!=='essay');
-    localStorage.setItem('swpwa_q',JSON.stringify(mcOnly));
-    localStorage.setItem('swpwa_s',JSON.stringify(DB.stats));
-    localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong));
-  }catch(e){showToast('儲存空間不足，請清除部分資料');}
+  try{ localStorage.setItem('swpwa_s',JSON.stringify(DB.stats)); }catch(e){}
+  try{ localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong)); }catch(e){}
 }
 
 // ===== STATE =====
@@ -1658,40 +1645,23 @@ async function syncFromGitHub(){
 // ===== INIT =====
 async function init(){
   const loading = document.getElementById('loadingScreen');
-  // 先用 Web Worker 非同步載入 localStorage 題庫
-  await new Promise(resolve=>{
-    loadQuestionsAsync(qs=>{ DB.questions=qs; resolve(); });
-  });
+  const closeLoading = ()=>{
+    loading.style.animation='none';
+    loading.style.opacity='0';
+    loading.style.transition='opacity .5s';
+    setTimeout(()=>{ loading.style.display='none'; },500);
+  };
 
-  if(DB.questions.length > 0){
-    document.getElementById('loadingMsg').textContent='載入快取題庫…';
+  document.getElementById('loadingMsg').textContent='載入題庫中…';
+  const count = await fetchFromGitHub(true);
+  if(count){
+    document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
     document.getElementById('loadingBar').style.width='100%';
-    // 先關 loading，再背景執行耗時操作
-    setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); },100);
-    setTimeout(()=>{
-      try{ buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode(); }catch(e){}
-      fetchFromGitHub(false).then(count=>{
-        if(count){ try{ buildSubjFilter();populateExamSubjs();updateHeader(); }catch(e){} }
-      });
-    },200);
-  } else {
-    document.getElementById('loadingMsg').textContent='首次使用，載入題庫中…';
-    const count = await fetchFromGitHub(true);
-    if(count){
-      document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
-      document.getElementById('loadingBar').style.width='100%';
-      // 先關 loading，再背景執行
-      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); },300);
-      setTimeout(()=>{
-        try{ buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode(); }catch(e){}
-      },400);
-    } else {
-      document.getElementById('loadingMsg').textContent='❌ 載入失敗，請確認網路連線後重新整理';
-      document.getElementById('loadingBar').style.background='var(--red)';
-      document.getElementById('loadingBar').style.width='100%';
-      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); }, 3000);
-    }
   }
+  closeLoading();
+  setTimeout(()=>{
+    try{ buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode(); }catch(e){ console.error(e); }
+  }, 300);
 }
 init();
 
