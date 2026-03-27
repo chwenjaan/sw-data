@@ -536,7 +536,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v7';
+const DB_VERSION = '20260327_v8';
 
 // ===== 重置題庫 =====
 function setGeminiKeyPrompt(){
@@ -689,10 +689,17 @@ function applyDevMode(){
 
 // ===== DB =====
 let DB = {
-  questions: JSON.parse(localStorage.getItem('swpwa_q')||'[]'),
-  stats: JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'),
-  wrong: JSON.parse(localStorage.getItem('swpwa_w')||'[]'),
+  questions: [],
+  stats: {"total":0,"correct":0,"bySubj":{},"sessions":0},
+  wrong: [],
 };
+// 非同步載入 localStorage，避免阻塞頁面
+setTimeout(()=>{
+  try{ DB.questions = JSON.parse(localStorage.getItem('swpwa_q')||'[]'); }catch(e){ DB.questions=[]; }
+  try{ DB.stats = JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'); }catch(e){}
+  try{ DB.wrong = JSON.parse(localStorage.getItem('swpwa_w')||'[]'); }catch(e){ DB.wrong=[]; }
+  init();
+}, 50);
 // 版本控制：升版才清題庫（放在 DB 讀取之後，避免先清後讀的競態）
 if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
   DB.questions = [];
@@ -1732,5 +1739,4 @@ async function init(){
     setTimeout(render, 100);
   }
 }
-init();
 </script>
