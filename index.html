@@ -121,7 +121,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .toast{position:fixed;bottom:calc(20px + var(--safe-bottom));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:9px 18px;border-radius:8px;font-size:12px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;white-space:nowrap;max-width:90vw;text-align:center;}
 .toast.show{opacity:1;}
 .empty-state{text-align:center;padding:40px 0;color:var(--gray);}
-.empty-state .icon{font-size:36px;margin-bottom:10px;}
+.empty-state .icon{font-size:36px;margin-bottom:10px;} .qrow:last-child{border-bottom:1px solid var(--border)!important;border-radius:0 0 8px 8px;} .qrow:first-of-type{border-radius:8px 8px 0 0;}
 @media(max-width:480px){.hstats{display:none;}.qtext{font-size:14px;}}
 </style>
 </head>
@@ -134,9 +134,9 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 <div class="panel" id="panel-exam"><div id="examStart"><div style="background:white;border:1px solid var(--border);border-radius:10px;padding:20px"><div class="sec-title">模擬考試設定</div><div class="frow"><label>科目</label><select id="examSubj"><option value="all">全科混合</option></select></div><div class="fgrid2"><div class="frow"><label>題數</label><select id="examCount"><option value="10">10 題</option><option value="20" selected>20 題</option><option value="40">40 題</option><option value="999">全部</option></select></div><div class="frow"><label>每題限時</label><select id="examTime"><option value="0">不限時</option><option value="60" selected>60 秒</option><option value="90">90 秒</option><option value="120">120 秒</option></select></div></div><button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="startExam()">開始考試</button><div id="examWarn" style="font-size:11px;color:var(--red);margin-top:8px;display:none">⚠ 此科目無題目</div></div></div><div id="examMain" style="display:none"><div class="quiz-header"><div class="quiz-info">第 <span id="eqNum">1</span> 題 / 共 <span id="eqTotal">20</span> 題</div><div class="timer" id="examTimer">01:00</div></div><div class="prog-bar"><div class="prog-fill" id="examPF" style="width:0%"></div></div><div class="qcard"><div class="qmeta"><span class="qtag subj" id="eqSubj"></span><span class="qtag year" id="eqYear"></span></div><div class="qtext" id="eqText"></div><div class="opts" id="eqOpts"></div></div><div class="action-row"><button class="btn btn-primary" id="eNextBtn" onclick="examNext()" disabled>下一題 →</button><button class="btn btn-outline" onclick="examSkip()">跳過</button><button class="btn btn-red" onclick="submitExam()" style="margin-left:auto">交卷</button></div></div><div id="examResult" style="display:none"><div class="sumcard"><div class="sring" id="sring"><div class="spct" id="spct">0%</div><div class="slbl">得分率</div></div><div style="font-size:17px;font-weight:700;margin-bottom:3px" id="stitle"></div><div style="font-size:12px;color:var(--gray)" id="smsg"></div><div class="sbreakdown"><div class="sbox cor"><strong id="scor">0</strong><span>答對</span></div><div class="sbox wrg"><strong id="swrg">0</strong><span>答錯</span></div><div class="sbox"><strong id="sskp">0</strong><span>未答</span></div></div><div class="action-row" style="justify-content:center"><button class="btn btn-primary" onclick="reviewExam()">查看解析</button><button class="btn btn-outline" onclick="resetExam()">重新考試</button></div></div><div id="examReview" style="display:none;margin-top:18px"></div></div></div>
 <div class="panel" id="panel-wrong"><div class="sec-title">錯題紀錄</div><div id="wrongList"></div><div id="wrongEmpty" class="empty-state" style="display:none"><div class="icon">🎉</div><div style="font-size:14px;font-weight:500">沒有錯題</div><div style="font-size:12px;margin-top:4px">繼續練習吧！</div></div><div id="wrongActs" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn btn-primary" onclick="practiceWrong()">練習錯題</button><button class="btn btn-outline" onclick="clearWrong()" style="color:var(--red)">清除全部</button></div></div>
 <div class="panel" id="panel-stats"><div class="stats-grid"><div class="stat-card"><div class="big" id="stTotal" style="color:var(--blue)">0</div><div class="lbl">累計作答</div></div><div class="stat-card"><div class="big" id="stAcc" style="color:var(--green)">0%</div><div class="lbl">整體正確率</div></div><div class="stat-card"><div class="big" id="stBank" style="color:var(--gold)">0</div><div class="lbl">題庫題數</div></div><div class="stat-card"><div class="big" id="stSess" style="color:var(--red)">0</div><div class="lbl">練習次數</div></div></div><div class="subj-stat"><div class="sec-title">各科正確率</div><div id="subjStats"><div style="color:var(--gray);font-size:13px">尚無作答資料</div></div></div><div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;"><button class="btn btn-outline btn-sm dev-only" onclick="pushToGitHub()" style="color:var(--green)">☁️ 上傳到 GitHub</button><button class="btn btn-outline btn-sm dev-only" onclick="syncFromGitHub()" style="color:var(--blue)">🔄 從 GitHub 同步</button><button class="btn btn-outline btn-sm dev-only" onclick="migrateExpsToFile()" style="color:#8e44ad">🔀 遷移解析檔</button><button class="btn btn-outline btn-sm dev-only" onclick="clearStats()" style="color:var(--gray)">重置統計</button><button class="btn btn-outline btn-sm" onclick="resetQuestionBank()" style="color:var(--red)">🔄 重置題庫</button><button class="btn btn-outline btn-sm dev-only" onclick="showGeminiModal()" style="color:var(--blue)">🔑 Gemini Key</button><button class="btn btn-outline btn-sm" id="devModeBtn" onclick="IS_DEV?exitDev():toggleDev()" style="color:var(--gray);font-size:10px">⚙️</button></div></div>
-<div class="panel" id="panel-manage"><div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center"><span class="sec-title" style="margin-bottom:0">題庫管理</span><span style="font-size:11px;color:var(--gray)" id="bankCount">共 0 題</span><div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-green btn-sm dev-only" onclick="openAdd()">＋ 新增</button><button class="btn btn-gold btn-sm dev-only" onclick="openImport()">📥 匯入</button><button class="btn btn-outline btn-sm dev-only" onclick="exportBank()">📤 備份</button><button class="btn btn-outline btn-sm dev-only" onclick="openBkImport()">📂 還原</button><button class="btn btn-outline btn-sm dev-only" onclick="manualCleanData()" style="color:var(--red)">🔧 修復資料</button></div></div><div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center"><select id="filterPaper" onchange="renderQList()" style="flex:1;min-width:200px;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper)"><option value="">— 選擇考卷 —</option></select><input type="text" id="qSearch" placeholder="🔍 搜尋題目…" oninput="renderQList()" style="flex:1;min-width:120px;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper)"><span id="filterCount" style="font-size:11px;color:var(--gray);white-space:nowrap"></span></div><div id="qListWrap" style="display:flex;flex-direction:column;gap:6px;max-height:70vh;overflow-y:auto;"></div></div>
+<div class="panel" id="panel-manage"><div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><span class="sec-title" style="margin-bottom:0">題庫管理</span><span style="font-size:11px;color:var(--gray)" id="bankCount">共 0 題</span><div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-green btn-sm dev-only" onclick="openAdd()">＋ 新增</button><button class="btn btn-gold btn-sm dev-only" onclick="openImport()">📥 匯入</button><button class="btn btn-outline btn-sm dev-only" onclick="exportBank()">📤 備份</button><button class="btn btn-outline btn-sm dev-only" onclick="openBkImport()">📂 還原</button><button class="btn btn-outline btn-sm dev-only" onclick="manualCleanData()" style="color:var(--red)">🔧 修復資料</button></div></div><div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;"><div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:10px;letter-spacing:.5px">選擇考卷</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;"><div><label style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">年度</label><select id="filterYear" onchange="onFilterYearChange()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit;"><option value="">— 選擇年度 —</option></select></div><div><label style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">考試次別</label><select id="filterExam" onchange="onFilterExamChange()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit;" disabled><option value="">— 先選年度 —</option></select></div><div><label style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">科目</label><select id="filterSubjNew" onchange="renderQList()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit;" disabled><option value="">— 先選年度 —</option></select></div></div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><input type="text" id="qSearch" placeholder="🔍 關鍵字搜尋…" oninput="renderQList()" style="flex:1;min-width:120px;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper)"><span id="filterCount" style="font-size:11px;color:var(--gray);white-space:nowrap"></span></div></div><div id="qListWrap" style="display:flex;flex-direction:column;gap:0;max-height:72vh;overflow-y:auto;"></div></div>
 <div class="panel" id="panel-essay"><div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><span class="sec-title" style="margin-bottom:0">歷屆申論題</span><div style="margin-left:auto;display:flex;gap:6px"><select id="essayFilterSubj" onchange="renderEssayList()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper)"><option value="">全部科目</option><option>社會工作</option><option>社會工作直接服務</option><option>社會政策與社會立法</option><option>人類行為與社會環境</option><option>社會工作研究方法</option></select><select id="essayFilterYear" onchange="renderEssayList()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper)"><option value="">全部年度</option></select></div></div><div id="essayList" style="display:flex;flex-direction:column;gap:8px"></div><div id="essayEmpty" class="empty-state" style="display:none"><div class="icon">✍️</div><div style="font-size:14px;font-weight:500">尚無申論題</div><div style="font-size:12px;margin-top:4px">請開發者從題庫匯入申論題</div></div></div>
-<div class="panel" id="panel-aisearch"><div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;"><div style="padding:14px 16px;background:var(--ink);color:var(--paper)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-size:16px">🔍</span><span style="font-size:14px;font-weight:600">AI 關鍵字搜尋</span><span style="font-size:10px;background:rgba(201,168,76,.25);color:var(--gold);padding:2px 7px;border-radius:10px;margin-left:auto">Gemini AI</span></div><div style="font-size:11px;color:rgba(245,240,232,.45)">輸入概念或關鍵字，AI 幫你找出相關題目</div></div><div style="padding:14px 16px"><div style="display:flex;gap:8px;margin-bottom:10px"><input type="text" id="aiSearchInput" placeholder="例如：充權、依附理論、社會保險…" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--paper)" onkeydown="if(event.key==='Enter')doAiSearch()"><button class="btn btn-primary" onclick="doAiSearch()" style="flex-shrink:0">搜尋</button></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px" id="aiSearchTags"><span style="font-size:11px;color:var(--gray)">快速選擇：</span><button onclick="quickSearch('充權與增能')" class="subj-btn" style="font-size:10px;padding:3px 9px">充權</button><button onclick="quickSearch('危機介入')" class="subj-btn" style="font-size:10px;padding:3px 9px">危機介入</button><button onclick="quickSearch('依附理論')" class="subj-btn" style="font-size:10px;padding:3px 9px">依附理論</button><button onclick="quickSearch('社會保險')" class="subj-btn" style="font-size:10px;padding:3px 9px">社會保險</button><button onclick="quickSearch('抽樣方法')" class="subj-btn" style="font-size:10px;padding:3px 9px">抽樣方法</button><button onclick="quickSearch('任務中心模式')" class="subj-btn" style="font-size:10px;padding:3px 9px">任務中心</button><button onclick="quickSearch('Erikson發展理論')" class="subj-btn" style="font-size:10px;padding:3px 9px">Erikson</button><button onclick="quickSearch('兒童保護通報')" class="subj-btn" style="font-size:10px;padding:3px 9px">兒童保護</button></div></div></div><div id="aiSearchResult" style="margin-top:14px"></div></div>
+<div class="panel" id="panel-aisearch"><div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;"><div style="padding:14px 16px;background:var(--ink);color:var(--paper)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><span style="font-size:16px">🔍</span><span style="font-size:14px;font-weight:600">AI 關鍵字搜尋</span><span style="font-size:10px;background:rgba(201,168,76,.25);color:var(--gold);padding:2px 7px;border-radius:10px;margin-left:auto">Gemini AI</span></div><div style="font-size:11px;color:rgba(245,240,232,.45)">輸入概念或關鍵字，AI 幫你找出相關題目</div></div><div style="padding:14px 16px"><div style="display:flex;gap:8px;margin-bottom:10px"><input type="text" id="aiSearchInput" placeholder="例如：充權、依附理論、社會保險…" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--paper)" onkeydown="if(event.key==='Enter')doAiSearch()"><button class="btn btn-primary" onclick="doAiSearch()" style="flex-shrink:0">搜尋</button></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px" id="aiSearchTags"><span style="font-size:11px;color:var(--gray)">快速選擇：</span><button onclick="quickSearch('充權')" class="subj-btn" style="font-size:10px;padding:3px 9px">充權</button><button onclick="quickSearch('危機介入')" class="subj-btn" style="font-size:10px;padding:3px 9px">危機介入</button><button onclick="quickSearch('依附理論')" class="subj-btn" style="font-size:10px;padding:3px 9px">依附理論</button><button onclick="quickSearch('社會保險')" class="subj-btn" style="font-size:10px;padding:3px 9px">社會保險</button><button onclick="quickSearch('抽樣方法')" class="subj-btn" style="font-size:10px;padding:3px 9px">抽樣方法</button><button onclick="quickSearch('任務中心')" class="subj-btn" style="font-size:10px;padding:3px 9px">任務中心</button><button onclick="quickSearch('Erikson')" class="subj-btn" style="font-size:10px;padding:3px 9px">Erikson</button><button onclick="quickSearch('兒童保護')" class="subj-btn" style="font-size:10px;padding:3px 9px">兒童保護</button></div></div></div><div id="aiSearchResult" style="margin-top:14px"></div></div>
 </div>
 <div class="modal-bg" id="addModal"><div class="modal"><h3 id="modalTitle">新增題目</h3><div class="fgrid2"><div class="frow"><label>科目 *</label><select id="fSubj"><option>社會工作</option><option>社會工作直接服務</option><option>社會政策與社會立法</option><option>人類行為與社會環境</option><option>社會工作研究方法</option></select></div><div class="frow"><label>年度</label><input type="text" id="fYear" placeholder="例：115年"></div></div><div class="frow"><label>來源（選填）</label><input type="text" id="fSrc" placeholder="例：考選部115年社工師考試"></div><div class="frow"><label>題目 *</label><textarea id="fQ" rows="3" placeholder="輸入題目內容…"></textarea></div><div class="frow"><label>選項 *（點ABCD設定正確答案）</label><div id="optInputs"></div></div><div class="frow"><label>正確答案</label><div class="ans-sel" id="ansSel"></div></div><div class="frow"><label>解析（選填）</label><textarea id="fExp" rows="2" placeholder="輸入解析…"></textarea></div><div class="action-row"><button class="btn btn-primary" onclick="saveQ()">儲存</button><button class="btn btn-outline" onclick="closeModal('addModal')">取消</button><button class="btn btn-red btn-sm" id="delBtn" onclick="deleteQ()" style="display:none;margin-left:auto">刪除</button></div></div></div>
 <div class="modal-bg" id="importModal"><div class="modal"><h3>批次匯入題目</h3><div class="ifmt">每題格式（題目間用空行分隔）：<br><code>Q: 題目</code> <code>A: 選項A</code> <code>B: 選項B</code> <code>C: 選項C</code> <code>D: 選項D</code><br><code>ANS: A</code>（正確答案） <code>SUBJ: 社會工作</code>（科目）<br><code>YEAR: 115年</code>（選填） <code>SRC: 考選部</code>（選填） <code>EXP: 解析</code>（選填）</div><div class="frow"><label>未指定科目時套用</label><select id="importSubj"><option>社會工作</option><option>社會工作直接服務</option><option>社會政策與社會立法</option><option>人類行為與社會環境</option><option>社會工作研究方法</option></select></div><div class="iarea"><textarea id="importText" placeholder="貼上題目內容…"></textarea></div><div id="importPreview" style="font-size:11px;margin-bottom:8px;"></div><div class="action-row"><button class="btn btn-primary" onclick="doImport()">匯入</button><button class="btn btn-outline" onclick="previewImport()">預覽</button><button class="btn btn-outline" onclick="closeModal('importModal')">取消</button></div></div></div>
@@ -461,56 +461,125 @@ function clearStats(){ if(!confirm('確定重置統計？'))return; DB.stats={to
 
 // ===== 題庫管理（核心修正）=====
 function populateFilterSelects(){
-  const fp=document.getElementById('filterPaper'); if(!fp) return;
-  const sel=fp.value;
+  // 取出所有年份（去掉次別）
+  const allYears=[...new Set(DB.questions.map(q=>{
+    if(!q.year) return null;
+    return q.year.replace(/第[一二三四五六]次$/,'').trim();
+  }).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+  const fy=document.getElementById('filterYear');
+  if(!fy) return;
+  const prevYear=fy.value;
+  fy.innerHTML='<option value="">— 選擇年度 —</option>'+allYears.map(y=>`<option value="${y}">${y}</option>`).join('');
+  if(prevYear && [...fy.options].some(o=>o.value===prevYear)) fy.value=prevYear;
+  onFilterYearChange(false);
+}
+function onFilterYearChange(doRender=true){
+  const year=document.getElementById('filterYear')?.value||'';
+  const examSel=document.getElementById('filterExam');
+  const subjSel=document.getElementById('filterSubjNew');
+  if(!examSel||!subjSel) return;
+  if(!year){
+    examSel.innerHTML='<option value="">— 先選年度 —</option>'; examSel.disabled=true;
+    subjSel.innerHTML='<option value="">— 先選年度 —</option>'; subjSel.disabled=true;
+    if(doRender) renderQList(); return;
+  }
+  // 找出此年度底下的次別 (e.g. 第一次/第二次 or 無次別)
+  const variants=[...new Set(DB.questions.filter(q=>q.year&&q.year.startsWith(year)).map(q=>{
+    const m=q.year.match(/第[一二三四五六]次/); return m?m[0]:'';
+  }))].sort();
+  examSel.disabled=false;
+  if(variants.length===1 && variants[0]===''){
+    // 只有一次，不需選
+    examSel.innerHTML='<option value="">（單次考試）</option>';
+    examSel.disabled=true;
+  } else {
+    const labels={'第一次':'專技高考社工師第一次','第二次':'專技高考社工師第二次','第三次':'專技高考社工師第三次','第四次':'專技高考社工師第四次'};
+    examSel.innerHTML='<option value="">— 選擇次別 —</option>'+variants.filter(v=>v).map(v=>`<option value="${v}">${labels[v]||v}</option>`).join('');
+  }
+  onFilterExamChange(doRender);
+}
+function onFilterExamChange(doRender=true){
+  const year=document.getElementById('filterYear')?.value||'';
+  const exam=document.getElementById('filterExam')?.value||'';
+  const subjSel=document.getElementById('filterSubjNew');
+  if(!subjSel) return;
+  // Build full year key
+  let yearKey=year+(exam?exam:'');
+  // Find matching questions
+  const qs=DB.questions.filter(q=>q.year&&(q.year===yearKey||(exam===''&&q.year.startsWith(year))));
+  const subjs=[...new Set(qs.map(q=>q.subject).filter(Boolean))];
   const subjOrder=['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
-  const paperMap=new Map();
-  DB.questions.forEach(q=>{ if(q.year && q.subject){ const key=`${q.year}||${q.subject}`; if(!paperMap.has(key)) paperMap.set(key,{year:q.year,subject:q.subject}); } });
-  const papers=Array.from(paperMap.values()).sort((a,b)=>{ const yr=b.year.localeCompare(a.year); if(yr!==0) return yr; const ia=subjOrder.indexOf(a.subject), ib=subjOrder.indexOf(b.subject); return (ia===-1?99:ia)-(ib===-1?99:ib); });
-  fp.innerHTML='<option value="">— 選擇考卷 —</option>'+papers.map(p=>`<option value="${p.year}||${p.subject}">${p.year}　${p.subject}</option>`).join('');
-  if(sel && [...fp.options].some(opt=>opt.value===sel)) fp.value=sel;
+  subjs.sort((a,b)=>(subjOrder.indexOf(a)===-1?99:subjOrder.indexOf(a))-(subjOrder.indexOf(b)===-1?99:subjOrder.indexOf(b)));
+  subjSel.disabled=false;
+  subjSel.innerHTML='<option value="">全部科目</option>'+subjs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(doRender) renderQList();
 }
 function renderQList(){
   const kw=(document.getElementById('qSearch')?.value||'').toLowerCase();
-  const paperVal=document.getElementById('filterPaper')?.value||'';
-  const [fy,fs]=paperVal?paperVal.split('||'):['',''];
-  let items=DB.questions.filter(q=>{ if(fy && q.year!==fy) return false; if(fs && q.subject!==fs) return false; if(kw && !q.q.toLowerCase().includes(kw) && !(q.opts||[]).join(' ').toLowerCase().includes(kw) && !(q.exp||'').toLowerCase().includes(kw)) return false; return true; });
+  const year=document.getElementById('filterYear')?.value||'';
+  const exam=document.getElementById('filterExam')?.value||'';
+  const subj=document.getElementById('filterSubjNew')?.value||'';
+  let yearKey=year+(exam||'');
   const bankCount=DB.questions.length;
   document.getElementById('bankCount').textContent=`共 ${bankCount} 題`;
   const wrap=document.getElementById('qListWrap');
   const filterCountSpan=document.getElementById('filterCount');
-  if(filterCountSpan) filterCountSpan.textContent=items.length!==bankCount?`顯示 ${items.length} 題`:'';
-  if(!paperVal && !kw){ wrap.innerHTML='<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">請選擇考卷，或輸入關鍵字搜尋</div>'; return; }
-  if(!items.length){ wrap.innerHTML='<div style="padding:32px;text-align:center;color:var(--gray);font-size:13px">無符合題目</div>'; return; }
+  if(!year && !kw){ wrap.innerHTML='<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">請先選擇年度，或輸入關鍵字搜尋</div>'; if(filterCountSpan) filterCountSpan.textContent=''; return; }
+  let items=DB.questions.filter(q=>{
+    if(year){ if(!q.year) return false; if(exam){ if(q.year!==yearKey) return false; } else { if(!q.year.startsWith(year)) return false; } }
+    if(subj && q.subject!==subj) return false;
+    if(kw && !q.q.toLowerCase().includes(kw) && !(q.opts||[]).join(' ').toLowerCase().includes(kw) && !(q.exp||'').toLowerCase().includes(kw)) return false;
+    return true;
+  });
   const subjOrder=['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
-  items.sort((a,b)=>{ const yr=(b.year||'').localeCompare(a.year||''); if(yr!==0) return yr; const ia=subjOrder.indexOf(a.subject), ib=subjOrder.indexOf(b.subject); if(ia!==ib) return (ia===-1?99:ia)-(ib===-1?99:ib); const aNo=extractQuestionNumber(a), bNo=extractQuestionNumber(b); if(aNo!==null && bNo!==null && aNo!==bNo) return aNo-bNo; return (a.id||'').localeCompare(b.id||''); });
+  items.sort((a,b)=>{
+    const yr=(a.year||'').localeCompare(b.year||''); if(yr!==0) return yr;
+    const ia=subjOrder.indexOf(a.subject), ib=subjOrder.indexOf(b.subject);
+    if(ia!==ib) return (ia===-1?99:ia)-(ib===-1?99:ib);
+    const aNo=extractQuestionNumber(a), bNo=extractQuestionNumber(b);
+    if(aNo!==null && bNo!==null && aNo!==bNo) return aNo-bNo;
+    return (a.id||'').localeCompare(b.id||'');
+  });
+  if(filterCountSpan) filterCountSpan.textContent=`共 ${items.length} 題`;
+  if(!items.length){ wrap.innerHTML='<div style="padding:32px;text-align:center;color:var(--gray);font-size:13px">無符合題目</div>'; return; }
   let html='';
-  if(fy && fs){ const col=COLORS[fs]||'#888'; html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:13px;font-weight:700;color:${col}">${fs}</span><span style="font-size:11px;color:var(--gray)">${fy}</span><span style="font-size:11px;background:var(--cream);color:var(--gray);padding:2px 8px;border-radius:10px">${items.length} 題</span></div>`; }
-  items.forEach((q,idx)=>{ const ansLetters=correctLetters(q); const qNo=extractQuestionNumber(q)||(idx+1); const isMulti=Array.isArray(q.ans)&&q.ans.length>1; html+=`<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:background .15s;margin-bottom:8px" onclick="expandQ(this,'${q.id.replace(/'/g,"\\'")}')" id="qcard_${q.id.replace(/[^a-z0-9]/gi,'_')}"><div style="display:flex;align-items:flex-start;gap:8px"><span style="flex-shrink:0;min-width:32px;height:28px;background:var(--cream);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gray)">${qNo}</span><div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.7;color:var(--ink)">${q.q}</div><div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:11px;background:#eafaf1;color:var(--green);padding:2px 8px;border-radius:4px;font-weight:600">答：${ansLetters}</span>${isMulti?`<span style="font-size:10px;background:#fff3e0;color:#e67e22;padding:2px 6px;border-radius:4px">官方更正</span>`:''}${q.exp&&q.exp.trim()?`<span style="font-size:10px;color:var(--gold)">✓ 有解析</span>`:''}</div></div>${IS_DEV?`<button class="btn btn-gold btn-sm" style="flex-shrink:0;font-size:10px" onclick="event.stopPropagation();openEdit('${q.id.replace(/'/g,"\\'")}')">✏️ 編輯</button>`:''}</div><div class="qdetail" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px"><div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">${q.opts.map((o,i)=>`<div style="display:flex;gap:8px;padding:7px 10px;border:1.5px solid ${isCorrect(q,i)?'var(--green)':'var(--border)'};border-radius:6px;background:${isCorrect(q,i)?'#eafaf1':'var(--paper)'}"><span style="font-size:10px;font-weight:700;width:16px;color:${isCorrect(q,i)?'var(--green)':'var(--gray)'}">${'ABCD'[i]}</span><span style="font-size:12px">${o}</span></div>`).join('')}</div>${q.exp&&q.exp.trim()?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:''}</div></div>`; });
+  if(!subj && !kw){
+    const groups=new Map();
+    items.forEach(q=>{ if(!groups.has(q.subject)) groups.set(q.subject,[]); groups.get(q.subject).push(q); });
+    groups.forEach((qs,s)=>{
+      const col=COLORS[s]||'#888';
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;margin-top:8px"><span style="font-size:12px;font-weight:700;color:${col}">${s}</span><span style="font-size:11px;background:white;color:var(--gray);padding:2px 8px;border-radius:10px;margin-left:auto">${qs.length} 題</span></div>`;
+      qs.forEach((q,idx)=>{ html+=buildQRow(q,idx); });
+    });
+  } else {
+    items.forEach((q,idx)=>{ html+=buildQRow(q,idx); });
+  }
   wrap.innerHTML=html;
 }
-function expandQ(el,id){ const detail=el.querySelector('.qdetail'); const isOpen=detail.style.display!=='none'; document.querySelectorAll('.qdetail').forEach(d=>d.style.display='none'); if(!isOpen) detail.style.display='block'; }
-
-// ===== 新增/編輯題目 =====
-function openAdd(){ editId=null; selAns=-1; document.getElementById('modalTitle').textContent='新增題目'; ['fYear','fSrc','fQ','fExp'].forEach(id=>document.getElementById(id).value=''); buildOptInputs(['','','','']); buildAnsSelector(); document.getElementById('delBtn').style.display='none'; openModal('addModal'); }
-function openEdit(id){ editId=id; const q=DB.questions.find(x=>x.id==id); if(!q)return; document.getElementById('modalTitle').textContent='編輯題目'; document.getElementById('fSubj').value=q.subject; document.getElementById('fYear').value=q.year||''; document.getElementById('fSrc').value=q.src||''; document.getElementById('fQ').value=q.q; document.getElementById('fExp').value=q.exp||''; selAns=q.ans; buildOptInputs(q.opts); buildAnsSelector(); document.getElementById('delBtn').style.display=''; openModal('addModal'); }
-function buildOptInputs(opts){ document.getElementById('optInputs').innerHTML=opts.map((o,i)=>`<div class="orow" id="orow${i}"><div class="olbl" onclick="setAns(${i})">${'ABCD'[i]}</div><input type="text" value="${o}" placeholder="選項${'ABCD'[i]}" id="fi${i}"></div>`).join(''); updOHL(); }
-function buildAnsSelector(){ document.getElementById('ansSel').innerHTML='ABCD'.split('').map((c,i)=>`<button class="ans-btn${selAns===i?' sel':''}" onclick="setAns(${i})">${c}</button>`).join(''); }
-function setAns(i){ selAns=i; document.querySelectorAll('.ans-btn').forEach((b,j)=>b.classList.toggle('sel',j===i)); updOHL(); }
-function updOHL(){ document.querySelectorAll('.orow').forEach((r,i)=>r.classList.toggle('ians',i===selAns)); }
-function saveQ(){
-  const subj=document.getElementById('fSubj').value;
-  const q=document.getElementById('fQ').value.trim();
-  const opts=['A','B','C','D'].map((_,i)=>document.getElementById('fi'+i).value.trim());
-  if(!q){showToast('請輸入題目');return;}
-  if(opts.some(o=>!o)){showToast('請填寫所有選項');return;}
-  if(selAns<0){showToast('請選擇正確答案');return;}
-  const entry={subject:subj,year:document.getElementById('fYear').value.trim(),src:document.getElementById('fSrc').value.trim(),q,opts,ans:selAns,exp:document.getElementById('fExp').value.trim()};
-  if(editId){const i=DB.questions.findIndex(x=>x.id==editId);if(i>=0)DB.questions[i]={...DB.questions[i],...entry};}
-  else DB.questions.push({id:'u'+Date.now()+Math.random().toString(36).slice(2),...entry});
-  save(); renderQList(); buildSubjFilter(); populateExamSubjs(); updateHeader();
-  closeModal('addModal'); showToast(editId?'已更新':'題目已新增！');
+function buildQRow(q,idx){
+  const ansLetters=correctLetters(q);
+  const qNo=extractQuestionNumber(q)||(idx+1);
+  const isMulti=Array.isArray(q.ans)&&q.ans.length>1;
+  const safeId=q.id.replace(/'/g,"\'");
+  const cardId=q.id.replace(/[^a-z0-9]/gi,'_');
+  return `<div style="background:white;border:1px solid var(--border);border-bottom:none;padding:12px 14px;cursor:pointer" class="qrow" onclick="expandQ(this,'${safeId}')" id="qcard_${cardId}">` +
+    `<div style="display:flex;align-items:flex-start;gap:10px">` +
+    `<span style="flex-shrink:0;min-width:30px;height:26px;background:var(--ink);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gold)">${qNo}</span>` +
+    `<div style="flex:1;min-width:0">` +
+    `<div style="font-size:13px;line-height:1.7;color:var(--ink)">${q.q}</div>` +
+    `<div style="margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">` +
+    `<span style="font-size:11px;background:#eafaf1;color:var(--green);padding:2px 8px;border-radius:4px;font-weight:600">答：${ansLetters}</span>` +
+    (isMulti?`<span style="font-size:10px;background:#fff3e0;color:#e67e22;padding:2px 6px;border-radius:4px">官方更正</span>`:'') +
+    (q.exp&&q.exp.trim()?`<span style="font-size:10px;color:var(--gold)">✓ 解析</span>`:'') +
+    `</div></div>` +
+    (IS_DEV?`<button class="btn btn-gold btn-sm" style="flex-shrink:0;font-size:10px" onclick="event.stopPropagation();openEdit('${safeId}')">✏️</button>`:'') +
+    `</div>` +
+    `<div class="qdetail" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">` +
+    `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">${q.opts.map((o,i)=>`<div style="display:flex;gap:8px;padding:7px 10px;border:1.5px solid ${isCorrect(q,i)?'var(--green)':'var(--border)'};border-radius:6px;background:${isCorrect(q,i)?'#eafaf1':'var(--paper)'}"><span style="font-size:11px;font-weight:700;width:18px;color:${isCorrect(q,i)?'var(--green)':'var(--gray)'}">${'ABCD'[i]}.</span><span style="font-size:13px">${o}</span></div>`).join('')}</div>` +
+    (q.exp&&q.exp.trim()?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:'') +
+    `</div></div>`;
 }
+function expandQ(el,id){ const detail=el.querySelector('.qdetail'); const isOpen=detail.style.display!=='none'; document.querySelectorAll('.qdetail').forEach(d=>d.style.display='none'); if(!isOpen) detail.style.display='block'; }
 function deleteQ(){ if(editId){ if(!confirm('確定刪除此題？'))return; DB.questions=DB.questions.filter(q=>q.id!=editId); save(); populateFilterSelects(); renderQList(); buildSubjFilter(); populateExamSubjs(); updateHeader(); closeModal('addModal'); showToast('已刪除'); } }
 
 // ===== 匯入匯出 =====
@@ -574,6 +643,7 @@ const KEYWORD_MAP={
 function quickSearch(kw){ document.getElementById('aiSearchInput').value=kw; doAiSearch(); }
 function doAiSearch(){
   const raw=document.getElementById('aiSearchInput').value.trim(); if(!raw){ showToast('請輸入關鍵字'); return; }
+  if(!DB.questions.length){ document.getElementById('aiSearchResult').innerHTML=`<div class="empty-state" style="padding:32px 0"><div class="icon">⚠️</div><div style="font-size:14px;font-weight:500">題庫尚未載入</div><div style="font-size:12px;margin-top:4px">請稍後再試，或點「統計」頁的「重置題庫」重新從 GitHub 載入</div></div>`; return; }
   const result=document.getElementById('aiSearchResult'); result.innerHTML='';
   let keywords=[raw.toLowerCase()];
   for(const [key,synonyms] of Object.entries(KEYWORD_MAP)){ if(raw.includes(key) || synonyms.some(s=>raw.toLowerCase().includes(s.toLowerCase()))){ keywords.push(...synonyms.map(s=>s.toLowerCase())); } }
