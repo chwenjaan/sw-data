@@ -532,7 +532,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v1';
+const DB_VERSION = '20260327_v2';
 
 // ===== 重置題庫 =====
 function setGeminiKeyPrompt(){
@@ -1709,10 +1709,15 @@ async function init(){
     document.getElementById('loadingBar').style.width='60%';
     // ★ 啟動時自動清理髒資料
     const fixed = cleanData();
-    buildSubjFilter();populateExamSubjs();loadPractice();renderQList();updateHeader();
-    applyDevMode();
-    if(fixed > 0) setTimeout(()=>showToast(`🔧 自動修復 ${fixed} 筆資料`), 800);
-    setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); },300);
+    // 先關 loading，再背景渲染
+    loading.style.opacity='0'; loading.style.transition='opacity .4s';
+    setTimeout(()=>{ loading.style.display='none'; }, 400);
+    setTimeout(()=>{
+      try{
+        buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode();
+        if(fixed > 0) showToast(`🔧 自動修復 ${fixed} 筆資料`);
+      }catch(e){ console.error('init cache error:',e); }
+    }, 500);
     // 背景靜默更新
     fetchFromGitHub(false).then(count=>{
       if(count){
@@ -1724,13 +1729,17 @@ async function init(){
     document.getElementById('loadingMsg').textContent='首次使用，載入題庫中…';
     const count = await fetchFromGitHub(true);
     if(count){
-      // ★ 首次載入後也清理
-      const fixed = cleanData();
+      cleanData();
       document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
       document.getElementById('loadingBar').style.width='100%';
-      buildSubjFilter();populateExamSubjs();loadPractice();renderQList();updateHeader();
-      applyDevMode();
-      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); },600);
+      // 先關閉 loading 畫面，再做耗時的 DOM 渲染
+      loading.style.opacity='0'; loading.style.transition='opacity .4s';
+      setTimeout(()=>{ loading.style.display='none'; }, 400);
+      setTimeout(()=>{
+        try{
+          buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode();
+        }catch(e){ console.error('init render error:',e); }
+      }, 500);
     } else {
       document.getElementById('loadingMsg').textContent='❌ 載入失敗，請確認網路連線後重新整理';
       document.getElementById('loadingBar').style.background='var(--red)';
