@@ -21,19 +21,15 @@
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;overflow-x:hidden;}
 body{
   font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif;
   background:var(--paper);color:var(--ink);
-  padding-top:var(--safe-top);padding-bottom:calc(var(--safe-bottom) + 60px);
+  padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);
 }
 .serif{font-family:'Georgia','Songti TC','SimSun',serif;}
 
-@keyframes fadeOutLoading{
-  from{opacity:1;pointer-events:all;}
-  to{opacity:0;pointer-events:none;visibility:hidden;}
-}
 /* HEADER */
 header{background:var(--ink);color:var(--paper);position:relative;overflow:hidden;}
 header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(201,168,76,.05) 20px,rgba(201,168,76,.05) 21px);}
@@ -52,7 +48,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .tab-btn.active{color:var(--red);border-bottom-color:var(--red);}
 
 /* MAIN */
-.main{max-width:960px;margin:0 auto;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom));}
+.main{max-width:960px;margin:0 auto;padding:16px;}
 .panel{display:none;}.panel.active{display:block;}
 
 /* SUBJECT BAR */
@@ -94,8 +90,8 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .exp{display:none;margin-top:10px;padding:12px 14px;border-left:3px solid var(--gold);background:#fffcf0;border-radius:0 6px 6px 0;font-size:13px;line-height:1.8;color:#4a4030;}
 .exp.show{display:block;animation:fu .2s ease;}
 
-.action-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;padding-bottom:max(16px,env(safe-area-inset-bottom));}
-.btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;min-height:44px;user-select:none;-webkit-user-select:none;position:relative;z-index:10;}
+.action-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;}
 .btn-primary{background:var(--ink);color:var(--paper);}
 .btn-gold{background:var(--gold);color:white;}
 .btn-outline{background:white;color:var(--ink);border:1.5px solid var(--border);}
@@ -214,7 +210,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 </header>
 
 <!-- 載入中畫面 -->
-<div id="loadingScreen" style="position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:var(--paper);animation:fadeOutLoading 1s ease 5s forwards">
+<div id="loadingScreen" style="position:fixed;inset:0;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:var(--paper)">
   <div style="font-size:36px;margin-bottom:16px">📚</div>
   <div style="font-size:16px;font-weight:600;margin-bottom:8px">社工師考試練習</div>
   <div id="loadingMsg" style="font-size:12px;color:rgba(245,240,232,.5);margin-bottom:20px">從 GitHub 載入題庫中…</div>
@@ -278,9 +274,9 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
       </div>
     </div>
     <div class="action-row">
-      <button class="btn btn-primary" id="nextBtn" onclick="safeTap(nextQ)" disabled>下一題 →</button>
-      <button class="btn btn-outline" onclick="safeTap(skipQ)">跳過</button>
-      <button class="btn btn-outline" onclick="safeTap(reshuffleQ)" style="margin-left:auto;font-size:11px">重新出題</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="nextQ()" disabled>下一題 →</button>
+      <button class="btn btn-outline" onclick="skipQ()">跳過</button>
+      <button class="btn btn-outline" onclick="reshuffleQ()" style="margin-left:auto;font-size:11px">重新出題</button>
     </div>
   </div>
 </div>
@@ -371,7 +367,6 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     <button class="btn btn-outline btn-sm dev-only" onclick="syncFromGitHub()" style="color:var(--blue)">🔄 從 GitHub 同步</button>
     <button class="btn btn-outline btn-sm dev-only" onclick="clearStats()" style="color:var(--gray)">重置統計</button>
     <button class="btn btn-outline btn-sm" onclick="resetQuestionBank()" style="color:var(--red)">🔄 重置題庫</button>
-    <button class="btn btn-outline btn-sm dev-only" onclick="setGeminiKeyPrompt()" style="color:var(--blue)">🔑 Gemini Key</button>
     <button class="btn btn-outline btn-sm" id="devModeBtn" onclick="IS_DEV?exitDev():toggleDev()" style="color:var(--gray);font-size:10px">⚙️</button>
   </div>
 </div>
@@ -536,34 +531,15 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v8';
+const DB_VERSION = '20260327_v9';
 
 // ===== 重置題庫 =====
-function setGeminiKeyPrompt(){
-  const current = getGeminiKey();
-  const key = prompt('請輸入 Gemini API Key：
-（前往 aistudio.google.com 免費申請）', current||'');
-  if(key === null) return;
-  if(key.trim()){
-    setGeminiKey(key.trim());
-    showToast('✅ Gemini API Key 已儲存');
-  } else {
-    setGeminiKey('');
-    showToast('已清除 Gemini API Key');
-  }
-}
-
-async function resetQuestionBank(){
+function resetQuestionBank(){
   if(!confirm('確定重置題庫？\n將清除本機題目，重新從 GitHub 載入最新版本。\n（統計和錯題紀錄會保留）')) return;
   localStorage.removeItem('swpwa_q');
   localStorage.removeItem('swpwa_dbver');
-  showToast('正在清除快取並重新載入…');
-  // 清除 Service Worker 快取
-  try{
-    const keys = await caches.keys();
-    await Promise.all(keys.map(k => caches.delete(k)));
-  }catch(e){}
-  setTimeout(()=>location.reload(true), 500);
+  showToast('正在重新載入…');
+  setTimeout(()=>location.reload(), 800);
 }
 
 // ===== GITHUB 設定 =====
@@ -574,16 +550,14 @@ const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHU
 
 function getGithubToken(){ return localStorage.getItem('swpwa_ghtoken')||''; }
 function setGithubToken(t){ localStorage.setItem('swpwa_ghtoken', t); }
-function getGeminiKey(){ return localStorage.getItem('swpwa_geminikey')||''; }
-function setGeminiKey(k){ localStorage.setItem('swpwa_geminikey', k); }
 
 async function pushToGitHub(){
+  if(!IS_DEV){ showToast('需要開發者模式'); return; }
   let token = getGithubToken();
   if(!token){
-    token = prompt('請輸入 GitHub Token（只需輸入一次）：');
+    token = prompt('請輸入 GitHub Personal Access Token\n（只需輸入一次，會記住）：');
     if(!token) return;
     setGithubToken(token.trim());
-    token = token.trim();
   }
   if(!confirm(`確定將目前 ${DB.questions.length} 道題目上傳到 GitHub？\n這會覆蓋 GitHub 上的 question.json`)) return;
   showToast('⏳ 上傳中…');
@@ -681,7 +655,7 @@ function exitDev(){
   applyDevMode(); showToast('已切換為一般使用者模式');
 }
 function applyDevMode(){
-  // ai-exp-area 由答題邏輯控制，不在這裡統一顯示/隱藏
+  document.querySelectorAll('.ai-exp-area').forEach(el=>el.style.display=IS_DEV?'block':'none');
   document.querySelectorAll('.dev-only').forEach(el=>el.style.display=IS_DEV?'':'none');
   const devBadge = document.getElementById('devBadge');
   if(devBadge) devBadge.style.display = IS_DEV ? 'flex' : 'none';
@@ -693,13 +667,13 @@ let DB = {
   stats: {"total":0,"correct":0,"bySubj":{},"sessions":0},
   wrong: [],
 };
-// 非同步載入 localStorage，避免阻塞頁面
+// 頁面載入完後再解析大型 JSON，避免卡死
 setTimeout(()=>{
-  try{ DB.questions = JSON.parse(localStorage.getItem('swpwa_q')||'[]'); }catch(e){ DB.questions=[]; }
-  try{ DB.stats = JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'); }catch(e){}
-  try{ DB.wrong = JSON.parse(localStorage.getItem('swpwa_w')||'[]'); }catch(e){ DB.wrong=[]; }
+  try{ DB.questions=JSON.parse(localStorage.getItem('swpwa_q')||'[]'); }catch(e){}
+  try{ DB.stats=JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'); }catch(e){}
+  try{ DB.wrong=JSON.parse(localStorage.getItem('swpwa_w')||'[]'); }catch(e){}
   init();
-}, 50);
+},0);
 // 版本控制：升版才清題庫（放在 DB 讀取之後，避免先清後讀的競態）
 if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
   DB.questions = [];
@@ -708,9 +682,7 @@ if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
 }
 function save(){
   try{
-    // 申論題不存 localStorage（太大），只存選擇題
-    const mcOnly = DB.questions.filter(q=>q.type!=='essay');
-    localStorage.setItem('swpwa_q',JSON.stringify(mcOnly));
+    localStorage.setItem('swpwa_q',JSON.stringify(DB.questions));
     localStorage.setItem('swpwa_s',JSON.stringify(DB.stats));
     localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong));
   }catch(e){showToast('儲存空間不足，請清除部分資料');}
@@ -721,20 +693,11 @@ let P={pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',y
 let E={pool:[],idx:0,answers:[],timerID:null,secsLeft:60,timeLimit:60};
 let editId=null,selAns=-1;
 
-// ===== 防抖動點擊 =====
-let _lastTap = 0;
-function safeTap(fn){
-  const now = Date.now();
-  if(now - _lastTap < 300) return;
-  _lastTap = now;
-  fn();
-}
-
 // ===== UTILS =====
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function getPool(s){const qs=DB.questions.filter(q=>q.type!=='essay');return(s==='全部'||s==='all')?[...qs]:qs.filter(q=>q.subject===s);}
+function getPool(s){return(s==='全部'||s==='all')?[...DB.questions]:DB.questions.filter(q=>q.subject===s);}
 function uniqueSubjs(){
-  const s=new Set(DB.questions.filter(q=>q.type!=='essay').map(q=>q.subject));
+  const s=new Set(DB.questions.map(q=>q.subject));
   return['全部',...Object.keys(COLORS).filter(k=>s.has(k)),...[...s].filter(k=>!COLORS[k])];
 }
 
@@ -846,7 +809,7 @@ function pickAns(i){
   }
   badge.style.display='flex';
   if(q.exp){const e=document.getElementById('exp');e.innerHTML=`<strong>解析：</strong>${q.exp}`;e.classList.add('show');}
-  if(!q.exp) document.getElementById('aiExpArea').style.display='block';
+  if(IS_DEV && !q.exp) document.getElementById('aiExpArea').style.display='block';
   document.getElementById('nextBtn').disabled=false;
   updateHeader();
 }
@@ -854,7 +817,7 @@ function nextQ(){
   if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();}
   else{showToast('🎉 完成本輪！');DB.stats.sessions++;save();reshuffleQ();}
 }
-function skipQ(){if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();}else{showToast('已是最後一題');}}
+function skipQ(){if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();}}
 function startPracticeTimer(){
   P.seconds=0;
   P.timerID=setInterval(()=>{
@@ -1242,33 +1205,7 @@ function updateHeader(){
   const s=DB.stats;
   document.getElementById('hTotal').textContent=s.total;
   document.getElementById('hAcc').textContent=s.total>0?Math.round(s.correct/s.total*100)+'%':'—';
-  document.getElementById('hBank').textContent=DB.questions.filter(q=>q.type!=='essay').length;
-}
-
-
-// ===== GEMINI API =====
-async function callGeminiAPI(prompt){
-  const key = getGeminiKey();
-  if(!key) return null;
-  try{
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-      {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          contents:[{parts:[{text: prompt}]}],
-          generationConfig:{temperature:0.3, maxOutputTokens:800}
-        })
-      }
-    );
-    if(!resp.ok) throw new Error('HTTP '+resp.status);
-    const data = await resp.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  }catch(e){
-    console.error('Gemini API error:', e);
-    return null;
-  }
+  document.getElementById('hBank').textContent=DB.questions.length;
 }
 
 // ===== AI EXPLAIN =====
@@ -1279,69 +1216,21 @@ async function requestAiExp(){
   const resultDiv = document.getElementById('aiExpResult');
   const textDiv = document.getElementById('aiExpText');
   const ansLetter = 'ABCD'[Array.isArray(q.ans)?q.ans[0]:q.ans];
-  const prompt = `你是社工師考試的專業解題老師，請用繁體中文解析以下選擇題。
-
-題目：${q.q}
-A. ${q.opts[0]}
-B. ${q.opts[1]}
-C. ${q.opts[2]}
-D. ${q.opts[3]}
-正確答案：${ansLetter}. ${q.opts[Array.isArray(q.ans)?q.ans[0]:q.ans]}
-科目：${q.subject}
-
-請依以下格式回答（約150字）：
-【正確答案解析】說明為何${ansLetter}是正確答案。
-【其他選項錯誤原因】簡要說明其他選項為何錯誤。
-
-注意：如果你認為題目或答案可能有誤，請直接說明你的疑慮，不要強行解釋。`;
-
-  btn.disabled = true;
-  btn.textContent = '⏳ 分析中…';
-  resultDiv.style.display = 'block';
-  textDiv.innerHTML = '<span style="opacity:.6;font-size:12px">Gemini AI 分析中，請稍候…</span>';
-
-  // 優先用 Gemini API
-  if(getGeminiKey()){
-    const response = await callGeminiAPI(prompt);
-    if(response){
-      const formatted = response
-        .replace(/【(.+?)】/g,'<strong style="color:var(--gold)">【$1】</strong>')
-        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-        .replace(/\n\n/g,'</p><p style="margin-top:8px">')
-        .replace(/\n/g,'<br>');
-      textDiv.innerHTML = `<p>${formatted}</p>
-        <div style="margin-top:8px;font-size:10px;opacity:.5;text-align:right">由 Gemini AI 生成</div>`;
-      btn.textContent = '✅ 解析完成';
-      if(!q.exp){
-        const saveBtn = document.createElement('button');
-        saveBtn.style.cssText='margin-top:8px;font-size:11px;padding:5px 12px;border-radius:5px;border:1px solid rgba(201,168,76,.4);background:rgba(201,168,76,.15);color:var(--gold2);cursor:pointer;font-family:inherit;width:100%';
-        saveBtn.textContent='💾 儲存解析到題庫';
-        saveBtn.onclick=async()=>{
-          const idx=DB.questions.findIndex(x=>x.id===q.id);
-          if(idx>=0){DB.questions[idx].exp=response;save();}
-          saveBtn.textContent='⏳ 儲存並上傳中…';saveBtn.disabled=true;
-          showToast('解析已儲存，自動上傳 GitHub…');
-          await pushToGitHub();
-          saveBtn.textContent='✅ 已儲存並同步';
-        };
-        textDiv.appendChild(saveBtn);
-      }
-      return;
-    }
-  }
-
-  // 備用：Chrome 內建 AI
+  const prompt = `請用繁體中文解析這道社工師考試題目。說明為何正確答案是${ansLetter}，以及其他選項錯誤的原因。約150字。\n\n題目：${q.q}\nA. ${q.opts[0]}\nB. ${q.opts[1]}\nC. ${q.opts[2]}\nD. ${q.opts[3]}\n正確答案：${ansLetter}. ${q.opts[Array.isArray(q.ans)?q.ans[0]:q.ans]}\n科目：${q.subject}${q.exp?'\n參考：'+q.exp:''}`;
   const chromeAI = window.LanguageModel || window.ai?.languageModel;
   if(chromeAI){
     try{
       const avail = await chromeAI.availability?.() || await chromeAI.capabilities?.();
       const isAvail = typeof avail === 'string' ? avail !== 'no' : avail?.available !== 'no';
       if(isAvail){
+        btn.disabled = true;
+        btn.textContent = '⏳ 分析中…';
+        resultDiv.style.display = 'block';
+        textDiv.innerHTML = '<span style="opacity:.6;font-size:12px">Chrome AI 分析中，請稍候…</span>';
         const session = await chromeAI.create();
         const response = await session.prompt(prompt);
         session.destroy();
         const formatted = response
-          .replace(/【(.+?)】/g,'<strong style="color:var(--gold)">【$1】</strong>')
           .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
           .replace(/\n\n/g,'</p><p style="margin-top:8px">')
           .replace(/\n/g,'<br>');
@@ -1366,22 +1255,9 @@ D. ${q.opts[3]}
       }
     }catch(e){ console.log('Chrome AI error:', e); }
   }
-
-  // 都不可用
-  btn.disabled = false;
-  btn.textContent = '🤖 AI 解析這題';
-  resultDiv.style.display = 'none';
-  if(!getGeminiKey()){
-    const k = prompt('請輸入 Gemini API Key 以使用 AI 解析：\n（前往 aistudio.google.com 免費申請）');
-    if(k && k.trim()){
-      setGeminiKey(k.trim());
-      showToast('✅ API Key 已儲存，請再按一次 AI 解析');
-    } else {
-      showToast('未設定 Gemini API Key，無法使用 AI 解析');
-    }
-  } else {
-    showToast('❌ AI 解析失敗，請確認 API Key 是否正確');
-  }
+  const url = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
+  window.open(url, '_blank');
+  showToast('已開啟 Claude.ai 新分頁');
 }
 
 
@@ -1419,7 +1295,7 @@ function renderEssayList(){
         <div style="font-size:14px;line-height:1.8;color:var(--ink);margin-bottom:10px">${q.q}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           ${hasExp?`<button class="btn btn-outline btn-sm" onclick="toggleEssayExp(this)" style="font-size:11px">📖 查看解析</button>`:''}
-          ${!hasExp?`<button class="btn btn-gold btn-sm" onclick="requestEssayAI('${q.id}')" style="font-size:11px">🤖 AI 解析</button>`:''}
+          ${IS_DEV&&!hasExp?`<button class="btn btn-gold btn-sm" onclick="requestEssayAI('${q.id}')" style="font-size:11px">🤖 AI 解析</button>`:''}
           ${IS_DEV&&hasExp?`<button class="btn btn-outline btn-sm" onclick="requestEssayAI('${q.id}')" style="font-size:11px;color:var(--gold)">🤖 重新解析</button>`:''}
         </div>
       </div>
@@ -1484,12 +1360,7 @@ async function requestEssayAI(id){
   const chromeAI = window.LanguageModel || window.ai?.languageModel;
   let response = '';
 
-  // 優先用 Gemini API
-  if(getGeminiKey()){
-    response = await callGeminiAPI(prompt) || '';
-  }
-
-  if(!response && chromeAI){
+  if(chromeAI){
     try{
       const avail = await chromeAI.availability?.() || await chromeAI.capabilities?.();
       const isAvail = typeof avail==='string'?avail!=='no':avail?.available!=='no';
@@ -1502,28 +1373,11 @@ async function requestEssayAI(id){
   }
 
   if(!response){
-    // 備用：Chrome 內建 AI
-    const chromeAI = window.LanguageModel || window.ai?.languageModel;
-    if(chromeAI){
-      try{
-        const avail = await chromeAI.availability?.() || await chromeAI.capabilities?.();
-        const isAvail = typeof avail==='string'?avail!=='no':avail?.available!=='no';
-        if(isAvail){
-          const session = await chromeAI.create();
-          response = await session.prompt(prompt);
-          session.destroy();
-        }
-      }catch(e){}
-    }
-    if(!response){
-      resultDiv.style.display='none';
-      if(!getGeminiKey()){
-        showToast('請先在統計頁設定 Gemini API Key');
-      } else {
-        showToast('❌ AI 解析失敗，請確認 API Key 是否正確');
-      }
-      return;
-    }
+    // 開新分頁給 Claude
+    window.open('https://claude.ai/new?q='+encodeURIComponent(prompt),'_blank');
+    resultDiv.style.display='none';
+    showToast('已開啟 Claude.ai，解析完成後手動貼入');
+    return;
   }
 
   const formatted = response
@@ -1657,12 +1511,18 @@ function practiceAiSearch(){
   showToast('已載入 '+pool.length+' 道相關題目');
 }
 
-// 清除所有 Service Worker 和快取，確保每次都拿最新版
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(regs=>{
-    regs.forEach(r=>r.unregister());
-  });
   caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
+  const swCode=`
+    const CACHE='swpwa-v3';
+    self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.add(self.location.href))));
+    self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
+      if(res.status===200){const clone=res.clone();caches.open(CACHE).then(c=>c.put(e.request,clone));}
+      return res;
+    }).catch(()=>caches.match(e.request)))));
+  `;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
 }
 
 // ===== GITHUB SYNC =====
@@ -1708,35 +1568,42 @@ async function syncFromGitHub(){
 // ===== INIT =====
 async function init(){
   const loading = document.getElementById('loadingScreen');
-  const closeLoading = ()=>{
-    loading.style.animation='none';
-    loading.style.opacity='0';
-    loading.style.transition='opacity .4s';
-    setTimeout(()=>{ loading.style.display='none'; }, 400);
-  };
-
-  const render = ()=>{
-    try{ buildSubjFilter(); }catch(e){}
-    try{ populateExamSubjs(); }catch(e){}
-    try{ loadPractice(); }catch(e){}
-    try{ updateHeader(); }catch(e){}
-    try{ applyDevMode(); }catch(e){}
-  };
 
   if(DB.questions.length > 0){
-    closeLoading();
-    setTimeout(render, 100);
+    document.getElementById('loadingMsg').textContent='載入快取題庫…';
+    document.getElementById('loadingBar').style.width='60%';
+    // ★ 啟動時自動清理髒資料
+    const fixed = cleanData();
+    buildSubjFilter();populateExamSubjs();loadPractice();renderQList();updateHeader();
+    applyDevMode();
+    if(fixed > 0) setTimeout(()=>showToast(`🔧 自動修復 ${fixed} 筆資料`), 800);
+    setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); },300);
+    // 背景靜默更新
     fetchFromGitHub(false).then(count=>{
-      if(count) setTimeout(render, 100);
+      if(count){
+        const f2 = cleanData();
+        buildSubjFilter();populateExamSubjs();renderQList();updateHeader();
+      }
     });
   } else {
+    document.getElementById('loadingMsg').textContent='首次使用，載入題庫中…';
     const count = await fetchFromGitHub(true);
     if(count){
+      // ★ 首次載入後也清理
+      const fixed = cleanData();
       document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
       document.getElementById('loadingBar').style.width='100%';
+      buildSubjFilter();populateExamSubjs();loadPractice();renderQList();updateHeader();
+      applyDevMode();
+      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); },600);
+    } else {
+      document.getElementById('loadingMsg').textContent='❌ 載入失敗，請確認網路連線後重新整理';
+      document.getElementById('loadingBar').style.background='var(--red)';
+      document.getElementById('loadingBar').style.width='100%';
+      setTimeout(()=>{ loading.style.opacity='0'; loading.style.transition='opacity .4s'; setTimeout(()=>loading.style.display='none',400); }, 3000);
     }
-    closeLoading();
-    setTimeout(render, 100);
   }
 }
 </script>
+</body>
+</html>
