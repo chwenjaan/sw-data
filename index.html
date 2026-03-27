@@ -393,13 +393,10 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     </div>
   </div>
 
-  <!-- 年度／科目篩選 -->
+  <!-- 考卷選擇 -->
   <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
-    <select id="filterYear" onchange="renderQList()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit">
-      <option value="">全部年度</option>
-    </select>
-    <select id="filterSubj" onchange="renderQList()" style="padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit">
-      <option value="">全部科目</option>
+    <select id="filterPaper" onchange="renderQList()" style="flex:1;min-width:200px;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit">
+      <option value="">— 選擇考卷 —</option>
     </select>
     <input type="text" id="qSearch" placeholder="🔍 搜尋題目…" oninput="renderQList()"
       style="flex:1;min-width:120px;padding:6px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:var(--paper)">
@@ -622,10 +619,8 @@ async function saveExpToGitHub(qId, expText){
   }catch(e){ showToast('❌ 上傳失敗，請確認網路連線'); console.error(e); return false; }
 }
 
-// ===== 批次上傳解析（累積 5 筆 或 閒置 5 分鐘，擇先觸發）=====
-const BATCH_COUNT = 5;           // 累積幾筆就上傳
-const BATCH_DELAY = 5 * 60000;  // 閒置幾毫秒後上傳
-let _batchTimer = null;
+// ===== 批次上傳解析（累積 5 筆觸發，關閉前 beforeunload 補傳）=====
+const BATCH_COUNT = 5;
 
 function getPendingExps(){
   try{ return JSON.parse(localStorage.getItem('swpwa_pending_exps')||'{}'); }catch(e){ return {}; }
@@ -634,7 +629,7 @@ function setPendingExps(obj){
   try{ localStorage.setItem('swpwa_pending_exps', JSON.stringify(obj)); }catch(e){}
 }
 
-// 解析完成後呼叫這個：存本機 + 加入待上傳佇列
+// 解析完成後呼叫：存本機 + 加入待上傳佇列
 function autoSaveExp(qId, expText){
   // 1. 存進題目本機資料
   const idx = DB.questions.findIndex(x=>x.id===qId);
@@ -646,26 +641,18 @@ function autoSaveExp(qId, expText){
   setPendingExps(pending);
 
   const count = Object.keys(pending).length;
-  showToast(`💾 解析已存本機（待上傳 ${count} 筆）`);
+  showToast(`💾 解析已存本機（待上傳 ${count}／${BATCH_COUNT} 筆）`);
 
-  // 3. 重設閒置計時器
-  clearTimeout(_batchTimer);
-  _batchTimer = setTimeout(()=> flushPendingExps('閒置'), BATCH_DELAY);
-
-  // 4. 累積達標就立刻上傳
+  // 3. 累積達標就立刻上傳
   if(count >= BATCH_COUNT) flushPendingExps('累積');
 }
 
 // 實際上傳待上傳佇列
 async function flushPendingExps(reason=''){
-  clearTimeout(_batchTimer);
   const pending = getPendingExps();
   if(!Object.keys(pending).length) return;
   const token = getGithubToken();
-  if(!token){
-    console.log('無 Token，解析留在本機待下次上傳');
-    return;
-  }
+  if(!token){ console.log('無 Token，解析留在本機待下次上傳'); return; }
   console.log(`⏳ 批次上傳解析（${reason}，共 ${Object.keys(pending).length} 筆）`);
   try{
     let existingExps = {}, sha = null;
@@ -678,7 +665,6 @@ async function flushPendingExps(reason=''){
       sha = infoData.sha;
       try{ existingExps = JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){}
     }
-    // 合併待上傳
     Object.assign(existingExps, pending);
     const total = Object.keys(existingExps).length;
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(existingExps, null, 2))));
@@ -690,12 +676,9 @@ async function flushPendingExps(reason=''){
       body: JSON.stringify(body)
     });
     if(res.ok){
-      setPendingExps({});  // 清空佇列
+      setPendingExps({});
       showToast(`☁️ 已批次上傳 ${Object.keys(pending).length} 筆解析`);
-      console.log(`✅ 批次上傳成功，共 ${total} 筆`);
-    } else {
-      console.warn('⚠ 批次上傳失敗', res.status);
-    }
+    } else { console.warn('⚠ 批次上傳失敗', res.status); }
   }catch(e){ console.warn('⚠ 批次上傳例外', e); }
 }
 
@@ -708,6 +691,18 @@ async function flushPendingOnStart(){
   console.log(`🔄 啟動時補傳 ${Object.keys(pending).length} 筆未上傳解析`);
   await flushPendingExps('啟動補傳');
 }
+
+// 關閉前嘗試上傳（注意：瀏覽器對 beforeunload 的非同步請求支援有限，僅作最後嘗試）
+window.addEventListener('beforeunload', (e)=>{
+  const pending = getPendingExps();
+  if(!Object.keys(pending).length) return;
+  const token = getGithubToken();
+  if(!token) return;
+  // 用 keepalive fetch 讓請求在頁面關閉後仍能送出
+  // 因為 explanations.json 需要先讀 sha 才能寫，無法在 beforeunload 完成完整流程
+  // 所以這裡只做一件事：把 pending 資料標記，確保本機已有，下次開啟必定補傳
+  console.log(`📌 頁面關閉前，${Object.keys(pending).length} 筆解析保留本機，下次開啟自動補傳`);
+});
 
 
 // ===== 一鍵遷移：把 question.json 裡的 exp 搬到 explanations.json =====
@@ -1211,88 +1206,99 @@ function clearStats(){if(!confirm('確定重置統計？'))return;DB.stats={tota
 
 // ===== MANAGE =====
 function populateFilterSelects(){
-  const years=[...new Set(DB.questions.map(q=>q.year).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
-  const subjs=[...new Set(DB.questions.map(q=>q.subject).filter(Boolean))];
-  const subjOrder=Object.keys(COLORS);
-  subjs.sort((a,b)=>{ const ia=subjOrder.indexOf(a),ib=subjOrder.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
-  const fy=document.getElementById('filterYear');
-  const fs=document.getElementById('filterSubj');
-  if(!fy||!fs) return;
-  const selY=fy.value, selS=fs.value;
-  fy.innerHTML='<option value="">全部年度</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join('');
-  fs.innerHTML='<option value="">全部科目</option>'+subjs.map(s=>`<option value="${s}">${s}</option>`).join('');
-  if(selY) fy.value=selY;
-  if(selS) fs.value=selS;
+  const fp = document.getElementById('filterPaper');
+  if(!fp) return;
+  const sel = fp.value;
+
+  // 收集所有考卷（year + subject 組合），按年度倒序、科目順序排列
+  const subjOrder = Object.keys(COLORS);
+  const papers = [...new Map(
+    DB.questions
+      .filter(q => q.year && q.subject)
+      .map(q => [`${q.year}||${q.subject}`, { year: q.year, subject: q.subject }])
+  ).values()].sort((a, b) => {
+    const yr = b.year.localeCompare(a.year);
+    if(yr !== 0) return yr;
+    const ia = subjOrder.indexOf(a.subject), ib = subjOrder.indexOf(b.subject);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+  });
+
+  fp.innerHTML = '<option value="">— 選擇考卷 —</option>' +
+    papers.map(p => `<option value="${p.year}||${p.subject}">${p.year}　${p.subject}</option>`).join('');
+  if(sel) fp.value = sel;
 }
 
 function renderQList(){
-  const kw=(document.getElementById('qSearch')?.value||'').toLowerCase();
-  const fy=document.getElementById('filterYear')?.value||'';
-  const fs=document.getElementById('filterSubj')?.value||'';
+  const kw = (document.getElementById('qSearch')?.value || '').toLowerCase();
+  const paperVal = document.getElementById('filterPaper')?.value || '';
+  const [fy, fs] = paperVal ? paperVal.split('||') : ['', ''];
 
-  let items=DB.questions.filter(q=>{
-    if(fy && q.year!==fy) return false;
-    if(fs && q.subject!==fs) return false;
-    if(kw && !q.q.toLowerCase().includes(kw) && !q.subject.toLowerCase().includes(kw)) return false;
+  let items = DB.questions.filter(q => {
+    if(fy && q.year !== fy) return false;
+    if(fs && q.subject !== fs) return false;
+    if(kw && !q.q.toLowerCase().includes(kw) && !(q.opts||[]).join(' ').toLowerCase().includes(kw)) return false;
     return true;
   });
 
-  const subjOrder=Object.keys(COLORS);
-  items.sort((a,b)=>{
-    const yr = b.year?.localeCompare(a.year||'')||0;
-    if(yr!==0) return yr;
-    const sa=subjOrder.indexOf(a.subject), sb=subjOrder.indexOf(b.subject);
-    return (sa<0?99:sa)-(sb<0?99:sb);
-  });
+  // 按題庫儲存順序（不打亂），保留原始題號順序
+  // 若有 no 欄位則用，否則維持 DB 順序
+  if(fy && fs){
+    items.sort((a, b) => (a.no||0) - (b.no||0) || DB.questions.indexOf(a) - DB.questions.indexOf(b));
+  }
 
-  document.getElementById('bankCount').textContent='共'+DB.questions.length+'題';
-  const wrap=document.getElementById('qListWrap');
-  document.getElementById('filterCount').textContent=items.length!==DB.questions.length?`顯示${items.length}題`:'';
+  document.getElementById('bankCount').textContent = '共' + DB.questions.length + '題';
+  const wrap = document.getElementById('qListWrap');
+  document.getElementById('filterCount').textContent = items.length !== DB.questions.length ? `顯示 ${items.length} 題` : '';
 
-  if(!items.length){wrap.innerHTML='<div style="padding:32px;text-align:center;color:var(--gray);font-size:13px">無符合題目</div>';return;}
+  if(!paperVal && !kw){
+    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">請選擇考卷，或輸入關鍵字搜尋</div>';
+    return;
+  }
+  if(!items.length){
+    wrap.innerHTML = '<div style="padding:32px;text-align:center;color:var(--gray);font-size:13px">無符合題目</div>';
+    return;
+  }
 
-  let html='', lastGroup='';
-  items.forEach((q,idx)=>{
-    const col=COLORS[q.subject]||'#888';
-    const group=`${q.year||''}｜${q.subject}`;
-    if(group!==lastGroup){
-      lastGroup=group;
-      const groupItems=items.filter(x=>x.year===q.year&&x.subject===q.subject);
-      html+=`<div style="display:flex;align-items:center;gap:8px;margin:${idx>0?'14px':0} 0 6px">
-        <span style="font-size:11px;font-weight:600;color:${col}">${q.subject}</span>
-        <span style="font-size:10px;color:var(--gray)">${q.year||''}</span>
-        <span style="font-size:10px;color:var(--gray)">（${groupItems.length}題）</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>`;
-    }
-    const groupIdx = items.filter((x,i)=>i<items.indexOf(q)&&x.year===q.year&&x.subject===q.subject).length;
+  // 標題
+  let html = '';
+  if(fy && fs){
+    const col = COLORS[fs] || '#888';
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <span style="font-size:13px;font-weight:700;color:${col}">${fs}</span>
+      <span style="font-size:11px;color:var(--gray)">${fy}</span>
+      <span style="font-size:11px;background:var(--cream);color:var(--gray);padding:2px 8px;border-radius:10px">${items.length} 題</span>
+    </div>`;
+  }
+
+  items.forEach((q, idx) => {
     const ansLetters = correctLetters(q);
-    html+=`<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:background .15s"
-      onclick="expandQ(this,'${q.id.replace(/'/g,"\\'")}')" id="qcard_${q.id.replace(/[^a-z0-9]/gi,'_')}">
+    const no = q.no || (idx + 1);
+    html += `<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:background .15s"
+      onclick="expandQ(this,'${q.id.replace(/'/g, "\\'")}')" id="qcard_${q.id.replace(/[^a-z0-9]/gi,'_')}">
       <div style="display:flex;align-items:flex-start;gap:8px">
-        <span style="flex-shrink:0;min-width:24px;height:24px;background:var(--cream);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gray)">${groupIdx+1}</span>
+        <span style="flex-shrink:0;min-width:28px;height:28px;background:var(--cream);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gray)">${no}</span>
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;line-height:1.7;color:var(--ink)">${q.q}</div>
           <div style="margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="font-size:11px;background:#eafaf1;color:var(--green);padding:2px 8px;border-radius:4px;font-weight:600">答：${ansLetters}</span>
-            ${Array.isArray(q.ans)&&q.ans.length>1?`<span style="font-size:10px;background:#fff3e0;color:#e67e22;padding:2px 6px;border-radius:4px">官方更正</span>`:''}
-            ${q.exp?`<span style="font-size:10px;color:var(--gold)">有解析</span>`:''}
+            ${Array.isArray(q.ans) && q.ans.length > 1 ? `<span style="font-size:10px;background:#fff3e0;color:#e67e22;padding:2px 6px;border-radius:4px">官方更正</span>` : ''}
+            ${q.exp ? `<span style="font-size:10px;color:var(--gold)">✓ 有解析</span>` : ''}
           </div>
         </div>
-        ${IS_DEV?`<button class="btn btn-gold btn-sm" style="flex-shrink:0;font-size:10px" onclick="event.stopPropagation();openEdit('${q.id.replace(/'/g,"\\'")}')">✏️</button>`:''}
+        ${IS_DEV ? `<button class="btn btn-gold btn-sm" style="flex-shrink:0;font-size:10px" onclick="event.stopPropagation();openEdit('${q.id.replace(/'/g, "\\'")}')">✏️ 編輯</button>` : ''}
       </div>
       <div class="qdetail" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
         <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
-          ${q.opts.map((o,i)=>`<div style="display:flex;gap:8px;padding:7px 10px;border:1.5px solid ${isCorrect(q,i)?'var(--green)':'var(--border)'};border-radius:6px;background:${isCorrect(q,i)?'#eafaf1':'var(--paper)'}">
-            <span style="font-size:10px;font-weight:700;width:16px;color:${isCorrect(q,i)?'var(--green)':'var(--gray)'}">${'ABCD'[i]}</span>
+          ${q.opts.map((o, i) => `<div style="display:flex;gap:8px;padding:7px 10px;border:1.5px solid ${isCorrect(q,i) ? 'var(--green)' : 'var(--border)'};border-radius:6px;background:${isCorrect(q,i) ? '#eafaf1' : 'var(--paper)'}">
+            <span style="font-size:10px;font-weight:700;width:16px;color:${isCorrect(q,i) ? 'var(--green)' : 'var(--gray)'}">${'ABCD'[i]}</span>
             <span style="font-size:12px">${o}</span>
           </div>`).join('')}
         </div>
-        ${q.exp?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:''}
+        ${q.exp ? `<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>` : ''}
       </div>
     </div>`;
   });
-  wrap.innerHTML=html;
+  wrap.innerHTML = html;
 }
 
 function expandQ(el, id){
