@@ -532,7 +532,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v4';
+const DB_VERSION = '20260327_v5';
 
 // ===== 重置題庫 =====
 function setGeminiKeyPrompt(){
@@ -1707,14 +1707,13 @@ async function init(){
   if(DB.questions.length > 0){
     document.getElementById('loadingMsg').textContent='載入快取題庫…';
     document.getElementById('loadingBar').style.width='60%';
-    // ★ 啟動時自動清理髒資料
-    const fixed = cleanData();
-    // 先關 loading，再背景渲染
+    // 先關 loading，再背景處理
     clearTimeout(forceClose);
     loading.style.opacity='0'; loading.style.transition='opacity .4s';
     setTimeout(()=>{ loading.style.display='none'; }, 400);
     setTimeout(()=>{
       try{
+        const fixed = cleanData();
         buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode();
         if(fixed > 0) showToast(`🔧 自動修復 ${fixed} 筆資料`);
       }catch(e){ console.error('init cache error:',e); }
@@ -1730,15 +1729,14 @@ async function init(){
     document.getElementById('loadingMsg').textContent='首次使用，載入題庫中…';
     const count = await fetchFromGitHub(true);
     if(count){
-      cleanData();
       document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
       document.getElementById('loadingBar').style.width='100%';
-      // 先關閉 loading 畫面，再做耗時的 DOM 渲染
       clearTimeout(forceClose);
       loading.style.opacity='0'; loading.style.transition='opacity .4s';
       setTimeout(()=>{ loading.style.display='none'; }, 400);
       setTimeout(()=>{
         try{
+          cleanData();
           buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode();
         }catch(e){ console.error('init render error:',e); }
       }, 500);
