@@ -536,7 +536,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v6';
+const DB_VERSION = '20260327_v7';
 
 // ===== 重置題庫 =====
 function setGeminiKeyPrompt(){
@@ -1709,10 +1709,11 @@ async function init(){
   };
 
   const render = ()=>{
-    try{
-      cleanData();
-      buildSubjFilter();populateExamSubjs();loadPractice();updateHeader();applyDevMode();
-    }catch(e){ console.error('render error:',e); }
+    try{ buildSubjFilter(); }catch(e){}
+    try{ populateExamSubjs(); }catch(e){}
+    try{ loadPractice(); }catch(e){}
+    try{ updateHeader(); }catch(e){}
+    try{ applyDevMode(); }catch(e){}
   };
 
   if(DB.questions.length > 0){
