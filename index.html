@@ -217,6 +217,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
   <div style="width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden">
     <div id="loadingBar" style="height:100%;background:var(--gold);width:0%;transition:width .3s;border-radius:2px"></div>
   </div>
+  <button onclick="localStorage.clear();location.reload();" style="margin-top:24px;padding:8px 16px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.5);border-radius:6px;font-size:11px;cursor:pointer;">卡住了？點我重置</button>
 </div>
 
 <div class="nav-wrap">
@@ -531,7 +532,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v9';
+const DB_VERSION = '20260327_v12';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -663,26 +664,29 @@ function applyDevMode(){
 
 // ===== DB =====
 let DB = {
-  questions: [],
-  stats: {"total":0,"correct":0,"bySubj":{},"sessions":0},
-  wrong: [],
+  questions: JSON.parse(localStorage.getItem('swpwa_q')||'[]'),
+  stats: JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'),
+  wrong: JSON.parse(localStorage.getItem('swpwa_w')||'[]'),
 };
-// 頁面載入完後再解析大型 JSON，避免卡死
-setTimeout(()=>{
-  try{ DB.questions=JSON.parse(localStorage.getItem('swpwa_q')||'[]'); }catch(e){}
-  try{ DB.stats=JSON.parse(localStorage.getItem('swpwa_s')||'{"total":0,"correct":0,"bySubj":{},"sessions":0}'); }catch(e){}
-  try{ DB.wrong=JSON.parse(localStorage.getItem('swpwa_w')||'[]'); }catch(e){}
-  init();
-},0);
-// 版本控制：升版才清題庫（放在 DB 讀取之後，避免先清後讀的競態）
+// 版本控制：升版才清題庫
 if(localStorage.getItem('swpwa_dbver') !== DB_VERSION){
   DB.questions = [];
   localStorage.removeItem('swpwa_q');
   localStorage.setItem('swpwa_dbver', DB_VERSION);
 }
+// 自動資料驗證：題庫異常就清除，App 會自動重新從 GitHub 下載
+if(DB.questions.length > 0 && DB.questions.length < 100){
+  DB.questions = [];
+  localStorage.removeItem('swpwa_q');
+}
+if(!Array.isArray(DB.questions)){
+  DB.questions = [];
+  localStorage.removeItem('swpwa_q');
+}
 function save(){
   try{
-    localStorage.setItem('swpwa_q',JSON.stringify(DB.questions));
+    const mcOnly = DB.questions.filter(q=>q.type!=='essay');
+    localStorage.setItem('swpwa_q',JSON.stringify(mcOnly));
     localStorage.setItem('swpwa_s',JSON.stringify(DB.stats));
     localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong));
   }catch(e){showToast('儲存空間不足，請清除部分資料');}
@@ -1604,6 +1608,7 @@ async function init(){
     }
   }
 }
+init();
 </script>
 </body>
 </html>
