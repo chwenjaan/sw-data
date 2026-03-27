@@ -372,7 +372,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
     <button class="btn btn-outline btn-sm dev-only" onclick="syncFromGitHub()" style="color:var(--blue)">🔄 從 GitHub 同步</button>
     <button class="btn btn-outline btn-sm dev-only" onclick="clearStats()" style="color:var(--gray)">重置統計</button>
     <button class="btn btn-outline btn-sm" onclick="resetQuestionBank()" style="color:var(--red)">🔄 重置題庫</button>
-    <button class="btn btn-outline btn-sm" onclick="showGeminiModal()" style="color:var(--blue);touch-action:manipulation">🔑 Gemini Key</button>
+    <button class="btn btn-outline btn-sm dev-only" onclick="showGeminiModal()" style="color:var(--blue);touch-action:manipulation">🔑 Gemini Key</button>
     <button class="btn btn-outline btn-sm" id="devModeBtn" onclick="IS_DEV?exitDev():toggleDev()" style="color:var(--gray);font-size:10px">⚙️</button>
   </div>
 </div>
@@ -568,7 +568,7 @@ async function callGeminiAPI(prompt){
     const resp = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,
       { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.3,maxOutputTokens:800}}) }
+        body: JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:1500}}) }
     );
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const data = await resp.json();
@@ -1240,7 +1240,35 @@ async function requestAiExp(){
   const resultDiv = document.getElementById('aiExpResult');
   const textDiv = document.getElementById('aiExpText');
   const ansLetter = 'ABCD'[Array.isArray(q.ans)?q.ans[0]:q.ans];
-  const prompt = `你是社工師考試的專業解題老師，請用繁體中文解析以下選擇題（約150字）。\n\n題目：${q.q}\nA. ${q.opts[0]}\nB. ${q.opts[1]}\nC. ${q.opts[2]}\nD. ${q.opts[3]}\n正確答案：${ansLetter}. ${q.opts[Array.isArray(q.ans)?q.ans[0]:q.ans]}\n科目：${q.subject}\n\n請說明為何${ansLetter}是正確答案，以及其他選項錯誤原因。若你認為答案可能有誤請直接說明，不要強行解釋。`;
+  const optionA = q.opts[0], optionB = q.opts[1], optionC = q.opts[2], optionD = q.opts[3];
+  const prompt = `你現在是社工師國考名師。請針對以下題目提供深度解析，並遵守以下「誠實準則」：
+
+【重要準則：嚴禁胡說八道】
+1. 如果你發現「題目提供的標準答案」與「正確理論」有衝突，請直接指出爭議點，不要強行護航錯誤答案。
+2. 若對某個選項不確定，請說明「該敘述在現行法規或主流理論中較少見」，保持專業誠實。
+3. 必須對比四個選項的細微差異，嚴禁只重複選項文字。
+
+### 題目資訊
+科目：${q.subject}
+題目類型：下列何者「正確 / 錯誤」（請依題意判斷）
+
+【題目內容】
+${q.q}
+(A) ${optionA}
+(B) ${optionB}
+(C) ${optionC}
+(D) ${optionD}
+
+正確答案：(${ansLetter})
+
+### 撰寫要求
+1. **先列理論核心**：在解析前，先簡述該題涉及理論（如生活模式、優勢觀點等）的核心定義（2-3句即可）。
+2. **批判性審核**：如果標準答案與正確理論有衝突，請直接指出「此題答案有爭議」或「此敘述在學理上較具爭議」。
+3. **分析正確答案**：明確說明為何選項(${ansLetter})是正確答案，需結合理論核心觀點進行深度對比。
+4. **逐一解析其他選項**：必須清楚解釋為什麼其他選項不是正確答案，加上理論根據，不要只重述選項內容。
+5. **選項對比**：解釋為什麼正確選項比其他選項更符合該理論。
+
+請開始撰寫詳細解析：`;
 
   btn.disabled = true;
   btn.textContent = '⏳ 分析中…';
@@ -1249,24 +1277,8 @@ async function requestAiExp(){
 
   let response = null;
 
-  // 優先用 Gemini API
+  // 使用 Gemini API
   if(getGeminiKey()) response = await callGeminiAPI(prompt);
-
-  // 備用 Chrome AI
-  if(!response){
-    const chromeAI = window.LanguageModel || window.ai?.languageModel;
-    if(chromeAI){
-      try{
-        const avail = await chromeAI.availability?.() || await chromeAI.capabilities?.();
-        const isAvail = typeof avail==='string'?avail!=='no':avail?.available!=='no';
-        if(isAvail){
-          const session = await chromeAI.create();
-          response = await session.prompt(prompt);
-          session.destroy();
-        }
-      }catch(e){}
-    }
-  }
 
   if(!response){
     btn.disabled = false;
@@ -1370,7 +1382,7 @@ async function requestEssayAI(id){
   const textDiv = resultDiv?.querySelector('.essay-ai-text');
   if(!resultDiv||!textDiv) return;
 
-  const prompt = `你是社工師考試的專業解題老師，請用繁體中文針對以下申論題提供完整解析。
+  const prompt = `你現在是社工師國考的首席閱卷官。請針對以下「申論題」提供專業解析。
 
 【題目資訊】
 科目：${q.subject}
@@ -1378,10 +1390,17 @@ async function requestEssayAI(id){
 配分：${q.score||25}分
 題目：${q.q}
 
+---
+【撰寫嚴格準則】
+1. **查證法規**：若涉及法規，請標註「依現行法規內容」，若不確定條文序號，嚴禁編造數字，請改用「相關法規規定」代替。
+2. **理論辨析**：先說明適用此題的核心理論。若題目本身邏輯有瑕疵或過時，請在【考點說明】中溫和地指出。
+3. **誠實聲明**：若對此議題的最新修法資訊不確定，請在結尾註記「建議考生須核對最新法規修正」。
+4. **嚴禁胡說八道**：若不確定，坦白說明，切勿編造內容。
+
 請依以下結構回答：
 
 【考點說明】
-說明這題主要考哪些知識點和能力。
+說明這題主要考哪些知識點和能力。若題目有任何爭議或過時之處，請於此指出。
 
 【理論基礎】
 列出作答時應引用的相關理論、學者或概念框架。
@@ -1390,34 +1409,32 @@ async function requestEssayAI(id){
 列出5-8個必須出現在答案中的關鍵詞。
 
 【結構化參考答案】
-提供完整、有條理的參考答案（依配分展開，約${(q.score||25)*20}字）。
+提供完整、有條理的參考答案（含前言、正文分點論述、結語），依配分展開，約${(q.score||25)*20}字。
 
 【評分重點提示】
-說明閱卷老師通常看重哪些面向，如何拿高分。`;
+說明閱卷老師通常看重哪些面向，如何拿高分。
+
+請開始撰寫專業擬答：`;
 
   resultDiv.style.display = 'block';
   textDiv.innerHTML = '<span style="opacity:.6;font-size:12px">⏳ AI 解析中，請稍候…</span>';
 
-  const chromeAI = window.LanguageModel || window.ai?.languageModel;
   let response = '';
 
-  if(chromeAI){
-    try{
-      const avail = await chromeAI.availability?.() || await chromeAI.capabilities?.();
-      const isAvail = typeof avail==='string'?avail!=='no':avail?.available!=='no';
-      if(isAvail){
-        const session = await chromeAI.create();
-        response = await session.prompt(prompt);
-        session.destroy();
-      }
-    }catch(e){ console.log('Chrome AI error:',e); }
+  // 使用 Gemini API
+  if(getGeminiKey()){
+    response = await callGeminiAPI(prompt) || '';
   }
 
   if(!response){
-    // 開新分頁給 Claude
-    window.open('https://claude.ai/new?q='+encodeURIComponent(prompt),'_blank');
+    // 沒有 Gemini Key 或 API 失敗
     resultDiv.style.display='none';
-    showToast('已開啟 Claude.ai，解析完成後手動貼入');
+    if(!getGeminiKey()){
+      const k = prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）');
+      if(k&&k.trim()){ setGeminiKey(k.trim()); showToast('✅ Key 已儲存，請再按一次 AI 解析'); }
+    } else {
+      showToast('❌ AI 解析失敗，請確認 Gemini API Key 是否正確');
+    }
     return;
   }
 
