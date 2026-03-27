@@ -371,6 +371,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
   <div style="margin-top:12px;text-align:right;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;position:relative;z-index:20;">
     <button class="btn btn-outline btn-sm dev-only" onclick="pushToGitHub()" style="color:var(--green)">☁️ 上傳到 GitHub</button>
     <button class="btn btn-outline btn-sm dev-only" onclick="syncFromGitHub()" style="color:var(--blue)">🔄 從 GitHub 同步</button>
+    <button class="btn btn-outline btn-sm dev-only" onclick="migrateExpsToFile()" style="color:#8e44ad">🔀 遷移解析檔</button>
     <button class="btn btn-outline btn-sm dev-only" onclick="clearStats()" style="color:var(--gray)">重置統計</button>
     <button class="btn btn-outline btn-sm" onclick="resetQuestionBank()" style="color:var(--red)">🔄 重置題庫</button>
     <button class="btn btn-outline btn-sm dev-only" onclick="showGeminiModal()" style="color:var(--blue);touch-action:manipulation">🔑 Gemini Key</button>
@@ -622,7 +623,65 @@ async function saveExpToGitHub(qId, expText){
 }
 
 
-// ===== GEMINI API =====
+// ===== 一鍵遷移：把 question.json 裡的 exp 搬到 explanations.json =====
+async function migrateExpsToFile(){
+  if(!IS_DEV){ showToast('需要開發者模式'); return; }
+  const withExp = DB.questions.filter(q => q.exp && q.exp.trim());
+  if(!withExp.length){ showToast('題庫中沒有任何解析可遷移'); return; }
+  if(!confirm(`找到 ${withExp.length} 筆題庫內建解析。\n將整合進 explanations.json 上傳到 GitHub。\n（不會刪除 question.json 裡的 exp 欄位，兩邊都保留）\n\n確定繼續？`)) return;
+
+  showToast('⏳ 遷移中…');
+  let token = getGithubToken();
+  if(!token){
+    token = prompt('請輸入 GitHub Personal Access Token：');
+    if(!token) return;
+    setGithubToken(token.trim());
+  }
+
+  try{
+    // 先讀現有 explanations.json（可能已有部分資料）
+    let existingExps = {}, sha = null;
+    const info = await fetch(EXP_API, {
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if(info.status === 401){ localStorage.removeItem('swpwa_ghtoken'); showToast('❌ Token 錯誤'); return; }
+    if(info.ok){
+      const infoData = await info.json();
+      sha = infoData.sha;
+      try{ existingExps = JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){}
+    }
+
+    // 合併：題庫的 exp 優先填入，但不覆蓋已存在的解析
+    let added = 0;
+    withExp.forEach(q => {
+      if(!existingExps[q.id]){
+        existingExps[q.id] = q.exp;
+        added++;
+      }
+    });
+
+    const total = Object.keys(existingExps).length;
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(existingExps, null, 2))));
+    const body = {
+      message: `遷移解析 ${new Date().toLocaleDateString('zh-TW')} (共${total}筆)`,
+      content
+    };
+    if(sha) body.sha = sha;
+
+    const res = await fetch(EXP_API, {
+      method: 'PUT',
+      headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if(res.ok){
+      showToast(`✅ 遷移完成！新增 ${added} 筆，共 ${total} 筆解析`);
+    } else {
+      const err = await res.json();
+      showToast('❌ 上傳失敗：' + (err.message||res.status));
+    }
+  }catch(e){ showToast('❌ 遷移失敗，請確認網路連線'); console.error(e); }
+}
 async function callGeminiAPI(prompt){
   const key = getGeminiKey();
   if(!key) return null;
