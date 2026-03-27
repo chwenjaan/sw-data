@@ -21,12 +21,12 @@
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 html,body{height:100%;overflow-x:hidden;}
 body{
   font-family:-apple-system,'PingFang TC','Microsoft JhengHei','Noto Sans TC',sans-serif;
   background:var(--paper);color:var(--ink);
-  padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);
+  padding-top:var(--safe-top);padding-bottom:calc(var(--safe-bottom) + 60px);
 }
 .serif{font-family:'Georgia','Songti TC','SimSun',serif;}
 
@@ -48,7 +48,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .tab-btn.active{color:var(--red);border-bottom-color:var(--red);}
 
 /* MAIN */
-.main{max-width:960px;margin:0 auto;padding:16px;}
+.main{max-width:960px;margin:0 auto;padding:16px;overscroll-behavior:none;}
 .panel{display:none;}.panel.active{display:block;}
 
 /* SUBJECT BAR */
@@ -91,7 +91,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 .exp.show{display:block;animation:fu .2s ease;}
 
 .action-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
-.btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;}
+.btn{padding:9px 16px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;-webkit-appearance:none;min-height:44px;user-select:none;-webkit-user-select:none;}
 .btn-primary{background:var(--ink);color:var(--paper);}
 .btn-gold{background:var(--gold);color:white;}
 .btn-outline{background:white;color:var(--ink);border:1.5px solid var(--border);}
@@ -275,9 +275,9 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
       </div>
     </div>
     <div class="action-row">
-      <button class="btn btn-primary" id="nextBtn" onclick="nextQ()" disabled>下一題 →</button>
-      <button class="btn btn-outline" onclick="skipQ()">跳過</button>
-      <button class="btn btn-outline" onclick="reshuffleQ()" style="margin-left:auto;font-size:11px">重新出題</button>
+      <button class="btn btn-primary" id="nextBtn" onclick="safeTap(nextQ)" disabled>下一題 →</button>
+      <button class="btn btn-outline" onclick="safeTap(skipQ)">跳過</button>
+      <button class="btn btn-outline" onclick="safeTap(reshuffleQ)" style="margin-left:auto;font-size:11px">重新出題</button>
     </div>
   </div>
 </div>
@@ -532,7 +532,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v13';
+const DB_VERSION = '20260327_v14';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -696,6 +696,15 @@ function save(){
 let P={pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null};
 let E={pool:[],idx:0,answers:[],timerID:null,secsLeft:60,timeLimit:60};
 let editId=null,selAns=-1;
+
+// ===== 防抖動點擊（手機觸控）=====
+let _lastTap = 0;
+function safeTap(fn){
+  const now = Date.now();
+  if(now - _lastTap < 300) return;
+  _lastTap = now;
+  fn();
+}
 
 // ===== UTILS =====
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
