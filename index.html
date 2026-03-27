@@ -537,7 +537,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v26';
+const DB_VERSION = '20260327_v27';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -693,42 +693,6 @@ let DB = {
   wrong: (()=>{ try{ return JSON.parse(localStorage.getItem('swpwa_w')||'[]'); }catch(e){ return []; } })(),
 };
 // 版本控制（已移除題庫快取，每次從 GitHub 拉）
-  const workerCode = `
-    self.onmessage = function(e){
-      try{
-        const data = JSON.parse(e.data);
-        self.postMessage({ok:true, data:data});
-      }catch(err){
-        self.postMessage({ok:false});
-      }
-    };
-  `;
-  try{
-    const blob = new Blob([workerCode], {type:'application/javascript'});
-    const worker = new Worker(URL.createObjectURL(blob));
-    worker.onmessage = function(e){
-      worker.terminate();
-      if(e.data.ok && Array.isArray(e.data.data) && e.data.data.length >= 100){
-        callback(e.data.data);
-      } else {
-        localStorage.removeItem('swpwa_q');
-        callback([]);
-      }
-    };
-    worker.onerror = function(){ 
-      worker.terminate(); 
-      localStorage.removeItem('swpwa_q');
-      callback([]); 
-    };
-    worker.postMessage(raw);
-  }catch(e){
-    // Web Worker 不支援時，直接解析（小裝置可能慢一點）
-    try{ 
-      const d = JSON.parse(raw);
-      callback(Array.isArray(d) && d.length >= 100 ? d : []);
-    }catch(e){ callback([]); }
-  }
-}
 function save(){
   try{ localStorage.setItem('swpwa_s',JSON.stringify(DB.stats)); }catch(e){}
   try{ localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong)); }catch(e){}
