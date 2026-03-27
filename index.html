@@ -537,7 +537,7 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 
 <script>
 // ===== 版本控制常數（實際清除邏輯移到 DB 讀取之後）=====
-const DB_VERSION = '20260327_v24';
+const DB_VERSION = '20260327_v25';
 
 // ===== 重置題庫 =====
 function resetQuestionBank(){
@@ -1613,10 +1613,19 @@ async function fetchFromGitHub(showLoading=true, retries=3){
       const resp = await fetch(GITHUB_URL + '?t=' + Date.now());
       if(!resp.ok) throw new Error('HTTP '+resp.status);
       if(showLoading) document.getElementById('loadingBar').style.width='70%';
-      const qs = await resp.json();
+      const text = await resp.text();
+      // 用 Worker 在背景解析大型 JSON，不卡主執行緒
+      const qs = await new Promise((resolve, reject)=>{
+        try{
+          const blob = new Blob([`self.onmessage=e=>{try{postMessage({ok:true,d:JSON.parse(e.data)});}catch(x){postMessage({ok:false});}};`],{type:'application/javascript'});
+          const w = new Worker(URL.createObjectURL(blob));
+          w.onmessage = e=>{ w.terminate(); e.data.ok ? resolve(e.data.d) : reject(new Error('parse fail')); };
+          w.onerror = ()=>{ w.terminate(); try{ resolve(JSON.parse(text)); }catch(x){ reject(x); } };
+          w.postMessage(text);
+        }catch(e){ try{ resolve(JSON.parse(text)); }catch(x){ reject(x); } }
+      });
       if(!Array.isArray(qs)||!qs.length) throw new Error('資料格式錯誤');
       DB.questions = qs;
-      save();
       if(showLoading) document.getElementById('loadingBar').style.width='100%';
       return qs.length;
     }catch(e){
