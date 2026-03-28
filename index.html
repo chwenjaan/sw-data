@@ -1343,8 +1343,7 @@ function getPools(subj='all'){
     const freshQ=DB.questions.find(x=>x.id===q.id)||q;
     if(freshQ.exp){
       const e=document.getElementById('exp');
-      e.innerHTML = `<strong>解析：</strong>${(freshQ.exp||'').replace(/
-/g,'<br>')}`;
+      e.innerHTML = `<strong>解析：</strong>${(freshQ.exp||'').replace(//g,'<br>')}`;
       const t=document.getElementById('expToggleBtn');
       if(t){
         t.style.display='inline-flex';
@@ -2073,7 +2072,7 @@ D. ${q.opts[3]}
     if(!text){showToast('AI 解析失敗');return;}
     document.getElementById('aiExpArea').style.display='none';
     const box=document.getElementById('aiExpResult');
-    document.getElementById('aiExpText').innerHTML = text.replace(/\n/g,'<br>');
+    document.getElementById('aiExpText').innerHTML=text.replace(/\n/g,'<br>');
     box.style.display='block';
     if(ISDEV && q.id){
       autoSaveExp(q.id,text);
