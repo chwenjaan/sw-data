@@ -248,7 +248,8 @@ async function fetchExplanations() {
 
     let merged = 0;
     DB.questions.forEach(q => {
-      if (exps[q.id]) {
+      // 題庫本身沒有 exp 時，才用 explanations.json 補
+      if (!q.exp && exps[q.id]) {
         q.exp = exps[q.id];
         merged++;
       }
@@ -308,6 +309,8 @@ async function syncFromGitHub() {
     showToast('❌ 同步失敗');
   }
 }
+
+// ===== Gemini API =====
 
 // ===== Gemini API =====
 async function callGeminiAPI(prompt){
