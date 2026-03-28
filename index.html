@@ -205,7 +205,7 @@ function getGeminiKey(){return localStorage.getItem('swpwa_geminikey')||'';}
 function setGeminiKey(k){localStorage.setItem('swpwa_geminikey',k);}
 
 // ===== 開發者模式 =====
-function toggleDev(){ const pw=prompt('請輸入開發者密碼：'); if(pw===DEV_PASSWORD){ IS_DEV=true; localStorage.setItem('swpwa_dev','1'); applyDevMode(); showToast('✅ 已進入開發者模式'); } else if(pw!==null){ showToast('密碼錯誤'); } }
+function toggleDev(){ const pw=window.prompt('請輸入開發者密碼：'); if(pw===DEV_PASSWORD){ IS_DEV=true; localStorage.setItem('swpwa_dev','1'); applyDevMode(); showToast('✅ 已進入開發者模式'); } else if(pw!==null){ showToast('密碼錯誤'); } }
 function exitDev(){ IS_DEV=false; localStorage.removeItem('swpwa_dev'); applyDevMode(); showToast('已切換為一般使用者模式'); }
 function applyDevMode(){ document.querySelectorAll('.dev-only').forEach(el=>el.style.display=IS_DEV?'':'none'); const db=document.getElementById('devBadge'); if(db) db.style.display=IS_DEV?'flex':'none'; }
 
@@ -282,7 +282,7 @@ async function fetchFromGitHub(showLoading=true, retries=3){
 async function syncFromGitHub(){ showToast('正在從 GitHub 同步…'); const count=await fetchFromGitHub(false); if(count){ const fixed=cleanData(); await fetchExplanations(); buildSubjFilter(); populateExamSubjs(); populateFilterSelects(); renderQList(); updateHeader(); showToast(`✅ 同步完成，共 ${count} 題${fixed>0?'，修復'+fixed+'筆':''}`); } else { showToast('❌ 同步失敗'); } }
 async function pushToGitHub(){
   if(!IS_DEV){ showToast('需要開發者模式'); return; }
-  let token=getGithubToken(); if(!token){ token=prompt('請輸入 GitHub Personal Access Token：'); if(!token) return; setGithubToken(token.trim()); }
+  let token=getGithubToken(); if(!token){ token=window.prompt('請輸入 GitHub Personal Access Token：'); if(!token) return; setGithubToken(token.trim()); }
   if(!confirm(`確定將目前 ${DB.questions.length} 道題目上傳到 GitHub？`)) return;
   showToast('⏳ 上傳中…');
   try{
@@ -294,7 +294,7 @@ async function pushToGitHub(){
     if(res.ok){ showToast(`✅ 已上傳 ${DB.questions.length} 題到 GitHub！`); } else { const err=await res.json(); showToast('❌ 上傳失敗：'+(err.message||res.status)); }
   } catch(e){ showToast('❌ 上傳失敗'); console.error(e); }
 }
-async function migrateExpsToFile(){ if(!IS_DEV){ showToast('需要開發者模式'); return; } const withExp=DB.questions.filter(q=>q.exp && q.exp.trim()); if(!withExp.length){ showToast('題庫中沒有任何解析可遷移'); return; } if(!confirm(`找到 ${withExp.length} 筆解析，將整合進 explanations.json 上傳。確定繼續？`)) return; showToast('⏳ 遷移中…'); let token=getGithubToken(); if(!token){ token=prompt('請輸入 GitHub Personal Access Token：'); if(!token) return; setGithubToken(token.trim()); } try{ let existingExps={}, sha=null; const info=await fetch(EXP_API,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}}); if(info.status===401){ localStorage.removeItem('swpwa_ghtoken'); showToast('❌ Token 錯誤'); return; } if(info.ok){ const infoData=await info.json(); sha=infoData.sha; try{ existingExps=JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){} } let added=0; withExp.forEach(q=>{ if(!existingExps[q.id]){ existingExps[q.id]=q.exp; added++; } }); const content=btoa(unescape(encodeURIComponent(JSON.stringify(existingExps,null,2)))); const body={ message:`遷移解析 ${new Date().toLocaleDateString('zh-TW')} (共${Object.keys(existingExps).length}筆)`, content }; if(sha) body.sha=sha; const res=await fetch(EXP_API,{method:'PUT',headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)}); if(res.ok){ showToast(`✅ 遷移完成！新增 ${added} 筆`); } else { const err=await res.json(); showToast('❌ 上傳失敗：'+err.message); } }catch(e){ showToast('❌ 遷移失敗'); console.error(e); } }
+async function migrateExpsToFile(){ if(!IS_DEV){ showToast('需要開發者模式'); return; } const withExp=DB.questions.filter(q=>q.exp && q.exp.trim()); if(!withExp.length){ showToast('題庫中沒有任何解析可遷移'); return; } if(!confirm(`找到 ${withExp.length} 筆解析，將整合進 explanations.json 上傳。確定繼續？`)) return; showToast('⏳ 遷移中…'); let token=getGithubToken(); if(!token){ token=window.prompt('請輸入 GitHub Personal Access Token：'); if(!token) return; setGithubToken(token.trim()); } try{ let existingExps={}, sha=null; const info=await fetch(EXP_API,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}}); if(info.status===401){ localStorage.removeItem('swpwa_ghtoken'); showToast('❌ Token 錯誤'); return; } if(info.ok){ const infoData=await info.json(); sha=infoData.sha; try{ existingExps=JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){} } let added=0; withExp.forEach(q=>{ if(!existingExps[q.id]){ existingExps[q.id]=q.exp; added++; } }); const content=btoa(unescape(encodeURIComponent(JSON.stringify(existingExps,null,2)))); const body={ message:`遷移解析 ${new Date().toLocaleDateString('zh-TW')} (共${Object.keys(existingExps).length}筆)`, content }; if(sha) body.sha=sha; const res=await fetch(EXP_API,{method:'PUT',headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)}); if(res.ok){ showToast(`✅ 遷移完成！新增 ${added} 筆`); } else { const err=await res.json(); showToast('❌ 上傳失敗：'+err.message); } }catch(e){ showToast('❌ 遷移失敗'); console.error(e); } }
 
 // ===== Gemini API =====
 async function callGeminiAPI(prompt){
@@ -612,7 +612,7 @@ async function requestEssayAI(id){
   const prompt=`你現在是社工師國考的首席閱卷官。請針對以下「申論題」提供專業解析。\n\n【題目資訊】\n科目：${q.subject}\n年度：${q.year||''}\n配分：${q.score||25}分\n題目：${q.q}\n\n---\n【撰寫嚴格準則】\n1. **直接開始解析，禁止任何開場白、自我介紹。**\n2. **查證法規**：若涉及法規，請標註「依現行法規內容」，若不確定條文序號，嚴禁編造數字。\n3. **理論辨析**：先說明適用此題的核心理論。\n4. **誠實聲明**：若不確定，坦白說明，切勿編造。\n\n請依以下結構回答：\n【考點說明】\n【理論基礎】\n【答題關鍵詞】\n【結構化參考答案】\n【評分重點提示】\n\n請開始撰寫專業擬答：`;
   resultDiv.style.display='block'; textDiv.innerHTML='<span style="opacity:.6;font-size:12px">⏳ AI 解析中，請稍候…</span>';
   let response=''; if(getGeminiKey()) response=await callGeminiAPI(prompt)||'';
-  if(!response){ resultDiv.style.display='none'; if(!getGeminiKey()){ const k=prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）'); if(k&&k.trim()){ setGeminiKey(k.trim()); showToast('✅ Key 已儲存，請再按一次 AI 解析'); } } else { showToast('❌ AI 解析失敗，請確認 Gemini API Key'); } return; }
+  if(!response){ resultDiv.style.display='none'; if(!getGeminiKey()){ const k=window.prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）'); if(k&&k.trim()){ setGeminiKey(k.trim()); showToast('✅ Key 已儲存，請再按一次 AI 解析'); } } else { showToast('❌ AI 解析失敗，請確認 Gemini API Key'); } return; }
   const formatted=response.replace(/【(.+?)】/g,'<div style="font-weight:700;color:var(--gold2);margin-top:14px;margin-bottom:4px">【$1】</div>').replace(/\n/g,'<br>');
   textDiv.innerHTML=formatted; autoSaveExp(id,response); renderEssayList();
 }
@@ -782,7 +782,7 @@ async function requestAiExp(){
   const prompt=`你現在是社工師國考名師。請針對以下題目提供深度解析，遵守「誠實準則」，直接開始解析，禁止開場白。\n\n### 題目資訊\n科目：${q.subject}\n題目類型：下列何者「正確 / 錯誤」\n\n【題目內容】\n${q.q}\n(A) ${q.opts[0]}\n(B) ${q.opts[1]}\n(C) ${q.opts[2]}\n(D) ${q.opts[3]}\n\n正確答案：(${ansLetter})\n\n### 撰寫要求\n1. 先列理論核心（2-3句）\n2. 批判性審核\n3. 分析正確答案\n4. 逐一解析其他選項\n5. 選項對比\n6. 字數 400~600 字\n\n請開始撰寫詳細解析：`;
   btn.disabled=true; btn.textContent='⏳ 分析中…'; resultDiv.style.display='block'; textDiv.innerHTML='<span style="opacity:.6;font-size:12px">AI 分析中，請稍候…</span>';
   let response=null; if(getGeminiKey()) response=await callGeminiAPI(prompt);
-  if(!response){ btn.disabled=false; btn.textContent='🤖 AI 解析這題'; resultDiv.style.display='none'; if(!getGeminiKey()){ const k=prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）'); if(k&&k.trim()){ setGeminiKey(k.trim()); showToast('✅ Key 已儲存，請再按一次 AI 解析'); } } else { showToast('❌ AI 解析失敗，請確認 API Key'); } return; }
+  if(!response){ btn.disabled=false; btn.textContent='🤖 AI 解析這題'; resultDiv.style.display='none'; if(!getGeminiKey()){ const k=window.prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）'); if(k&&k.trim()){ setGeminiKey(k.trim()); showToast('✅ Key 已儲存，請再按一次 AI 解析'); } } else { showToast('❌ AI 解析失敗，請確認 API Key'); } return; }
   const formatted=response.replace(/【(.+?)】/g,'<strong style="color:var(--gold)">【$1】</strong>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'</p><p style="margin-top:8px">').replace(/\n/g,'<br>');
   textDiv.innerHTML=`<p>${formatted}</p><div style="margin-top:8px;font-size:10px;opacity:.5;text-align:right">由 AI 生成</div>`;
   btn.textContent='✅ 解析完成'; autoSaveExp(q.id,response);
