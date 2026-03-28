@@ -706,10 +706,11 @@
     }
     return a;
   }
-  function getPools(subj='all'){
-    const s = subj==='all'?null:subj;
-    return s?DB.questions.filter(q=>q.subject===s):DB.questions;
-  }
+function getPools(subj='all'){
+  const s = subj === 'all' ? null : subj;
+  const all = DB.questions.filter(q => q.type !== 'essay');
+  return s ? all.filter(q => q.subject === s) : all;
+}
   function uniqueSubjs(){
     const s = new Set(DB.questions.map(q=>q.subject).filter(Boolean));
     const colored = Object.keys(COLORS).filter(k=>s.has(k));
@@ -1396,10 +1397,11 @@
   }
 
   // ===== 模擬考流程 =====
-  function startExam(){
-    const s = document.getElementById('examSubj').value;
-    E.timeLimit = parseInt(document.getElementById('examTime').value,10);
-    let pool = getPools(s==='all'?null:s);
+function startExam(){
+  const s = document.getElementById('examSubj').value;
+  E.timeLimit = parseInt(document.getElementById('examTime').value,10);
+  let pool = getPools(s === 'all' ? null : s);
+  pool = pool.filter(q => q.type !== 'essay');
     if(!pool.length){
       document.getElementById('examWarn').style.display='block';
       return;
