@@ -142,18 +142,29 @@ header::before{content:'';position:absolute;inset:0;background:repeating-linear-
 <div class="modal-bg" id="importModal"><div class="modal"><h3>批次匯入題目</h3><div class="ifmt">每題格式（題目間用空行分隔）：<br><code>Q: 題目</code> <code>A: 選項A</code> <code>B: 選項B</code> <code>C: 選項C</code> <code>D: 選項D</code><br><code>ANS: A</code>（正確答案） <code>SUBJ: 社會工作</code>（科目）<br><code>YEAR: 115年</code>（選填） <code>SRC: 考選部</code>（選填） <code>EXP: 解析</code>（選填）</div><div class="frow"><label>未指定科目時套用</label><select id="importSubj"><option>社會工作</option><option>社會工作直接服務</option><option>社會政策與社會立法</option><option>人類行為與社會環境</option><option>社會工作研究方法</option></select></div><div class="iarea"><textarea id="importText" placeholder="貼上題目內容…"></textarea></div><div id="importPreview" style="font-size:11px;margin-bottom:8px;"></div><div class="action-row"><button class="btn btn-primary" onclick="doImport()">匯入</button><button class="btn btn-outline" onclick="previewImport()">預覽</button><button class="btn btn-outline" onclick="closeModal('importModal')">取消</button></div></div></div>
 <div class="modal-bg" id="bkModal"><div class="modal"><h3>匯入備份</h3><p style="font-size:13px;color:var(--gray);margin-bottom:12px">選擇先前匯出的 .json 備份檔</p><input type="file" id="bkFile" accept=".json" style="font-size:13px"><div class="action-row" style="margin-top:12px"><button class="btn btn-primary" onclick="doBkImport()">匯入</button><button class="btn btn-outline" onclick="closeModal('bkModal')">取消</button></div></div></div>
 <div class="toast" id="toast"></div>
+
 <script>
-// ===== 常數與配置 =====
+// ===== 常數定義 =====
 const GITHUB_REPO = 'chwenjaan/sw-data';
 const GITHUB_FILE = 'question.json';
 const GITHUB_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${GITHUB_FILE}`;
+const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
 const EXP_FILE = 'explanations.json';
 const EXP_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${EXP_FILE}`;
-const COLORS = {'社會工作':'#2980b9','社會工作直接服務':'#27ae60','社會政策與社會立法':'#8e44ad','人類行為與社會環境':'#d35400','社會工作研究方法':'#16a085'};
+const EXP_API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${EXP_FILE}`;
+
+const COLORS = {
+  '社會工作':'#2980b9',
+  '社會工作直接服務':'#27ae60',
+  '社會政策與社會立法':'#8e44ad',
+  '人類行為與社會環境':'#d35400',
+  '社會工作研究方法':'#16a085'
+};
+
 const KNOWN_SUBJS = ['社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法','社會工作'];
 const DEV_PASSWORD = 'sw2024dev';
 
-// ===== 資料庫初始化 =====
+// ===== 全域變數 =====
 let DB = {
   questions: [],
   stats: (()=>{ try{ return JSON.parse(localStorage.getItem('swpwa_s')||'{}'); }catch(e){ return {}; } })() || {"total":0,"correct":0,"bySubj":{},"sessions":0},
@@ -165,210 +176,681 @@ let editId=null,selAns=-1;
 let IS_DEV = localStorage.getItem('swpwa_dev') === '1';
 let _lastTap = 0;
 
-// ===== 基礎工具函式 =====
+// ===== 輔助函數 =====
 function safeTap(fn){ const now=Date.now(); if(now-_lastTap<300)return; _lastTap=now; fn(); }
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function correctLetters(q){ return (Array.isArray(q.ans)?q.ans:[q.ans]).map(i=>'ABCD'[i]).join('或'); }
-function isCorrect(q,i){ return (Array.isArray(q.ans)?q.ans:[q.ans]).includes(i); }
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300);}
-function closeModal(id){document.getElementById(id).classList.remove('show');}
+function getPool(s){return(s==='全部'||s==='all')?[...DB.questions]:DB.questions.filter(q=>q.subject===s);}
+function uniqueSubjs(){const s=new Set(DB.questions.map(q=>q.subject));const colored=Object.keys(COLORS).filter(k=>s.has(k));const others=[...s].filter(k=>!COLORS[k]);return['全部',...colored,...others];}
+function getCorrectIdxs(q){return Array.isArray(q.ans)?q.ans:[q.ans];}
+function isCorrect(q,i){return getCorrectIdxs(q).includes(i);}
+function correctLetters(q){return getCorrectIdxs(q).map(i=>'ABCD'[i]).join('或');}
+function extractQuestionNumber(q){
+  if(q.no && typeof q.no === 'number') return q.no;
+  if(q.no && typeof q.no === 'string'){ const n=parseInt(q.no,10); if(!isNaN(n)) return n; }
+  if(q.id){
+    let m=q.id.match(/_(\d{1,3})$/); if(m) return parseInt(m[1],10);
+    m=q.id.match(/_(\d{1,3})_/); if(m) return parseInt(m[1],10);
+  }
+  return null;
+}
+function save(){ try{ localStorage.setItem('swpwa_s',JSON.stringify(DB.stats)); }catch(e){} try{ localStorage.setItem('swpwa_w',JSON.stringify(DB.wrong)); }catch(e){} }
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._toastT);window._toastT=setTimeout(()=>t.classList.remove('show'),2300);}
 function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+document.addEventListener('click',e=>{if(e.target.classList.contains('modal-bg'))e.target.classList.remove('show');});
 
-// ===== 修正點 1：補全題庫管理渲染與篩選邏輯 =====
-function onFilterYearChange() {
-    const yr = document.getElementById('filterYear').value;
-    const examSel = document.getElementById('filterExam');
-    const subjSel = document.getElementById('filterSubjNew');
-    examSel.innerHTML = '<option value="">— 全部次別 —</option>';
-    if (yr) {
-        const exams = [...new Set(DB.questions.filter(q => q.year && q.year.startsWith(yr)).map(q => q.year.replace(yr, '')))];
-        exams.forEach(e => examSel.add(new Option(e, e)));
-        examSel.disabled = false;
-        subjSel.disabled = false;
-    } else {
-        examSel.disabled = true;
-        subjSel.disabled = true;
+function getGithubToken(){return localStorage.getItem('swpwa_ghtoken')||'';}
+function setGithubToken(t){localStorage.setItem('swpwa_ghtoken',t);}
+function getGeminiKey(){return localStorage.getItem('swpwa_geminikey')||'';}
+function setGeminiKey(k){localStorage.setItem('swpwa_geminikey',k);}
+
+// ===== 開發者模式 =====
+function toggleDev(){ const pw=window.prompt('請輸入開發者密碼：'); if(pw===DEV_PASSWORD){ IS_DEV=true; localStorage.setItem('swpwa_dev','1'); applyDevMode(); showToast('✅ 已進入開發者模式'); } else if(pw!==null){ showToast('密碼錯誤'); } }
+function exitDev(){ IS_DEV=false; localStorage.removeItem('swpwa_dev'); applyDevMode(); showToast('已切換為一般使用者模式'); }
+function applyDevMode(){ document.querySelectorAll('.dev-only').forEach(el=>el.style.display=IS_DEV?'':'none'); const db=document.getElementById('devBadge'); if(db) db.style.display=IS_DEV?'flex':'none'; }
+
+// ===== 資料清理 =====
+function cleanData(){
+  let fixed=0;
+  DB.questions.forEach(q=>{
+    if(q.subject && !KNOWN_SUBJS.includes(q.subject)){
+      for(const ks of KNOWN_SUBJS){ if(q.subject.includes(ks)){ q.subject=ks; fixed++; break; } }
     }
-    renderQList();
+    if(q.year && (q.year.includes('SRC:')||q.year.includes('YEAR:')||q.year.includes('src:'))){
+      const ym=q.year.match(/(\d+年(?:第[一二三四五六]次)?(?:第?\d次)?)/);
+      if(ym) q.year=ym[1]; fixed++;
+    }
+    if(!q.no && q.id){ const num=extractQuestionNumber(q); if(num!==null){ q.no=num; fixed++; } }
+  });
+  if(fixed>0) save();
+  return fixed;
 }
+function manualCleanData(){ const n=cleanData(); buildSubjFilter(); populateExamSubjs(); populateFilterSelects(); renderQList(); updateHeader(); showToast(n>0?`✅ 修復了 ${n} 筆資料`:'✅ 資料已乾淨'); }
 
-function onFilterExamChange() { renderQList(); }
+// ===== 重置題庫 =====
+function resetQuestionBank(){ if(!confirm('確定重置題庫？\n將清除本機題目，重新從 GitHub 載入最新版本。')) return; localStorage.removeItem('swpwa_q'); localStorage.removeItem('swpwa_dbver'); showToast('正在重新載入…'); setTimeout(()=>location.reload(),800); }
 
-function populateFilterSelects() {
-    const yrSel = document.getElementById('filterYear');
-    const subSel = document.getElementById('filterSubjNew');
-    if(!yrSel) return;
-    const years = [...new Set(DB.questions.map(q => q.year ? q.year.substring(0,4) : null).filter(Boolean))].sort().reverse();
-    yrSel.innerHTML = '<option value="">— 選擇年度 —</option>';
-    years.forEach(y => yrSel.add(new Option(y, y)));
-    subSel.innerHTML = '<option value="">— 全部科目 —</option>';
-    KNOWN_SUBJS.forEach(s => subSel.add(new Option(s, s)));
-}
-
-function renderQList() {
-    const kw = (document.getElementById('qSearch')?.value || '').toLowerCase();
-    const year = document.getElementById('filterYear')?.value || '';
-    const exam = document.getElementById('filterExam')?.value || '';
-    const subj = document.getElementById('filterSubjNew')?.value || '';
-    const wrap = document.getElementById('qListWrap');
-    if(!wrap) return;
-    
-    if(!year && !kw) {
-        wrap.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">請先選擇年度，或輸入關鍵字搜尋題目</div>';
-        return;
+// ===== 解析檔處理 =====
+// 只讀 explanations.json，依 id 合併到 DB.questions
+async function fetchExplanations() {
+  try {
+    const resp = await fetch(EXP_URL + '?t=' + Date.now());
+    if (!resp.ok) {
+      console.log('fetchExplanations: HTTP', resp.status);
+      return;
     }
 
-    const items = DB.questions.filter(q => {
-        if(year && (!q.year || !q.year.startsWith(year))) return false;
-        if(exam && (!q.year || !q.year.includes(exam))) return false;
-        if(subj && q.subject !== subj) return false;
-        if(kw && !(q.q.toLowerCase().includes(kw) || (q.exp && q.exp.toLowerCase().includes(kw)))) return false;
-        return true;
+    const exps = await resp.json(); // exps: { [id]: "解析文字" }
+    if (!exps || typeof exps !== 'object') {
+      console.log('fetchExplanations: invalid json');
+      return;
+    }
+
+    let merged = 0;
+    DB.questions.forEach(q => {
+      if (exps[q.id]) {
+        q.exp = exps[q.id];
+        merged++;
+      }
     });
 
-    wrap.innerHTML = items.map((q, idx) => `
-        <div class="qrow" style="background:white;padding:12px;border-bottom:1px solid var(--border);" onclick="expandQ(this)">
-            <div style="font-size:10px;color:var(--gray);margin-bottom:4px;">${q.subject} | ${q.year || '未知年度'}</div>
-            <div style="font-size:13px;line-height:1.6;color:var(--ink);">${q.q}</div>
-            <div style="margin-top:6px;color:var(--green);font-size:11px;font-weight:700;">答案：${correctLetters(q)}</div>
-            <div class="qdetail" style="display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);">
-                ${q.opts.map((o,i)=>`<div style="font-size:12px;margin-bottom:4px;color:#555;">${'ABCD'[i]}. ${o}</div>`).join('')}
-                ${q.exp ? `<div style="margin-top:8px;padding:8px;background:#fffcf0;border-left:2px solid var(--gold);font-size:12px;">${q.exp}</div>` : ''}
-                ${IS_DEV ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openEdit('${q.id}')">✏️ 編輯</button>` : ''}
-            </div>
-        </div>
-    `).join('');
-    if(document.getElementById('filterCount')) document.getElementById('filterCount').textContent = `共 ${items.length} 題`;
-}
-
-function expandQ(el) {
-    const d = el.querySelector('.qdetail');
-    if(d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
-}
-
-// ===== 修正點 2：校正 AI 解析模型 (1.5-flash) =====
-async function callGeminiAPI(prompt){
-  const key=localStorage.getItem('swpwa_geminikey');
-  if(!key) return null;
-  try{
-    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
-    });
-    const data = await resp.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-  }catch(e){ console.error(e); return null; }
-}
-
-// ===== 練習模式渲染 =====
-function renderPQ() {
-    const q = P.pool[P.idx]; if(!q) return;
-    document.getElementById('qNum').textContent = P.idx + 1;
-    document.getElementById('qTotal').textContent = P.pool.length;
-    document.getElementById('progFill').style.width = ((P.idx+1)/P.pool.length*100) + '%';
-    document.getElementById('qSubjTag').textContent = q.subject;
-    document.getElementById('qSubjTag').style.color = COLORS[q.subject] || '#555';
-    document.getElementById('qYearTag').textContent = q.year || '';
-    document.getElementById('qText').textContent = q.q;
-    document.getElementById('qOpts').innerHTML = q.opts.map((o,i) => `
-        <button class="opt" onclick="pickAns(${i})" id="opt${i}">
-            <span class="opt-lbl">${'ABCD'[i]}</span><span>${o}</span>
-        </button>
-    `).join('');
-    document.getElementById('rbadge').style.display = 'none';
-    document.getElementById('exp').style.display = 'none';
-    document.getElementById('aiExpArea').style.display = 'none';
-    document.getElementById('nextBtn').disabled = true;
-    P.answered = false;
-}
-
-function pickAns(i) {
-    if(P.answered) return;
-    P.answered = true;
-    const q = P.pool[P.idx];
-    const ok = isCorrect(q, i);
-    document.querySelectorAll('.opt').forEach(btn => btn.disabled = true);
-    document.getElementById('opt'+i).classList.add(ok ? 'correct' : 'wrong');
-    if(!ok) {
-        const cIdx = Array.isArray(q.ans) ? q.ans[0] : q.ans;
-        document.getElementById('opt'+cIdx).classList.add('correct');
+    if (merged > 0) {
+      console.log(`✅ 已 merge ${merged} 筆解析`);
     }
-    const badge = document.getElementById('rbadge');
-    badge.className = ok ? 'rbadge rb-ok' : 'rbadge rb-fail';
-    badge.innerHTML = ok ? '✓ 回答正確！' : `✗ 答錯！答案為 ${correctLetters(q)}`;
-    badge.style.display = 'flex';
-    if(q.exp) {
-        document.getElementById('exp').innerHTML = `<strong>解析：</strong>${q.exp}`;
-        document.getElementById('exp').style.display = 'block';
-    } else if(IS_DEV) {
-        document.getElementById('aiExpArea').style.display = 'block';
-    }
-    document.getElementById('nextBtn').disabled = false;
-    recordStat(q.subject, ok);
+  } catch (e) {
+    console.log('fetchExplanations error', e);
+  }
 }
 
-// ===== 頁籤與統計工具 =====
-function switchTab(tab, el) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('panel-' + tab).classList.add('active');
-    if(el) el.classList.add('active');
-    if(tab === 'manage') renderQList();
-    if(tab === 'stats') renderStats();
-}
-
-function recordStat(s, ok) {
-    DB.stats.total++; if(ok) DB.stats.correct++;
-    if(!DB.stats.bySubj[s]) DB.stats.bySubj[s] = {total:0, correct:0};
-    DB.stats.bySubj[s].total++; if(ok) DB.stats.bySubj[s].correct++;
-    localStorage.setItem('swpwa_s', JSON.stringify(DB.stats));
-    updateHeader();
-}
-
-function updateHeader() {
-    document.getElementById('hTotal').textContent = DB.stats.total;
-    document.getElementById('hAcc').textContent = DB.stats.total > 0 ? Math.round(DB.stats.correct/DB.stats.total*100)+'%' : '—';
-    document.getElementById('hBank').textContent = DB.questions.length;
-}
-
-async function init() {
+// ===== 同步 GitHub =====
+async function fetchFromGitHub(showLoading = true, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-        const resp = await fetch(GITHUB_URL + '?t=' + Date.now());
-        DB.questions = await resp.json();
-        document.getElementById('loadingScreen').style.display = 'none';
-        populateFilterSelects();
-        buildSubjFilter();
-        loadPractice();
-        updateHeader();
-    } catch (e) { console.error('Init Fail', e); }
+      if (showLoading) {
+        document.getElementById('loadingMsg').textContent =
+          `從 GitHub 載入題庫中…${attempt > 1 ? ' (重試' + attempt + '/' + retries + ')' : ''}`;
+        document.getElementById('loadingBar').style.width = (20 + attempt * 15) + '%';
+      }
+      const resp = await fetch(GITHUB_URL + '?t=' + Date.now());
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      if (showLoading) document.getElementById('loadingBar').style.width = '70%';
+
+      const text = await resp.text();
+      const qs = await new Promise((resolve, reject) => {
+        try { resolve(JSON.parse(text)); } catch (e) { reject(e); }
+      });
+      if (!Array.isArray(qs) || !qs.length) throw new Error('資料格式錯誤');
+
+      DB.questions = qs;
+      if (showLoading) document.getElementById('loadingBar').style.width = '100%';
+      return qs.length;
+    } catch (e) {
+      console.error(`GitHub載入失敗 (第${attempt}次):`, e);
+      if (attempt < retries) await new Promise(r => setTimeout(r, 1500 * attempt));
+    }
+  }
+  return null;
 }
 
-function buildSubjFilter(){
-    const subjs = [...new Set(DB.questions.map(q => q.subject))];
-    const bar = document.getElementById('subjFilter');
-    if(!bar) return;
-    bar.innerHTML = '<button class="subj-btn active" onclick="filterSubj(\'all\',this)">全部</button>' + 
-        subjs.map(s => `<button class="subj-btn" onclick="filterSubj('${s}',this)">${s}</button>`).join('');
+async function syncFromGitHub() {
+  showToast('正在從 GitHub 同步…');
+  const count = await fetchFromGitHub(false);
+  if (count) {
+    const fixed = cleanData();
+    await fetchExplanations();
+    buildSubjFilter();
+    populateExamSubjs();
+    populateFilterSelects();
+    renderQList();
+    updateHeader();
+    showToast(`✅ 同步完成，共 ${count} 題${fixed > 0 ? '，修復' + fixed + '筆' : ''}`);
+  } else {
+    showToast('❌ 同步失敗');
+  }
 }
 
-function filterSubj(s, btn) {
-    document.querySelectorAll('.subj-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    P.subj = s;
-    loadPractice();
+// ===== Gemini API =====
+async function callGeminiAPI(prompt){
+  const key=getGeminiKey(); if(!key) return null;
+  try{
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:4000}})});
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+  }catch(e){ console.error('Gemini error:',e); return null; }
 }
 
-function loadPractice() {
-    let pool = P.subj === 'all' ? [...DB.questions] : DB.questions.filter(q => q.subject === P.subj);
-    P.pool = shuffle(pool); P.idx = 0; renderPQ();
+// ===== 頁籤切換 =====
+function switchTab(tab,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  if(el)el.classList.add('active');
+  if(tab==='wrong')renderWrong();
+  if(tab==='stats')renderStats();
+  if(tab==='manage'){populateFilterSelects();renderQList();}
+  if(tab==='essay'){populateEssayYearFilter();renderEssayList();}
+}
+function switchTabByName(t){const tabs=['practice','exam','wrong','aisearch','stats','essay','manage'];const i=tabs.indexOf(t);const btn=document.querySelectorAll('.tab-btn')[i];switchTab(t,btn);}
+
+// ===== 科目與年度篩選 =====
+function buildSubjFilter(){ document.getElementById('subjFilter').innerHTML=uniqueSubjs().map(s=>`<button class="subj-btn${s==='全部'?' active':''}" onclick="filterSubj('${s}',this)">${s}</button>`).join(''); buildYearFilter(); }
+function buildYearFilter(){ const bar=document.getElementById('yearFilterBar'); if(!bar) return; const years=[...new Set(DB.questions.map(q=>q.year).filter(Boolean))].sort((a,b)=>b.localeCompare(a)); bar.innerHTML=['全部年度',...years].map(y=>`<button class="subj-btn${(P.year||'全部年度')===y?' active':''}" style="font-size:11px;white-space:nowrap" onclick="filterYear('${y}',this)">${y}</button>`).join(''); }
+function filterSubj(s,btn){ document.querySelectorAll('#subjFilter .subj-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); P.subj=s; loadPractice(); }
+function filterYear(y,btn){ document.querySelectorAll('#yearFilterBar .subj-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); P.year=y==='全部年度'?null:y; loadPractice(); }
+function populateExamSubjs(){ document.getElementById('examSubj').innerHTML='<option value="all">全科混合</option>'+uniqueSubjs().filter(s=>s!=='全部').map(s=>`<option value="${s}">${s}</option>`).join(''); }
+
+// ===== 練習模式 =====
+function loadPractice(){
+  let pool=getPool(P.subj); if(P.year) pool=pool.filter(q=>q.year===P.year);
+  P.pool=shuffle(pool); P.idx=0; P.answered=false; P.seconds=0;
+  clearInterval(P.timerID);
+  const nb=document.getElementById('noBank'),pm=document.getElementById('practiceMain');
+  if(!P.pool.length){nb.style.display='block';pm.style.display='none';return;}
+  nb.style.display='none';pm.style.display='block';
+  startPracticeTimer(); renderPQ();
+}
+function reshuffleQ(){DB.stats.sessions++;save();loadPractice();}
+function startPracticeTimer(){ P.seconds=0; P.timerID=setInterval(()=>{ P.seconds++; document.getElementById('practiceTimer').textContent=String(Math.floor(P.seconds/60)).padStart(2,'0')+':'+String(P.seconds%60).padStart(2,'0'); },1000); }
+function renderPQ(){
+  const q=P.pool[P.idx],n=P.pool.length;
+  document.getElementById('qNum').textContent=P.idx+1;
+  document.getElementById('qTotal').textContent=n;
+  document.getElementById('progFill').style.width=(P.idx/n*100)+'%';
+  document.getElementById('qSubjTag').textContent=q.subject;
+  document.getElementById('qSubjTag').style.color=COLORS[q.subject]||'#555';
+  document.getElementById('qYearTag').textContent=q.year||'';
+  const src=document.getElementById('qSrcTag');
+  if(q.src){src.textContent=q.src;src.style.display='';}else src.style.display='none';
+  document.getElementById('qText').textContent=q.q;
+  document.getElementById('qOpts').innerHTML=(Array.isArray(q.opts)?q.opts:[]).map((o,i)=>`<button class="opt" onclick="pickAns(${i})" id="opt${i}"><span class="opt-lbl">${'ABCD'[i]}</span><span>${o}</span></button>`).join('');
+  document.getElementById('rbadge').style.display='none';
+  document.getElementById('exp').className='exp';
+  document.getElementById('aiExpArea').style.display='none';
+  document.getElementById('aiExpResult').style.display='none';
+  const expToggle=document.getElementById('expToggleBtn');
+  if(expToggle){expToggle.style.display='none';expToggle.textContent='📖 查看解析';}
+  if(document.getElementById('aiExpBtn')){document.getElementById('aiExpBtn').disabled=false;document.getElementById('aiExpBtn').textContent='🤖 AI 解析這題';}
+  document.getElementById('nextBtn').disabled=true;
+  P.answered=false;
+}
+function pickAns(i){
+  if(P.answered)return;P.answered=true;
+  const q=P.pool[P.idx],ok=isCorrect(q,i);
+  const isMulti=Array.isArray(q.ans)&&q.ans.length>1;
+  document.querySelectorAll('.opt').forEach(b=>b.disabled=true);
+  document.getElementById('opt'+i).classList.add(ok?'correct':'wrong');
+  getCorrectIdxs(q).forEach(c=>{ if(c!==i) document.getElementById('opt'+c).classList.add('correct'); });
+  const badge=document.getElementById('rbadge');
+  if(ok){ badge.className='rbadge rb-ok'; badge.innerHTML='✓ 回答正確！'+(isMulti?`<span style="font-size:10px;opacity:.75;margin-left:6px">（官方更正，${correctLetters(q)} 均給分）</span>`:''); P.streak++; recordStat(q.subject,true); }
+  else{ badge.className='rbadge rb-fail'; badge.innerHTML=`✗ 答錯！正確答案為 <strong>${correctLetters(q)}</strong>`+(isMulti?'<span style="font-size:10px;opacity:.8;margin-left:4px">（官方更正，均給分）</span>':''); P.streak=0; recordStat(q.subject,false); addWrong(q,i); }
+  badge.style.display='flex';
+  const freshQ=DB.questions.find(x=>x.id===q.id)||q;
+  if(freshQ.exp){ const e=document.getElementById('exp'); e.innerHTML=`<strong>解析：</strong>${freshQ.exp}`; const expToggle=document.getElementById('expToggleBtn'); if(expToggle){ expToggle.style.display='inline-flex'; expToggle.textContent='📖 查看解析'; } }
+  if(!freshQ.exp && IS_DEV) document.getElementById('aiExpArea').style.display='block';
+  document.getElementById('nextBtn').disabled=false;
+  updateHeader();
+  setTimeout(()=>{ const btn=document.getElementById('nextBtn'); if(btn) btn.scrollIntoView({behavior:'smooth',block:'nearest'}); },200);
+}
+function nextQ(){ if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();} else{showToast('🎉 完成本輪！');DB.stats.sessions++;save();reshuffleQ();} }
+function skipQ(){ if(P.idx<P.pool.length-1){P.idx++;P.answered=false;renderPQ();} }
+function toggleExp(){ const e=document.getElementById('exp'); const btn=document.getElementById('expToggleBtn'); const isOpen=e.classList.contains('show'); e.classList.toggle('show',!isOpen); btn.textContent=isOpen?'📖 查看解析':'📖 收起解析'; }
+
+// ===== 模擬考 =====
+function startExam(){
+  const s=document.getElementById('examSubj').value;
+  E.timeLimit=parseInt(document.getElementById('examTime').value);
+  let pool=getPool(s); if(!pool.length){document.getElementById('examWarn').style.display='block';return;}
+  document.getElementById('examWarn').style.display='none';
+  shuffle(pool); const cnt=parseInt(document.getElementById('examCount').value);
+  E.pool=pool.slice(0,Math.min(cnt,pool.length));E.idx=0;
+  E.answers=new Array(E.pool.length).fill(-1);
+  document.getElementById('examStart').style.display='none';
+  document.getElementById('examResult').style.display='none';
+  document.getElementById('examMain').style.display='block';
+  document.getElementById('eqTotal').textContent=E.pool.length;
+  renderEQ();
+}
+function renderEQ(){
+  const q=E.pool[E.idx];
+  document.getElementById('eqNum').textContent=E.idx+1;
+  document.getElementById('examPF').style.width=(E.idx/E.pool.length*100)+'%';
+  document.getElementById('eqSubj').textContent=q.subject;
+  document.getElementById('eqYear').textContent=q.year||'';
+  document.getElementById('eqText').textContent=q.q;
+  const sv=E.answers[E.idx];
+  document.getElementById('eqOpts').innerHTML=(Array.isArray(q.opts)?q.opts:[]).map((o,i)=>`<button class="opt${sv===i?' sel':''}" onclick="pickEAns(${i})" id="eopt${i}"><span class="opt-lbl">${'ABCD'[i]}</span><span>${o}</span></button>`).join('');
+  document.getElementById('eNextBtn').disabled=(sv===-1);
+  if(E.timeLimit>0){clearInterval(E.timerID);E.secsLeft=E.timeLimit;updET();E.timerID=setInterval(()=>{E.secsLeft--;updET();if(E.secsLeft<=0){clearInterval(E.timerID);examNext();}},1000);}
+}
+function updET(){ const el=document.getElementById('examTimer'); el.textContent=String(Math.floor(E.secsLeft/60)).padStart(2,'0')+':'+String(E.secsLeft%60).padStart(2,'0'); el.classList.toggle('warn',E.secsLeft<=10); }
+function pickEAns(i){ E.answers[E.idx]=i; document.querySelectorAll('#eqOpts .opt').forEach((b,j)=>{ b.classList.toggle('sel',j===i); const l=b.querySelector('.opt-lbl'); l.style.background=j===i?'var(--blue)':'';l.style.color=j===i?'white':'';l.style.borderColor=j===i?'var(--blue)':''; }); document.getElementById('eNextBtn').disabled=false; }
+function examNext(){ if(E.idx<E.pool.length-1){E.idx++;renderEQ();}else submitExam(); }
+function examSkip(){ E.answers[E.idx]=-1; examNext(); }
+function submitExam(){
+  clearInterval(E.timerID);
+  document.getElementById('examMain').style.display='none';
+  document.getElementById('examResult').style.display='block';
+  let cor=0,wrg=0,skp=0;
+  E.pool.forEach((q,i)=>{const a=E.answers[i];if(a===-1)skp++;else if(isCorrect(q,a))cor++;else{wrg++;addWrong(q,a);}});
+  const pct=Math.round(cor/E.pool.length*100);
+  document.getElementById('spct').textContent=pct+'%';
+  document.getElementById('scor').textContent=cor;document.getElementById('swrg').textContent=wrg;document.getElementById('sskp').textContent=skp;
+  document.getElementById('sring').classList.toggle('fail',pct<60);
+  const t=pct>=80?['優秀！','繼續保持！']:pct>=60?['及格','仍有進步空間。']:['加油！','繼續努力！'];
+  document.getElementById('stitle').textContent=t[0];document.getElementById('smsg').textContent=t[1];
+  document.getElementById('examReview').style.display='none';
+  DB.stats.total+=E.pool.length-skp;DB.stats.correct+=cor;DB.stats.sessions++;
+  save();updateHeader();
+}
+function reviewExam(){
+  const el=document.getElementById('examReview');el.style.display='block';
+  el.innerHTML='<div class="sec-title">詳細解析</div>'+E.pool.map((q,i)=>{ const a=E.answers[i],ok=isCorrect(q,a),sk=a===-1; const bc=ok?'var(--green)':sk?'var(--border)':'var(--red)'; return `<div style="background:white;border:1px solid var(--border);border-left:3px solid ${bc};border-radius:8px;padding:12px;margin-bottom:8px"><div style="font-size:10px;color:var(--gray);margin-bottom:4px">${q.subject}·${q.year||''}·第${i+1}題 <strong style="color:${ok?'var(--green)':sk?'var(--gray)':'var(--red)'}">${sk?'未答':ok?'✓':'✗'}</strong></div><div style="font-size:14px;margin-bottom:7px">${q.q}</div>${!sk&&!ok?`<div style="font-size:11px;color:var(--red);margin-bottom:2px">你的答案：${'ABCD'[a]}. ${q.opts[a]}</div>`:''}<div style="font-size:11px;color:var(--green);margin-bottom:${q.exp?'6px':'0'}">正確答案：${correctLetters(q)}. ${getCorrectIdxs(q).map(c=>q.opts[c]).join(' / ')}</div>${q.exp?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:''}</div>`; }).join('');
+}
+function resetExam(){document.getElementById('examResult').style.display='none';document.getElementById('examStart').style.display='block';}
+
+// ===== 錯題 =====
+function addWrong(q,myAns){ const ex=DB.wrong.findIndex(w=>w.id===q.id); if(ex>=0){DB.wrong[ex].myAns=myAns;DB.wrong[ex].count=(DB.wrong[ex].count||1)+1;} else DB.wrong.push({...q,myAns,count:1}); save(); }
+function renderWrong(){
+  const list=document.getElementById('wrongList'),empty=document.getElementById('wrongEmpty'),acts=document.getElementById('wrongActs');
+  if(!DB.wrong.length){list.innerHTML='';empty.style.display='block';acts.style.display='none';return;}
+  empty.style.display='none';acts.style.display='flex';
+  list.innerHTML=DB.wrong.map(q=>`<div class="witem"><div style="font-size:10px;color:var(--gray);margin-bottom:4px">${q.subject}·${q.year||''}·答錯${q.count||1}次</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">${q.q}</div><div style="font-size:11px;color:#555;margin-bottom:6px">${(Array.isArray(q.opts)?q.opts:[]).map((o,i)=>`${' ABCD'[i+1]}. ${o}`).join('　')}</div><div style="display:flex;gap:12px;font-size:11px;flex-wrap:wrap;margin-bottom:${q.exp?'6px':'0'}"><span style="color:var(--red)">✗ ${'ABCD'[q.myAns]}. ${q.opts[q.myAns]}</span><span style="color:var(--green)">✓ ${correctLetters(q)}. ${getCorrectIdxs(q).map(c=>q.opts[c]).join(' / ')}</span></div>${q.exp?`<div style="font-size:11px;color:#4a4030;background:#fffcf0;padding:7px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:''}</div>`).join('');
+}
+function practiceWrong(){ if(!DB.wrong.length)return; P.pool=shuffle([...DB.wrong]);P.idx=0;P.answered=false; clearInterval(P.timerID); document.getElementById('noBank').style.display='none'; document.getElementById('practiceMain').style.display='block'; startPracticeTimer();renderPQ(); switchTabByName('practice'); showToast('已載入'+DB.wrong.length+'道錯題'); }
+function clearWrong(){ if(!confirm('確定清除所有錯題？'))return; DB.wrong=[]; save(); renderWrong(); showToast('錯題已清除'); }
+
+// ===== 統計 =====
+function recordStat(subj,ok){ DB.stats.total++; if(ok)DB.stats.correct++; if(!DB.stats.bySubj[subj])DB.stats.bySubj[subj]={total:0,correct:0}; DB.stats.bySubj[subj].total++; if(ok)DB.stats.bySubj[subj].correct++; save(); }
+function renderStats(){
+  const s=DB.stats,acc=s.total>0?Math.round(s.correct/s.total*100)+'%':'0%';
+  document.getElementById('stTotal').textContent=s.total;
+  document.getElementById('stAcc').textContent=acc;
+  document.getElementById('stBank').textContent=DB.questions.length;
+  document.getElementById('stSess').textContent=s.sessions||0;
+  document.getElementById('subjStats').innerHTML=Object.entries(s.bySubj).map(([subj,d])=>{ const pct=d.total>0?Math.round(d.correct/d.total*100):0,col=COLORS[subj]||'#888'; return `<div class="srow"><span class="sname">${subj}</span><div class="sbar"><div class="sbar-fill" style="width:${pct}%;background:${col}"></div></div><span class="spct-lbl">${pct}%</span></div><div style="font-size:10px;color:var(--gray);margin-bottom:8px;padding-left:108px">答對${d.correct}/${d.total}</div>`; }).join('')||'<div style="color:var(--gray);font-size:13px">尚無作答資料</div>';
+}
+function clearStats(){ if(!confirm('確定重置統計？'))return; DB.stats={total:0,correct:0,bySubj:{},sessions:0}; save(); renderStats(); showToast('統計已重置'); }
+
+// function renderQList(){
+  const kw=(document.getElementById('qSearch')?.value||'').toLowerCase();
+  const year=document.getElementById('filterYear')?.value||'';
+  const exam=document.getElementById('filterExam')?.value||'';
+  const subj=document.getElementById('filterSubjNew')?.value||'';
+  let yearKey=year+(exam||'');
+  const bankCount=DB.questions.length;
+  document.getElementById('bankCount').textContent=`共 ${bankCount} 題`;
+  const wrap=document.getElementById('qListWrap');
+  const filterCountSpan=document.getElementById('filterCount');
+  if(!year && !kw){
+    wrap.innerHTML='<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">請先選擇年度，或輸入關鍵字搜尋</div>';
+    if(filterCountSpan) filterCountSpan.textContent='';
+    return;
+  }
+  let items=DB.questions.filter(q=>{
+    if(year){
+      if(!q.year) return false;
+      if(exam){
+        if(q.year!==yearKey) return false;
+      } else {
+        if(!q.year.startsWith(year)) return false;
+      }
+    }
+    if(subj && q.subject!==subj) return false;
+    if(kw && !q.q.toLowerCase().includes(kw)
+      && !(q.opts||[]).join(' ').toLowerCase().includes(kw)
+      && !(q.exp||'').toLowerCase().includes(kw)) return false;
+    return true;
+  });
+  const subjOrder=['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
+  items.sort((a,b)=>{
+    const yr=(a.year||'').localeCompare(b.year||''); if(yr!==0) return yr;
+    const ia=subjOrder.indexOf(a.subject), ib=subjOrder.indexOf(b.subject);
+    if(ia!==ib) return (ia===-1?99:ia)-(ib===-1?99:ib);
+    const aNo=extractQuestionNumber(a), bNo=extractQuestionNumber(b);
+    if(aNo!==null && bNo!==null && aNo!==bNo) return aNo-bNo;
+    return (a.id||'').localeCompare(b.id||'');
+  });
+  if(filterCountSpan) filterCountSpan.textContent=`共 ${items.length} 題`;
+  if(!items.length){
+    wrap.innerHTML='<div style="padding:32px;text-align:center;color:var(--gray);font-size:13px">無符合題目</div>';
+    return;
+  }
+  let html='';
+  if(!subj && !kw){
+    const groups=new Map();
+    items.forEach(q=>{
+      if(!groups.has(q.subject)) groups.set(q.subject,[]);
+      groups.get(q.subject).push(q);
+    });
+    groups.forEach((qs,s)=>{
+      const col=COLORS[s]||'#888';
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;margin-top:8px"><span style="font-size:12px;font-weight:700;color:${col}">${s}</span><span style="font-size:11px;background:white;color:var(--gray);padding:2px 8px;border-radius:10px;margin-left:auto">${qs.length} 題</span></div>`;
+      qs.forEach((q,idx)=>{ html+=buildQRow(q,idx); });
+    });
+  } else {
+    items.forEach((q,idx)=>{ html+=buildQRow(q,idx); });
+  }
+  wrap.innerHTML=html;
 }
 
-function nextQ() { if(P.idx < P.pool.length - 1) { P.idx++; renderPQ(); } }
-function skipQ() { if(P.idx < P.pool.length - 1) { P.idx++; renderPQ(); } }
-function toggleDev(){ const pw=prompt('請輸入開發密碼'); if(pw===DEV_PASSWORD){ IS_DEV=true; localStorage.setItem('swpwa_dev','1'); location.reload(); }}
-function exitDev(){ IS_DEV=false; localStorage.removeItem('swpwa_dev'); location.reload(); }
+function buildQRow(q,idx){
+  const ansLetters=correctLetters(q);
+  const qNo=extractQuestionNumber(q)||(idx+1);
+  const isMulti=Array.isArray(q.ans)&&q.ans.length>1;
+  const safeId=q.id.replace(/'/g,"\\'");
+  const cardId=q.id.replace(/[^a-z0-9]/gi,'_');
+  return `<div style="background:white;border:1px solid var(--border);border-bottom:none;padding:12px 14px;cursor:pointer" class="qrow" onclick="expandQ(this,'${safeId}')" id="qcard_${cardId}">` +
+    `<div style="display:flex;align-items:flex-start;gap:10px">` +
+    `<span style="flex-shrink:0;min-width:30px;height:26px;background:var(--ink);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--gold)">${qNo}</span>` +
+    `<div style="flex:1;min-width:0">` +
+    `<div style="font-size:13px;line-height:1.7;color:var(--ink)">${q.q}</div>` +
+    `<div style="margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">` +
+    `<span style="font-size:11px;background:#eafaf1;color:var(--green);padding:2px 8px;border-radius:4px;font-weight:600">答：${ansLetters}</span>` +
+    (isMulti?`<span style="font-size:10px;background:#fff3e0;color:#e67e22;padding:2px 6px;border-radius:4px">官方更正</span>`:'') +
+    (q.exp&&q.exp.trim()?`<span style="font-size:10px;color:var(--gold)">✓ 解析</span>`:'') +
+    `</div></div>` +
+    (IS_DEV?`<button class="btn btn-gold btn-sm" style="flex-shrink:0;font-size:10px" onclick="event.stopPropagation();openEdit('${safeId}')">✏️</button>`:'') +
+    `</div>` +
+    `<div class="qdetail" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">` +
+    `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">${(Array.isArray(q.opts)?q.opts:[]).map((o,i)=>`<div style="display:flex;gap:8px;padding:7px 10px;border:1.5px solid ${isCorrect(q,i)?'var(--green)':'var(--border)'};border-radius:6px;background:${isCorrect(q,i)?'#eafaf1':'var(--paper)'}"><span style="font-size:11px;font-weight:700;width:18px;color:${isCorrect(q,i)?'var(--green)':'var(--gray)'}">${'ABCD'[i]}.</span><span style="font-size:13px">${o}</span></div>`).join('')}</div>` +
+    (q.exp&&q.exp.trim()?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:'') +
+    `</div></div>`;
+}
 
+function expandQ(el,id){
+  const detail=el.querySelector('.qdetail');
+  const isOpen=detail.style.display!=='none';
+  document.querySelectorAll('.qdetail').forEach(d=>d.style.display='none');
+  if(!isOpen) detail.style.display='block';
+}
+
+// 新增：編輯既有題目
+function openEdit(id){
+  const q = DB.questions.find(x => x.id === id);
+  if (!q) {
+    showToast('找不到這一題');
+    return;
+  }
+
+  // 開啟「新增/編輯題目」的 modal
+  openAdd();
+
+  const fSubj = document.getElementById('fSubj');
+  const fYear = document.getElementById('fYear');
+  const fSrc  = document.getElementById('fSrc');
+  const fQ    = document.getElementById('fQ');
+  const fExp  = document.getElementById('fExp');
+
+  if (fSubj) fSubj.value = q.subject || '';
+  if (fYear) fYear.value = q.year || '';
+  if (fSrc)  fSrc.value  = q.src || '';
+  if (fQ)    fQ.value    = q.q || '';
+  if (fExp)  fExp.value  = q.exp || '';
+
+  if (Array.isArray(q.opts)) {
+    q.opts.forEach((optText, i) => {
+      const inp = document.querySelector(`#optInputs input[data-idx="${i}"]`);
+      if (inp) inp.value = optText;
+    });
+  }
+
+  if (q.ans !== undefined) {
+    const ansIdx = Array.isArray(q.ans) ? q.ans[0] : q.ans;
+    const btns = document.querySelectorAll('#ansSel .ans-btn');
+    btns.forEach((btn, i) => {
+      btn.classList.toggle('sel', i === ansIdx);
+    });
+  }
+
+  editId = q.id;
+}
+
+function deleteQ(){
+  if(editId){
+    if(!confirm('確定刪除此題？'))return;
+    DB.questions=DB.questions.filter(q=>q.id!=editId);
+    save();
+    populateFilterSelects();
+    renderQList();
+    buildSubjFilter();
+    populateExamSubjs();
+    updateHeader();
+    closeModal('addModal');
+    showToast('已刪除');
+  }
+}
+// ===== 匯入匯出 =====
+function openImport(){ document.getElementById('importText').value=''; document.getElementById('importPreview').textContent=''; openModal('importModal'); }
+function openBkImport(){ document.getElementById('bkFile').value=''; openModal('bkModal'); }
+function parseImport(text,defSubj){
+  const blocks=text.trim().split(/\n\s*\n/).filter(b=>b.trim());
+  const results=[], errors=[];
+  blocks.forEach((block,bi)=>{ const get=(k)=>{ const m=block.match(new RegExp('^'+k+':\\s*(.+)$','im')); return m?m[1].trim():''; }; const q=get('Q'), a=get('A'), b=get('B'), c=get('C'), d=get('D'); const ansRaw=get('ANS').toUpperCase(); let subj=get('SUBJ')||defSubj; for(const ks of KNOWN_SUBJS){ if(subj.includes(ks)){ subj=ks; break; } } let year=get('YEAR'); const ym=year.match(/(\d+年(?:第[一二三四五六]次)?(?:第?\d次)?)/); if(ym) year=ym[1]; if(!q||!a||!b||!c||!d||!ansRaw){ errors.push(`第${bi+1}題格式不完整`); return; } const ansIdxs=[...ansRaw].map(ch=>'ABCD'.indexOf(ch)).filter(i=>i>=0); if(!ansIdxs.length){ errors.push(`第${bi+1}題答案錯誤`); return; } const ans=ansIdxs.length===1?ansIdxs[0]:ansIdxs; results.push({id:'i'+Date.now()+Math.random().toString(36).slice(2),subject:subj,year,src:get('SRC'),q,opts:[a,b,c,d],ans,exp:get('EXP')}); });
+  return {results,errors};
+}
+function previewImport(){ const{results,errors}=parseImport(document.getElementById('importText').value,document.getElementById('importSubj').value); document.getElementById('importPreview').innerHTML=`<span style="color:var(--green)">✓ 可匯入${results.length}題</span>`+(errors.length?`　<span style="color:var(--red)">⚠ ${errors.slice(0,3).join('；')}</span>`:''); }
+function doImport(){ const{results,errors}=parseImport(document.getElementById('importText').value,document.getElementById('importSubj').value); if(!results.length){showToast('無法解析，請檢查格式');return;} DB.questions.push(...results); save(); populateFilterSelects(); renderQList(); buildSubjFilter(); populateExamSubjs(); updateHeader(); closeModal('importModal'); showToast(`成功匯入${results.length}題！`); }
+function exportBank(){ const data=JSON.stringify(DB.questions,null,2); const blob=new Blob([data],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='question.json'; a.click(); showToast('備份已下載'); }
+function doBkImport(){ const f=document.getElementById('bkFile').files[0]; if(!f){showToast('請選擇檔案');return;} const r=new FileReader(); r.onload=e=>{ try{ const raw=JSON.parse(e.target.result); const questions=Array.isArray(raw)?raw:(raw.questions||null); if(!questions||!Array.isArray(questions))throw 0; if(!confirm(`確定匯入${questions.length}題？（合併至現有題庫）`))return; const ex=new Set(DB.questions.map(q=>q.id)); const nq=questions.filter(q=>!ex.has(q.id)); DB.questions.push(...nq); save(); populateFilterSelects(); renderQList(); buildSubjFilter(); populateExamSubjs(); updateHeader(); closeModal('bkModal'); showToast(`已匯入${nq.length}道新題目`); }catch{showToast('備份格式錯誤');} }; r.readAsText(f); }
+
+// ===== 申論題 =====
+function getEssays(){ return DB.questions.filter(q=>q.type==='essay'); }
+function renderEssayList(){
+  const fs=document.getElementById('essayFilterSubj')?.value||''; const fy=document.getElementById('essayFilterYear')?.value||'';
+  let items=getEssays().filter(q=>{ if(fs && q.subject!==fs) return false; if(fy && q.year!==fy) return false; return true; });
+  const list=document.getElementById('essayList'); const empty=document.getElementById('essayEmpty');
+  if(!items.length){ list.innerHTML=''; empty.style.display='block'; return; } empty.style.display='none';
+  list.innerHTML=items.map(q=>{ const col=COLORS[q.subject]||'#888'; const hasExp=q.exp&&q.exp.trim(); return `<div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 2px 8px var(--shadow)"><div style="padding:14px 16px"><div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center"><span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#eef3fb;color:${col};font-weight:500">${q.subject}</span><span style="font-size:10px;padding:2px 8px;border-radius:3px;background:var(--cream);color:var(--gray)">${q.year||''}</span><span style="font-size:10px;padding:2px 8px;border-radius:3px;background:#fff3e0;color:#e67e22">${q.score||25}分</span>${hasExp?'<span style="font-size:10px;color:var(--green);margin-left:auto">✓ 有解析</span>':'<span style="font-size:10px;color:var(--gray);margin-left:auto">尚無解析</span>'}</div><div style="font-size:14px;line-height:1.8;color:var(--ink);margin-bottom:10px">${q.q}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${hasExp?`<button class="btn btn-outline btn-sm" onclick="toggleEssayExp(this)" style="font-size:11px">📖 查看解析</button>`:''}${IS_DEV&&!hasExp?`<button class="btn btn-gold btn-sm" onclick="requestEssayAI('${q.id}')" style="font-size:11px">🤖 AI 解析</button>`:''}${IS_DEV&&hasExp?`<button class="btn btn-outline btn-sm" onclick="requestEssayAI('${q.id}')" style="font-size:11px;color:var(--gold)">🤖 重新解析</button>`:''}</div></div>${hasExp?`<div class="essay-exp" style="display:none;padding:14px 16px;border-top:1px solid var(--border);background:#fffcf0"><div style="font-size:11px;font-weight:600;color:var(--gold);margin-bottom:8px">AI 解析</div><div style="font-size:13px;line-height:1.9;color:#4a4030;white-space:pre-wrap">${q.exp}</div></div>`:''}<div class="essay-ai-result" id="essay-ai-${q.id.replace(/[^a-z0-9]/gi,'_')}" style="display:none;padding:14px 16px;border-top:1px solid var(--border);background:linear-gradient(135deg,#1a1a2e,#2c2c4a)"><div style="font-size:11px;color:rgba(245,240,232,.5);margin-bottom:8px">🤖 AI 解析結果</div><div class="essay-ai-text" style="font-size:13px;line-height:1.9;color:rgba(245,240,232,.9)"></div></div></div>`; }).join('');
+}
+function toggleEssayExp(btn){ const card=btn.closest('div[style*="background:white"]'); const expDiv=card.querySelector('.essay-exp'); if(!expDiv) return; const isOpen=expDiv.style.display!=='none'; expDiv.style.display=isOpen?'none':'block'; btn.textContent=isOpen?'📖 查看解析':'📖 收起解析'; }
+async function requestEssayAI(id){
+  const q=DB.questions.find(x=>x.id===id); if(!q) return;
+  const safeId=id.replace(/[^a-z0-9]/gi,'_'); const resultDiv=document.getElementById('essay-ai-'+safeId); const textDiv=resultDiv?.querySelector('.essay-ai-text'); if(!resultDiv||!textDiv) return;
+  const prompt=`你現在是社工師國考的首席閱卷官。請針對以下「申論題」提供專業解析。\n\n【題目資訊】\n科目：${q.subject}\n年度：${q.year||''}\n配分：${q.score||25}分\n題目：${q.q}\n\n---\n【撰寫嚴格準則】\n1. **直接開始解析，禁止任何開場白、自我介紹。**\n2. **查證法規**：若涉及法規，請標註「依現行法規內容」，若不確定條文序號，嚴禁編造數字。\n3. **理論辨析**：先說明適用此題的核心理論。\n4. **誠實聲明**：若不確定，坦白說明，切勿編造。\n\n請依以下結構回答：\n【考點說明】\n【理論基礎】\n【答題關鍵詞】\n【結構化參考答案】\n【評分重點提示】\n\n請開始撰寫專業擬答：`;
+  resultDiv.style.display='block'; textDiv.innerHTML='<span style="opacity:.6;font-size:12px">⏳ AI 解析中，請稍候…</span>';
+  let response=''; if(getGeminiKey()) response=await callGeminiAPI(prompt)||'';
+  if(!response){ resultDiv.style.display='none'; if(!getGeminiKey()){ const k=window.prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）'); if(k&&k.trim()){ setGeminiKey(k.trim()); showToast('✅ Key 已儲存，請再按一次 AI 解析'); } } else { showToast('❌ AI 解析失敗，請確認 Gemini API Key'); } return; }
+  const formatted=response.replace(/【(.+?)】/g,'<div style="font-weight:700;color:var(--gold2);margin-top:14px;margin-bottom:4px">【$1】</div>').replace(/\n/g,'<br>');
+  textDiv.innerHTML=formatted; autoSaveExp(id,response); renderEssayList();
+}
+function populateEssayYearFilter(){ const sel=document.getElementById('essayFilterYear'); if(!sel) return; const years=[...new Set(getEssays().map(q=>q.year).filter(Boolean))].sort((a,b)=>b.localeCompare(a)); sel.innerHTML='<option value="">全部年度</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join(''); }
+
+// ===== AI 搜尋 =====
+const KEYWORD_MAP = {
+  '充權':['充權','增能','empowerment','自決','掌控','賦權'],
+  '危機介入':['危機','crisis','介入','干預','緊急','危急'],
+  '依附理論':['依附','attachment','Bowlby','鮑比','安全型','迴避型','焦慮型'],
+  '社會保險':['社會保險','保費','被保險人','給付','年金','健保','勞保','國民年金'],
+  '抽樣方法':['抽樣','sampling','隨機','分層','滾雪球','立意','叢集','配額'],
+  '任務中心':['任務中心','task-centered','Reid','Epstein','標的問題','特定性任務'],
+  'Erikson':['Erikson','艾瑞克森','心理社會','自我認同','親密','生產力','統整'],
+  '兒童保護':['兒童保護','兒保','通報','兒少','虐待','疏忽','安置','強制通報'],
+  '焦點解決':['焦點解決','SFBT','例外','奇蹟問句','優勢','解決取向'],
+  '生態系統':['生態系統','生態','Bronfenbrenner','微系統','外系統','鉅系統','生活模式'],
+  '優勢觀點':['優勢觀點','優勢','strengths','復原力','resilience','抗逆'],
+  '女性主義':['女性主義','feminist','性別','基進','自由主義女性','壓迫'],
+  '認知行為':['認知行為','CBT','認知','非理性信念','自動化思考','Albert Ellis','Beck'],
+  '效度信度':['效度','信度','validity','reliability','測量','工具'],
+  '質性研究':['質性','qualitative','田野','訪談','觀察','紮根理論','現象學'],
+  '量化研究':['量化','quantitative','問卷','統計','實驗','變項','假說'],
+  '老人福利':['老人','長者','高齡','失能','長照','安養','退休'],
+  '身心障礙':['身心障礙','障礙','輔具','庇護','就業','鑑定'],
+  '家庭暴力':['家庭暴力','家暴','保護令','受暴','施暴','親密關係暴力'],
+};
+
+function quickSearch(kw) {
+  document.getElementById('aiSearchInput').value = kw;
+  doAiSearch();
+}
+
+function doAiSearch() {
+  const inputEl = document.getElementById('aiSearchInput');
+  const raw = (inputEl.value || '').trim();
+  if (!raw) {
+    showToast('請輸入關鍵字');
+    return;
+  }
+  if (!DB.questions || !DB.questions.length) {
+    document.getElementById('aiSearchResult').innerHTML = `
+      <div class="empty-state" style="padding:32px 0">
+        <div class="icon">⚠️</div>
+        <div style="font-size:14px;font-weight:500">題庫尚未載入</div>
+        <div style="font-size:12px;margin-top:4px">
+          請稍後再試，或點「統計」頁的「重置題庫」重新從 GitHub 載入
+        </div>
+      </div>`;
+    return;
+  }
+
+  const result = document.getElementById('aiSearchResult');
+  result.innerHTML = '';
+
+  // 建立關鍵字集合
+  let keywords = [raw.toLowerCase()];
+  for (const [key, synonyms] of Object.entries(KEYWORD_MAP)) {
+    const rawLower = raw.toLowerCase();
+    if (raw.includes(key) || synonyms.some(s => rawLower.includes(s.toLowerCase()))) {
+      keywords.push(...synonyms.map(s => s.toLowerCase()));
+    }
+  }
+  raw.split(/[\s,，、]+/).forEach(w => {
+    if (w) keywords.push(w.toLowerCase());
+  });
+  keywords = [...new Set(keywords)];
+
+  // 搜尋題庫（加防呆，避免 undefined.join）
+  const matched = DB.questions.filter(q => {
+    if (!q) return false;
+    const qtext = (q.q || '');
+    const subj = (q.subject || '');
+    const opts = Array.isArray(q.opts) ? q.opts : [];
+    const exp = (q.exp || '');
+    const searchTarget = (qtext + subj + opts.join(' ') + exp).toLowerCase();
+    return keywords.some(kw => searchTarget.includes(kw));
+  });
+
+  if (!matched.length) {
+    result.innerHTML = `
+      <div class="empty-state" style="padding:32px 0">
+        <div class="icon">🔍</div>
+        <div style="font-size:14px;font-weight:500">找不到相關題目</div>
+        <div style="font-size:12px;margin-top:4px">試試其他關鍵字</div>
+      </div>`;
+    return;
+  }
+
+  // 依關鍵字出現次數打分排序（同樣加 opts 防呆）
+  const scored = matched.map(q => {
+    const opts = Array.isArray(q.opts) ? q.opts : [];
+    const target = ( (q.q || '') + opts.join(' ') + (q.exp || '') ).toLowerCase();
+    const score = keywords.reduce((n, kw) => n + (target.split(kw).length - 1), 0);
+    return { q, score };
+  }).sort((a, b) => b.score - a.score);
+
+  window._aiSearchPool = scored.map(s => s.q);
+
+  result.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div>
+        <span style="font-size:14px;font-weight:600">「${raw}」</span>
+        <span style="font-size:12px;color:var(--gray)"> 找到 ${matched.length} 道相關題目</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="practiceAiSearch()">練習這些題目 →</button>
+    </div>
+    ${scored.map(({q}) => {
+      const col = COLORS[q.subject] || '#888';
+      let qtext = q.q || '';
+      keywords.forEach(kw => {
+        if (kw.length < 2) return;
+        qtext = qtext.replace(
+          new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),'gi'),
+          m => `<mark style="background:#fff3cd;border-radius:2px">${m}</mark>`
+        );
+      });
+      const opts = Array.isArray(q.opts) ? q.opts : [];
+      return `
+        <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+            <span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#eef3fb;color:${col};font-weight:500">${q.subject}</span>
+            <span style="font-size:10px;padding:2px 7px;border-radius:3px;background:var(--cream);color:var(--gray)">${q.year || ''}</span>
+          </div>
+          <div style="font-size:13px;line-height:1.7;color:var(--ink)">${qtext}</div>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
+            ${opts.map((o,j) => `
+              <div style="font-size:12px;padding:5px 9px;border-radius:5px;background:${isCorrect(q,j)?'#eafaf1':'var(--paper)'};border:1px solid ${isCorrect(q,j)?'var(--green)':'var(--border)'}">
+                <span style="font-weight:700;color:${isCorrect(q,j)?'var(--green)':'var(--gray)'}">${'ABCD'[j]}.</span> ${o}
+              </div>
+            `).join('')}
+          </div>
+          ${q.exp ? `
+            <div style="margin-top:8px;font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)">
+              <strong>解析：</strong>${q.exp}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+function practiceAiSearch() {
+  const pool = window._aiSearchPool;
+  if (!pool || !pool.length) {
+    showToast('請先搜尋題目');
+    return;
+  }
+  P.pool = shuffle([...pool]);
+  P.idx = 0;
+  P.answered = false;
+  clearInterval(P.timerID);
+  document.getElementById('noBank').style.display = 'none';
+  document.getElementById('practiceMain').style.display = 'block';
+  startPracticeTimer();
+  renderPQ();
+  switchTabByName('practice');
+  showToast('已載入 ' + pool.length + ' 道相關題目');
+}
+
+// ===== AI 解析 =====
+async function requestAiExp(){
+  const q=P.pool[P.idx]; if(!q) return;
+  const btn=document.getElementById('aiExpBtn'); const resultDiv=document.getElementById('aiExpResult'); const textDiv=document.getElementById('aiExpText');
+  const ansLetter='ABCD'[Array.isArray(q.ans)?q.ans[0]:q.ans];
+  const prompt=`你現在是社工師國考名師。請針對以下題目提供深度解析，遵守「誠實準則」，直接開始解析，禁止開場白。\n\n### 題目資訊\n科目：${q.subject}\n題目類型：下列何者「正確 / 錯誤」\n\n【題目內容】\n${q.q}\n(A) ${q.opts[0]}\n(B) ${q.opts[1]}\n(C) ${q.opts[2]}\n(D) ${q.opts[3]}\n\n正確答案：(${ansLetter})\n\n### 撰寫要求\n1. 先列理論核心（2-3句）\n2. 批判性審核\n3. 分析正確答案\n4. 逐一解析其他選項\n5. 選項對比\n6. 字數 400~600 字\n\n請開始撰寫詳細解析：`;
+  btn.disabled=true; btn.textContent='⏳ 分析中…'; resultDiv.style.display='block'; textDiv.innerHTML='<span style="opacity:.6;font-size:12px">AI 分析中，請稍候…</span>';
+  let response=null; if(getGeminiKey()) response=await callGeminiAPI(prompt);
+  if(!response){ btn.disabled=false; btn.textContent='🤖 AI 解析這題'; resultDiv.style.display='none'; if(!getGeminiKey()){ const k=window.prompt('請輸入 Gemini API Key：\n（前往 aistudio.google.com 免費申請）'); if(k&&k.trim()){ setGeminiKey(k.trim()); showToast('✅ Key 已儲存，請再按一次 AI 解析'); } } else { showToast('❌ AI 解析失敗，請確認 API Key'); } return; }
+  const formatted=response.replace(/【(.+?)】/g,'<strong style="color:var(--gold)">【$1】</strong>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n\n/g,'</p><p style="margin-top:8px">').replace(/\n/g,'<br>');
+  textDiv.innerHTML=`<p>${formatted}</p><div style="margin-top:8px;font-size:10px;opacity:.5;text-align:right">由 AI 生成</div>`;
+  btn.textContent='✅ 解析完成'; autoSaveExp(q.id,response);
+}
+
+// ===== 更新頁首 =====
+function updateHeader(){ const s=DB.stats; document.getElementById('hTotal').textContent=s.total; document.getElementById('hAcc').textContent=s.total>0?Math.round(s.correct/s.total*100)+'%':'—'; document.getElementById('hBank').textContent=DB.questions.length; }
+
+// ===== Service Worker =====
+if('serviceWorker' in navigator){ caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))); const swCode=`const CACHE='swpwa-v3'; self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.add(self.location.href)))); self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{ if(res.status===200){const clone=res.clone();caches.open(CACHE).then(c=>c.put(e.request,clone));} return res; }).catch(()=>caches.match(e.request)))));`; const blob=new Blob([swCode],{type:'application/javascript'}); navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{}); }
+
+// ===== 初始化 =====
+function runStep(steps,i=0){ if(i>=steps.length) return; setTimeout(()=>{ try{ steps[i](); }catch(e){ console.error('step',i,e); } runStep(steps,i+1); },30); }
+async function init(){
+  const loading=document.getElementById('loadingScreen'); const closeLoading=()=>{ loading.style.animation='none'; loading.style.opacity='0'; loading.style.transition='opacity .5s'; setTimeout(()=>{ loading.style.display='none'; },500); };
+  document.getElementById('loadingMsg').textContent='載入題庫中…';
+  const count=await fetchFromGitHub(true);
+  if(count){ document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`; document.getElementById('loadingBar').style.width='100%'; await fetchExplanations(); }
+  const fixedCount=cleanData(); if(fixedCount>0) console.log(`修復了 ${fixedCount} 筆資料`);
+  closeLoading();
+  runStep([  () => buildSubjFilter(),  () => populateExamSubjs(),  () => loadPractice(),  () => updateHeader(),  () => applyDevMode(),  () => populateFilterSelects(),  () => renderQList()
+]);
+}
 init();
+
+function showGeminiModal(){
+  let m=document.getElementById('gModal');
+  if(!m){ m=document.createElement('div'); m.id='gModal'; m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;'; const cancelBtn=document.createElement('button'); cancelBtn.textContent='取消'; cancelBtn.style.cssText='padding:9px 18px;border:1.5px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;'; cancelBtn.onclick=()=>{ m.style.display='none'; }; const saveBtn=document.createElement('button'); saveBtn.textContent='儲存'; saveBtn.style.cssText='padding:9px 18px;border:none;border-radius:8px;background:#2980b9;color:white;font-size:13px;cursor:pointer;'; saveBtn.onclick=()=>{ const v=document.getElementById('gKeyIn').value.trim(); if(v){ localStorage.setItem('swpwa_geminikey',v); m.style.display='none'; showToast('✅ Gemini Key 已儲存'); } else { showToast('請輸入 Key'); } }; const inp=document.createElement('input'); inp.id='gKeyIn'; inp.type='text'; inp.placeholder='AIzaSy...'; inp.style.cssText='width:100%;padding:10px 12px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;margin-bottom:14px;'; const btnRow=document.createElement('div'); btnRow.style.cssText='display:flex;gap:8px;justify-content:flex-end;'; btnRow.appendChild(cancelBtn); btnRow.appendChild(saveBtn); const inner=document.createElement('div'); inner.style.cssText='background:white;border-radius:14px;padding:22px;width:100%;max-width:340px;'; inner.innerHTML='<div style="font-size:16px;font-weight:700;margin-bottom:6px">🔑 Gemini API Key</div><div style="font-size:12px;color:#888;margin-bottom:14px">前往 aistudio.google.com 免費申請</div>'; inner.appendChild(inp); inner.appendChild(btnRow); m.appendChild(inner); document.body.appendChild(m); }
+  const cur=localStorage.getItem('swpwa_geminikey')||''; document.getElementById('gKeyIn').value=cur; m.style.display='flex';
+}
 </script>
 </body>
 </html>
