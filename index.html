@@ -216,6 +216,24 @@
     }
     .toast.show{opacity:1;}
     .dev-only{display:none;}
+    /* 題庫編輯：選項輸入列 */
+    .orow{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+    .olbl{
+      width:22px;height:22px;border-radius:50%;background:var(--cream);
+      display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:700;flex-shrink:0;color:var(--gray);
+    }
+    .orow input{flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;background:var(--paper);}
+    .orow.i-ans .olbl{background:#eef3fb;color:var(--blue);}
+    /* 答案選擇按鈕 */
+    .ans-sel{display:flex;gap:8px;margin-top:4px;}
+    .ans-btn{
+      width:38px;height:38px;border-radius:50%;border:2px solid var(--border);
+      background:white;font-size:13px;font-weight:700;cursor:pointer;
+      font-family:inherit;color:var(--gray);transition:all .15s;
+    }
+    .ans-btn.sel{background:var(--green);color:white;border-color:var(--green);}
+    .ans-btn:hover:not(.sel){border-color:var(--gold);color:var(--gold);}
   </style>
 </head>
 <body>
@@ -286,13 +304,27 @@
           <div class="r-badge" id="rbadge"></div>
           <div class="exp" id="exp"></div>
 
+          <!-- 無解析時：複製提示詞區 -->
           <div id="aiExpArea" style="display:none;margin-top:10px">
-            <button class="btn btn-gold" id="aiExpBtn" onclick="requestAiExp()" style="width:100%;font-size:13px">🤖 AI 解析這題</button>
+            <div style="background:#fffcf0;border:1.5px dashed var(--gold);border-radius:8px;padding:12px">
+              <div style="font-size:12px;color:#7a6830;margin-bottom:8px;font-weight:600">📋 此題尚無解析，可複製提示詞請 AI 解析後貼回</div>
+              <div style="display:flex;gap:6px;margin-bottom:10px">
+                <button class="btn btn-gold" id="copyPromptBtn" onclick="copyAiPrompt()" style="font-size:12px;flex:1">📋 複製提示詞</button>
+                <button class="btn btn-outline" onclick="openAiWithPrompt('perplexity')" style="font-size:12px;flex:1">🔍 開啟 Perplexity</button>
+              </div>
+              <div style="font-size:11px;color:var(--gray);margin-bottom:6px">將 AI 回覆的解析貼到下方，儲存後下次直接顯示：</div>
+              <textarea id="aiPasteBox" rows="4" placeholder="將 AI 解析貼到這裡…" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;background:white;resize:vertical"></textarea>
+              <div style="display:flex;gap:6px;margin-top:8px">
+                <button class="btn btn-primary" onclick="saveAiPastedExp()" style="font-size:12px">💾 儲存解析</button>
+                <button class="btn btn-outline" onclick="clearAiPasteBox()" style="font-size:12px">清除</button>
+              </div>
+            </div>
           </div>
+          <!-- 已有 AI 解析暫存結果（已存入正式前的預覽） -->
           <div id="aiExpResult" style="display:none;margin-top:10px;background:linear-gradient(135deg,#1a1a2e,#2c2c4a);border-radius:8px;padding:14px;color:#f5f0e8">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:8px">
               <span style="font-size:14px">🤖</span>
-              <span style="font-size:12px;font-weight:600">AI 解析</span>
+              <span style="font-size:12px;font-weight:600">AI 解析（已儲存）</span>
             </div>
             <div id="aiExpText" style="font-size:13px;line-height:1.9"></div>
           </div>
@@ -1002,7 +1034,7 @@ function applyDevMode(){
     }
   }
 
-  async function pushToGitHub(){
+  async function pushToGitHub(silent=false){
     if(!ISDEV){showToast('僅 DEV 模式可用');return;}
     let token = getGithubToken();
     if(!token){
@@ -1010,7 +1042,7 @@ function applyDevMode(){
       if(!token) return;
       setGithubToken(token.trim());
     }
-    if(!confirm(`確定要將目前 ${DB.questions.length} 題上傳至 GitHub？`)) return;
+    if(!silent && !confirm(`確定要將目前 ${DB.questions.length} 題上傳至 GitHub？`)) return;
     showToast('上傳中…');
     try{
       const info = await fetch(GITHUB_API,{
@@ -1300,6 +1332,8 @@ function applyDevMode(){
     document.getElementById('exp').className='exp';
     document.getElementById('aiExpArea').style.display='none';
     document.getElementById('aiExpResult').style.display='none';
+    const pasteBox=document.getElementById('aiPasteBox');
+    if(pasteBox) pasteBox.value='';
     const expToggle=document.getElementById('expToggleBtn');
     if(expToggle){
       expToggle.style.display='none';
@@ -1349,8 +1383,11 @@ function applyDevMode(){
         t.style.display='inline-flex';
         t.textContent='📖 查看解析';
       }
-    }else if(ISDEV){
+    }else{
+      // 無解析：顯示複製提示詞區（所有使用者皆可用）
       document.getElementById('aiExpArea').style.display='block';
+      document.getElementById('aiPasteBox').value='';
+      document.getElementById('aiExpResult').style.display='none';
     }
     document.getElementById('nextBtn').disabled=false;
     updateHeader();
@@ -1793,6 +1830,12 @@ function startExam(){
     updateHeader();
     showToast('已儲存題目');
     closeModal('addModal');
+    // DEV 模式且有 token，自動推送到 GitHub
+    if(ISDEV && getGithubToken()){
+      setTimeout(()=>pushToGitHub(true),300);
+    } else if(ISDEV){
+      showToast('已儲存（記得手動 push 到 GitHub）');
+    }
   }
 
   function editQ(id){
@@ -1809,7 +1852,7 @@ function startExam(){
     optWrap.innerHTML=(q.opts||['','','','']).map((o,i)=>`
       <div class="orow i-ans">
         <div class="olbl">${'ABCD'[i]}</div>
-        <input type="text" id="optInput${i}" value="${o}">
+        <input type="text" id="optInput${i}" value="${o.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">
       </div>`).join('');
     const ansSel=document.getElementById('ansSel');
     ansSel.innerHTML=['A','B','C','D'].map((lbl,i)=>`
@@ -2050,22 +2093,109 @@ ${context}
     `).join('');
   }
 
-  // ===== AI 單題解析 =====
+  // ===== 複製提示詞 / 貼回解析 =====
+  function buildAiPrompt(){
+    const q = P.pool[P.idx];
+    if(!q) return '';
+    return `請以社工師國考標準，對下列考題提供詳盡解析：
+
+題目：${q.q}
+
+選項：
+A. ${(q.opts||[])[0]||''}
+B. ${(q.opts||[])[1]||''}
+C. ${(q.opts||[])[2]||''}
+D. ${(q.opts||[])[3]||''}
+
+正確答案：${correctLetters(q)}
+
+請用繁體中文條列重點說明，約 200-400 字，包含：
+1. 正確答案的理由
+2. 其他選項錯誤的原因
+3. 相關社工考試重點提示`;
+  }
+
+  async function copyAiPrompt(){
+    const prompt = buildAiPrompt();
+    if(!prompt) return;
+    try{
+      await navigator.clipboard.writeText(prompt);
+      const btn = document.getElementById('copyPromptBtn');
+      btn.textContent = '✅ 已複製！';
+      setTimeout(()=>{ btn.textContent = '📋 複製提示詞'; }, 2000);
+    }catch(e){
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = prompt;
+      ta.style.position='fixed';ta.style.opacity='0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToast('提示詞已複製');
+    }
+  }
+
+  function openAiWithPrompt(target){
+    const urls = {
+      perplexity: 'https://www.perplexity.ai/',
+      copilot:    'https://copilot.microsoft.com/'
+    };
+    copyAiPrompt();
+    setTimeout(()=>{ window.open(urls[target],'_blank'); }, 300);
+  }
+
+  function saveAiPastedExp(){
+    const q = P.pool[P.idx];
+    if(!q) return;
+    const text = (document.getElementById('aiPasteBox').value||'').trim();
+    if(!text){ showToast('請先貼上解析內容'); return; }
+
+    // 更新記憶體中的題目
+    const idx = DB.questions.findIndex(x=>x.id===q.id);
+    if(idx>=0) DB.questions[idx].exp = text;
+    q.exp = text;
+
+    // 顯示剛存的解析
+    document.getElementById('aiExpArea').style.display='none';
+    const result = document.getElementById('aiExpResult');
+    document.getElementById('aiExpText').innerHTML = text.replace(/\n/g,'<br>');
+    result.style.display='block';
+
+    // 同步顯示正式解析欄（expToggleBtn）
+    const e=document.getElementById('exp');
+    e.innerHTML = `<strong>解析：</strong>${text.replace(/\n/g,'<br>')}`;
+    const t=document.getElementById('expToggleBtn');
+    if(t){ t.style.display='inline-flex'; t.textContent='📖 查看解析'; }
+
+    // 暫存 pending，DEV 有 token 則自動推送
+    const pending = getPendingExps();
+    pending[q.id] = text;
+    setPendingExps(pending);
+    save();
+
+    if(ISDEV && getGithubToken()){
+      flushPendingExps('saveAiPastedExp');
+      showToast('解析已儲存並推送 GitHub ✅');
+    }else if(ISDEV){
+      showToast('解析已暫存，請記得 push GitHub');
+    }else{
+      showToast('解析已儲存到本機 ✅');
+    }
+  }
+
+  function clearAiPasteBox(){
+    document.getElementById('aiPasteBox').value='';
+  }
+
+  // ===== AI 單題解析（舊 Gemini，保留備用） =====
   async function requestAiExp(){
     const q=P.pool[P.idx];
     const btn=document.getElementById('aiExpBtn');
     if(!q){return;}
     btn.disabled=true;
     btn.textContent='產生中…';
-    const prompt=`請以社工師國考標準，對下列考題提供詳盡解析：
-題目：${q.q}
-選項：
-A. ${q.opts[0]}
-B. ${q.opts[1]}
-C. ${q.opts[2]}
-D. ${q.opts[3]}
-正確答案：${correctLetters(q)}
-請用中文條列重點說明，約 200-400 字。`;
+    const prompt=buildAiPrompt();
     const text=await callGeminiAPI(prompt);
     btn.disabled=false;
     btn.textContent='🤖 AI 解析這題';
