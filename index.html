@@ -475,7 +475,8 @@ function renderStats(){
 }
 function clearStats(){ if(!confirm('確定重置統計？'))return; DB.stats={total:0,correct:0,bySubj:{},sessions:0}; save(); renderStats(); showToast('統計已重置'); }
 
-// function renderQList(){
+// ===== 題庫列表渲染 =====
+function renderQList(){
   const kw=(document.getElementById('qSearch')?.value||'').toLowerCase();
   const year=document.getElementById('filterYear')?.value||'';
   const exam=document.getElementById('filterExam')?.value||'';
