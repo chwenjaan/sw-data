@@ -475,6 +475,50 @@ function renderStats(){
 }
 function clearStats(){ if(!confirm('確定重置統計？'))return; DB.stats={total:0,correct:0,bySubj:{},sessions:0}; save(); renderStats(); showToast('統計已重置'); }
 
+// ===== 題庫管理篩選下拉 =====
+function initExamFilters() {
+  const yearSel = document.getElementById('examYear');
+  const examSel = document.getElementById('examTimes');
+  const subjSel = document.getElementById('examSubj');
+
+  if (!yearSel || !examSel || !subjSel) return;
+
+  const years = new Set();
+  DB.questions.forEach(q => {
+    if (q.year) years.add(q.year.substring(0, 3)); // 115年...
+  });
+
+  yearSel.innerHTML = '<option value="">— 選擇年度 —</option>';
+  Array.from(years).sort().forEach(y => {
+    yearSel.innerHTML += `<option value="${y}">${y}</option>`;
+  });
+
+  examSel.innerHTML = '<option value="">— 先選年度 —</option>';
+  subjSel.innerHTML = '<option value="">— 先選年度 —</option>';
+
+  yearSel.onchange = () => {
+    const y = yearSel.value;
+    const yearExams = new Set();
+    const yearSubjs = new Set();
+    DB.questions.forEach(q => {
+      if (q.year && q.year.startsWith(y)) {
+        yearExams.add(q.year);
+        if (q.subject) yearSubjs.add(q.subject);
+      }
+    });
+
+    examSel.innerHTML = '<option value="">全部次別</option>';
+    Array.from(yearExams).sort().forEach(e => {
+      examSel.innerHTML += `<option value="${e}">${e}</option>`;
+    });
+
+    subjSel.innerHTML = '<option value="">全部科目</option>';
+    Array.from(yearSubjs).sort().forEach(s => {
+      subjSel.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+  };
+}
+  
 // ===== 題庫列表渲染 =====
 function renderQList(){
   const kw=(document.getElementById('qSearch')?.value||'').toLowerCase();
@@ -837,16 +881,41 @@ function updateHeader(){ const s=DB.stats; document.getElementById('hTotal').tex
 if('serviceWorker' in navigator){ caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))); const swCode=`const CACHE='swpwa-v3'; self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.add(self.location.href)))); self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{ if(res.status===200){const clone=res.clone();caches.open(CACHE).then(c=>c.put(e.request,clone));} return res; }).catch(()=>caches.match(e.request)))));`; const blob=new Blob([swCode],{type:'application/javascript'}); navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{}); }
 
 // ===== 初始化 =====
-function runStep(steps,i=0){ if(i>=steps.length) return; setTimeout(()=>{ try{ steps[i](); }catch(e){ console.error('step',i,e); } runStep(steps,i+1); },30); }
+function runStep(steps,i=0){
+  if(i>=steps.length) return;
+  setTimeout(()=>{
+    try{ steps[i](); }catch(e){ console.error('step',i,e); }
+    runStep(steps,i+1);
+  },30);
+}
+
 async function init(){
-  const loading=document.getElementById('loadingScreen'); const closeLoading=()=>{ loading.style.animation='none'; loading.style.opacity='0'; loading.style.transition='opacity .5s'; setTimeout(()=>{ loading.style.display='none'; },500); };
+  const loading=document.getElementById('loadingScreen');
+  const closeLoading=()=>{
+    loading.style.animation='none';
+    loading.style.opacity='0';
+    loading.style.transition='opacity .5s';
+    setTimeout(()=>{ loading.style.display='none'; },500);
+  };
   document.getElementById('loadingMsg').textContent='載入題庫中…';
   const count=await fetchFromGitHub(true);
-  if(count){ document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`; document.getElementById('loadingBar').style.width='100%'; await fetchExplanations(); }
-  const fixedCount=cleanData(); if(fixedCount>0) console.log(`修復了 ${fixedCount} 筆資料`);
+  if(count){
+    document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`;
+    document.getElementById('loadingBar').style.width='100%';
+    await fetchExplanations();
+  }
+  const fixedCount=cleanData();
+  if(fixedCount>0) console.log(`修復了 ${fixedCount} 筆資料`);
   closeLoading();
-  runStep([  () => buildSubjFilter(),  () => populateExamSubjs(),  () => loadPractice(),  () => updateHeader(),  () => applyDevMode(),  () => populateFilterSelects(),  () => renderQList()
-]);
+  runStep([
+    () => buildSubjFilter(),
+    () => populateExamSubjs(),
+    () => loadPractice(),
+    () => updateHeader(),
+    () => applyDevMode(),
+    () => initExamFilters(),   // ← 這行用新的函式
+    () => renderQList()
+  ]);
 }
 init();
 
