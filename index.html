@@ -1243,7 +1243,7 @@
     subjSel.onchange = renderQList;
   }
 
-  function onFilterYearChange(){document.getElementById('filterExam').value='';document.getElementById('filterSubjNew').value='';populateFilterSelects();}
+  function onFilterYearChange(){   const yearSel = document.getElementById('filterYear');   const examSel = document.getElementById('filterExam');   const subjSel = document.getElementById('filterSubjNew');   examSel.value = '';   subjSel.value = '';   if (yearSel && yearSel.onchange) yearSel.onchange(); }
   function onFilterExamChange(){renderQList();}
 
   // ===== 練習流程 =====
@@ -1670,7 +1670,7 @@
     const year=document.getElementById('filterYear')?.value||'';
     const exam=document.getElementById('filterExam')?.value||'';
     const subj=document.getElementById('filterSubjNew')?.value||'';
-    let yearKey=year+(exam||'');
+    let yearKey = exam || year;
     const bankCount=DB.questions.length;
     document.getElementById('bankCount').textContent=`共 ${bankCount} 題`;
     const wrap=document.getElementById('qListWrap');
