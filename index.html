@@ -689,7 +689,7 @@
   let P = {pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null};
   let E = {pool:[],idx:0,answers:[],timerID:null,secsLeft:60,timeLimit:60};
   let editId = null, selAns = -1;
-  let ISDEV = localStorage.getItem('swp-wadev')==='1';
+  let ISDEV = localStorage.getItem('swpwa-dev') === '1';
   let lastTap = 0;
 
   // ===== 工具函式 =====
@@ -773,32 +773,32 @@ function getPools(subj='all'){
   }
 
   // ===== DEV Mode =====
-  function toggleDev(){
-    const pw = prompt('輸入開發者密碼');
-    if(pw===DEVPASSWORD){
-      ISDEV = true;
-      localStorage.setItem('swp-wadev','1');
-      applyDevMode();
-      showToast('已啟用 DEV 模式');
-    }else if(pw!==null){
-      showToast('密碼錯誤');
-    }
-  }
-  function exitDev(){
-    ISDEV = false;
-    localStorage.removeItem('swp-wadev');
+function toggleDev(){
+  const pw = prompt('輸入開發者密碼');
+  if(pw===DEVPASSWORD){
+    ISDEV = true;
+    localStorage.setItem('swpwa-dev','1');
     applyDevMode();
-    showToast('已關閉 DEV 模式');
+    showToast('已啟用 DEV 模式');
+  }else if(pw!==null){
+    showToast('密碼錯誤');
   }
-  function applyDevMode(){
-    document.querySelectorAll('.dev-only').forEach(el=>{
-      el.style.display = ISDEV?'inline-flex':'none';
-    });
-    const db = document.getElementById('devBadge');
-    if(db) db.style.display = ISDEV?'flex':'none';
-  }
+}
+function exitDev(){
+  ISDEV = false;
+  localStorage.removeItem('swpwa-dev');
+  applyDevMode();
+  showToast('已關閉 DEV 模式');
+}
+function applyDevMode(){
+  document.querySelectorAll('.dev-only').forEach(el=>{
+    el.style.display = ISDEV ? 'inline-flex' : 'none';
+  });
+  const db = document.getElementById('devBadge');
+  if(db) db.style.display = ISDEV ? 'flex' : 'none';
+}
 
-  // ===== 資料清理 =====
+// ===== 資料清理 =====
   function cleanData(){
     let fixed=0;
     DB.questions.forEach(q=>{
