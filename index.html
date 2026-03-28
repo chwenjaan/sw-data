@@ -231,70 +231,83 @@ function manualCleanData(){ const n=cleanData(); buildSubjFilter(); populateExam
 function resetQuestionBank(){ if(!confirm('確定重置題庫？\n將清除本機題目，重新從 GitHub 載入最新版本。')) return; localStorage.removeItem('swpwa_q'); localStorage.removeItem('swpwa_dbver'); showToast('正在重新載入…'); setTimeout(()=>location.reload(),800); }
 
 // ===== 解析檔處理 =====
-async function fetchExplanations(){
-  try{ const resp=await fetch(EXP_URL+'?t='+Date.now()); if(!resp.ok) return; const exps=await resp.json(); let merged=0; DB.questions.forEach(q=>{ if(exps[q.id] && !q.exp){ q.exp=exps[q.id]; merged++; } }); if(merged>0) console.log(`✅ 已 merge ${merged} 筆解析`); }catch(e){ console.log('explanations.json 未找到'); }
+// 只讀 explanations.json，依 id 合併到 DB.questions
+async function fetchExplanations() {
+  try {
+    const resp = await fetch(EXP_URL + '?t=' + Date.now());
+    if (!resp.ok) {
+      console.log('fetchExplanations: HTTP', resp.status);
+      return;
+    }
+
+    const exps = await resp.json(); // exps: { [id]: "解析文字" }
+    if (!exps || typeof exps !== 'object') {
+      console.log('fetchExplanations: invalid json');
+      return;
+    }
+
+    let merged = 0;
+    DB.questions.forEach(q => {
+      if (exps[q.id]) {
+        q.exp = exps[q.id];
+        merged++;
+      }
+    });
+
+    if (merged > 0) {
+      console.log(`✅ 已 merge ${merged} 筆解析`);
+    }
+  } catch (e) {
+    console.log('fetchExplanations error', e);
+  }
 }
-function getPendingExps(){ try{ return JSON.parse(localStorage.getItem('swpwa_pending_exps')||'{}'); }catch(e){ return {}; } }
-function setPendingExps(obj){ try{ localStorage.setItem('swpwa_pending_exps',JSON.stringify(obj)); }catch(e){} }
-function autoSaveExp(qId,expText){
-  const idx=DB.questions.findIndex(x=>x.id===qId); if(idx>=0){ DB.questions[idx].exp=expText; save(); }
-  const pending=getPendingExps(); pending[qId]=expText; setPendingExps(pending);
-  const count=Object.keys(pending).length; showToast(`💾 解析已存本機（待上傳 ${count}／5 筆）`);
-  if(count>=5) flushPendingExps('累積');
-}
-async function flushPendingExps(reason=''){
-  const pending=getPendingExps(); if(!Object.keys(pending).length) return;
-  const token=getGithubToken(); if(!token){ console.log('無 Token'); return; }
-  console.log(`⏳ 批次上傳解析（${reason}，共 ${Object.keys(pending).length} 筆）`);
-  try{
-    let existingExps={}, sha=null;
-    const info=await fetch(EXP_API,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}});
-    if(info.status===401){ localStorage.removeItem('swpwa_ghtoken'); return; }
-    if(info.ok){ const infoData=await info.json(); sha=infoData.sha; try{ existingExps=JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){} }
-    Object.assign(existingExps,pending);
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(existingExps,null,2))));
-    const body={ message:`批次上傳解析 ${new Date().toLocaleDateString('zh-TW')} (共${Object.keys(existingExps).length}筆)`, content };
-    if(sha) body.sha=sha;
-    const res=await fetch(EXP_API,{method:'PUT',headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(res.ok){ setPendingExps({}); showToast(`☁️ 已批次上傳 ${Object.keys(pending).length} 筆解析`); }
-  }catch(e){ console.warn('⚠ 批次上傳例外',e); }
-}
-async function flushPendingOnStart(){ const pending=getPendingExps(); if(!Object.keys(pending).length) return; const token=getGithubToken(); if(!token) return; await flushPendingExps('啟動補傳'); }
-window.addEventListener('beforeunload',()=>{ const pending=getPendingExps(); if(Object.keys(pending).length) console.log(`📌 ${Object.keys(pending).length} 筆解析保留本機，下次開啟自動補傳`); });
 
 // ===== 同步 GitHub =====
-async function fetchFromGitHub(showLoading=true, retries=3){
-  for(let attempt=1; attempt<=retries; attempt++){
-    try{
-      if(showLoading){ document.getElementById('loadingMsg').textContent=`從 GitHub 載入題庫中…${attempt>1?' (重試'+attempt+'/'+retries+')':''}`; document.getElementById('loadingBar').style.width=(20+attempt*15)+'%'; }
-      const resp=await fetch(GITHUB_URL+'?t='+Date.now()); if(!resp.ok) throw new Error('HTTP '+resp.status);
-      if(showLoading) document.getElementById('loadingBar').style.width='70%';
-      const text=await resp.text();
-      const qs=await new Promise((resolve,reject)=>{ try{ resolve(JSON.parse(text)); }catch(e){ reject(e); } });
-      if(!Array.isArray(qs)||!qs.length) throw new Error('資料格式錯誤');
-      DB.questions=qs;
-      if(showLoading) document.getElementById('loadingBar').style.width='100%';
+async function fetchFromGitHub(showLoading = true, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      if (showLoading) {
+        document.getElementById('loadingMsg').textContent =
+          `從 GitHub 載入題庫中…${attempt > 1 ? ' (重試' + attempt + '/' + retries + ')' : ''}`;
+        document.getElementById('loadingBar').style.width = (20 + attempt * 15) + '%';
+      }
+      const resp = await fetch(GITHUB_URL + '?t=' + Date.now());
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      if (showLoading) document.getElementById('loadingBar').style.width = '70%';
+
+      const text = await resp.text();
+      const qs = await new Promise((resolve, reject) => {
+        try { resolve(JSON.parse(text)); } catch (e) { reject(e); }
+      });
+      if (!Array.isArray(qs) || !qs.length) throw new Error('資料格式錯誤');
+
+      DB.questions = qs;
+      if (showLoading) document.getElementById('loadingBar').style.width = '100%';
       return qs.length;
-    }catch(e){ console.error(`GitHub載入失敗 (第${attempt}次):`,e); if(attempt<retries) await new Promise(r=>setTimeout(r,1500*attempt)); }
+    } catch (e) {
+      console.error(`GitHub載入失敗 (第${attempt}次):`, e);
+      if (attempt < retries) await new Promise(r => setTimeout(r, 1500 * attempt));
+    }
   }
   return null;
 }
-async function syncFromGitHub(){ showToast('正在從 GitHub 同步…'); const count=await fetchFromGitHub(false); if(count){ const fixed=cleanData(); await fetchExplanations(); buildSubjFilter(); populateExamSubjs(); populateFilterSelects(); renderQList(); updateHeader(); showToast(`✅ 同步完成，共 ${count} 題${fixed>0?'，修復'+fixed+'筆':''}`); } else { showToast('❌ 同步失敗'); } }
-async function pushToGitHub(){
-  if(!IS_DEV){ showToast('需要開發者模式'); return; }
-  let token=getGithubToken(); if(!token){ token=window.prompt('請輸入 GitHub Personal Access Token：'); if(!token) return; setGithubToken(token.trim()); }
-  if(!confirm(`確定將目前 ${DB.questions.length} 道題目上傳到 GitHub？`)) return;
-  showToast('⏳ 上傳中…');
-  try{
-    const info=await fetch(GITHUB_API,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}});
-    if(info.status===401){ localStorage.removeItem('swpwa_ghtoken'); showToast('❌ Token 錯誤'); return; }
-    const infoData=await info.json(); const sha=infoData.sha;
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(DB.questions,null,2))));
-    const res=await fetch(GITHUB_API,{method:'PUT',headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({message:`更新題庫 ${new Date().toLocaleDateString('zh-TW')} (${DB.questions.length}題)`,content,sha})});
-    if(res.ok){ showToast(`✅ 已上傳 ${DB.questions.length} 題到 GitHub！`); } else { const err=await res.json(); showToast('❌ 上傳失敗：'+(err.message||res.status)); }
-  } catch(e){ showToast('❌ 上傳失敗'); console.error(e); }
+
+async function syncFromGitHub() {
+  showToast('正在從 GitHub 同步…');
+  const count = await fetchFromGitHub(false);
+  if (count) {
+    const fixed = cleanData();
+    await fetchExplanations();
+    buildSubjFilter();
+    populateExamSubjs();
+    populateFilterSelects();
+    renderQList();
+    updateHeader();
+    showToast(`✅ 同步完成，共 ${count} 題${fixed > 0 ? '，修復' + fixed + '筆' : ''}`);
+  } else {
+    showToast('❌ 同步失敗');
+  }
 }
-async function migrateExpsToFile(){ if(!IS_DEV){ showToast('需要開發者模式'); return; } const withExp=DB.questions.filter(q=>q.exp && q.exp.trim()); if(!withExp.length){ showToast('題庫中沒有任何解析可遷移'); return; } if(!confirm(`找到 ${withExp.length} 筆解析，將整合進 explanations.json 上傳。確定繼續？`)) return; showToast('⏳ 遷移中…'); let token=getGithubToken(); if(!token){ token=window.prompt('請輸入 GitHub Personal Access Token：'); if(!token) return; setGithubToken(token.trim()); } try{ let existingExps={}, sha=null; const info=await fetch(EXP_API,{headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json'}}); if(info.status===401){ localStorage.removeItem('swpwa_ghtoken'); showToast('❌ Token 錯誤'); return; } if(info.ok){ const infoData=await info.json(); sha=infoData.sha; try{ existingExps=JSON.parse(atob(infoData.content.replace(/\n/g,''))); }catch(e){} } let added=0; withExp.forEach(q=>{ if(!existingExps[q.id]){ existingExps[q.id]=q.exp; added++; } }); const content=btoa(unescape(encodeURIComponent(JSON.stringify(existingExps,null,2)))); const body={ message:`遷移解析 ${new Date().toLocaleDateString('zh-TW')} (共${Object.keys(existingExps).length}筆)`, content }; if(sha) body.sha=sha; const res=await fetch(EXP_API,{method:'PUT',headers:{'Authorization':`token ${token}`,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)}); if(res.ok){ showToast(`✅ 遷移完成！新增 ${added} 筆`); } else { const err=await res.json(); showToast('❌ 上傳失敗：'+err.message); } }catch(e){ showToast('❌ 遷移失敗'); console.error(e); } }
 
 // ===== Gemini API =====
 async function callGeminiAPI(prompt){
