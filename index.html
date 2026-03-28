@@ -331,7 +331,7 @@ function switchTab(tab,el){
   if(el)el.classList.add('active');
   if(tab==='wrong')renderWrong();
   if(tab==='stats')renderStats();
-  if(tab==='manage'){initExamFilters();renderQList();}
+  if(tab==='manage'){populateFilterSelects();renderQList();}
   if(tab==='essay'){populateEssayYearFilter();renderEssayList();}
 }
 function switchTabByName(t){
@@ -480,49 +480,7 @@ function renderStats(){
 }
 function clearStats(){ if(!confirm('確定重置統計？'))return; DB.stats={total:0,correct:0,bySubj:{},sessions:0}; save(); renderStats(); showToast('統計已重置'); }
 
-// ===== 題庫管理篩選下拉 =====
-function initExamFilters() {
-  const yearSel = document.getElementById('examYear');
-  const examSel = document.getElementById('examTimes');
-  const subjSel = document.getElementById('examSubj');
 
-  if (!yearSel || !examSel || !subjSel) return;
-
-  const years = new Set();
-  DB.questions.forEach(q => {
-    if (q.year) years.add(q.year.substring(0, 3)); // 115年...
-  });
-
-  yearSel.innerHTML = '<option value="">— 選擇年度 —</option>';
-  Array.from(years).sort().forEach(y => {
-    yearSel.innerHTML += `<option value="${y}">${y}</option>`;
-  });
-
-  examSel.innerHTML = '<option value="">— 先選年度 —</option>';
-  subjSel.innerHTML = '<option value="">— 先選年度 —</option>';
-
-  yearSel.onchange = () => {
-    const y = yearSel.value;
-    const yearExams = new Set();
-    const yearSubjs = new Set();
-    DB.questions.forEach(q => {
-      if (q.year && q.year.startsWith(y)) {
-        yearExams.add(q.year);
-        if (q.subject) yearSubjs.add(q.subject);
-      }
-    });
-
-    examSel.innerHTML = '<option value="">全部次別</option>';
-    Array.from(yearExams).sort().forEach(e => {
-      examSel.innerHTML += `<option value="${e}">${e}</option>`;
-    });
-
-    subjSel.innerHTML = '<option value="">全部科目</option>';
-    Array.from(yearSubjs).sort().forEach(s => {
-      subjSel.innerHTML += `<option value="${s}">${s}</option>`;
-    });
-  };
-}
   
 // ===== 題庫列表渲染 =====
 function renderQList(){
@@ -918,7 +876,7 @@ async function init(){
     () => loadPractice(),
     () => updateHeader(),
     () => applyDevMode(),
-    () => initExamFilters(),   // ← 這行用新的函式
+    () => populateFilterSelects(),   // ← 這行用新的函式
     () => renderQList()
   ]);
 }
