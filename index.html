@@ -472,62 +472,7 @@ function renderStats(){
 }
 function clearStats(){ if(!confirm('確定重置統計？'))return; DB.stats={total:0,correct:0,bySubj:{},sessions:0}; save(); renderStats(); showToast('統計已重置'); }
 
-// ===== 題庫管理（核心修正）=====
-function populateFilterSelects(){
-  // 取出所有年份（去掉次別）
-  const allYears=[...new Set(DB.questions.map(q=>{
-    if(!q.year) return null;
-    return q.year.replace(/第[一二三四五六]次$/,'').trim();
-  }).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
-  const fy=document.getElementById('filterYear');
-  if(!fy) return;
-  const prevYear=fy.value;
-  fy.innerHTML='<option value="">— 選擇年度 —</option>'+allYears.map(y=>`<option value="${y}">${y}</option>`).join('');
-  if(prevYear && [...fy.options].some(o=>o.value===prevYear)) fy.value=prevYear;
-  onFilterYearChange(false);
-}
-function onFilterYearChange(doRender=true){
-  const year=document.getElementById('filterYear')?.value||'';
-  const examSel=document.getElementById('filterExam');
-  const subjSel=document.getElementById('filterSubjNew');
-  if(!examSel||!subjSel) return;
-  if(!year){
-    examSel.innerHTML='<option value="">— 先選年度 —</option>'; examSel.disabled=true;
-    subjSel.innerHTML='<option value="">— 先選年度 —</option>'; subjSel.disabled=true;
-    if(doRender) renderQList(); return;
-  }
-  // 找出此年度底下的次別 (e.g. 第一次/第二次 or 無次別)
-  const variants=[...new Set(DB.questions.filter(q=>q.year&&q.year.startsWith(year)).map(q=>{
-    const m=q.year.match(/第[一二三四五六]次/); return m?m[0]:'';
-  }))].sort();
-  examSel.disabled=false;
-  if(variants.length===1 && variants[0]===''){
-    // 只有一次，不需選
-    examSel.innerHTML='<option value="">（單次考試）</option>';
-    examSel.disabled=true;
-  } else {
-    const labels={'第一次':'專技高考社工師第一次','第二次':'專技高考社工師第二次','第三次':'專技高考社工師第三次','第四次':'專技高考社工師第四次'};
-    examSel.innerHTML='<option value="">— 選擇次別 —</option>'+variants.filter(v=>v).map(v=>`<option value="${v}">${labels[v]||v}</option>`).join('');
-  }
-  onFilterExamChange(doRender);
-}
-function onFilterExamChange(doRender=true){
-  const year=document.getElementById('filterYear')?.value||'';
-  const exam=document.getElementById('filterExam')?.value||'';
-  const subjSel=document.getElementById('filterSubjNew');
-  if(!subjSel) return;
-  // Build full year key
-  let yearKey=year+(exam?exam:'');
-  // Find matching questions
-  const qs=DB.questions.filter(q=>q.year&&(q.year===yearKey||(exam===''&&q.year.startsWith(year))));
-  const subjs=[...new Set(qs.map(q=>q.subject).filter(Boolean))];
-  const subjOrder=['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
-  subjs.sort((a,b)=>(subjOrder.indexOf(a)===-1?99:subjOrder.indexOf(a))-(subjOrder.indexOf(b)===-1?99:subjOrder.indexOf(b)));
-  subjSel.disabled=false;
-  subjSel.innerHTML='<option value="">全部科目</option>'+subjs.map(s=>`<option value="${s}">${s}</option>`).join('');
-  if(doRender) renderQList();
-}
-function renderQList(){
+// function renderQList(){
   const kw=(document.getElementById('qSearch')?.value||'').toLowerCase();
   const year=document.getElementById('filterYear')?.value||'';
   const exam=document.getElementById('filterExam')?.value||'';
@@ -537,11 +482,24 @@ function renderQList(){
   document.getElementById('bankCount').textContent=`共 ${bankCount} 題`;
   const wrap=document.getElementById('qListWrap');
   const filterCountSpan=document.getElementById('filterCount');
-  if(!year && !kw){ wrap.innerHTML='<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">請先選擇年度，或輸入關鍵字搜尋</div>'; if(filterCountSpan) filterCountSpan.textContent=''; return; }
+  if(!year && !kw){
+    wrap.innerHTML='<div style="padding:40px;text-align:center;color:var(--gray);font-size:13px">請先選擇年度，或輸入關鍵字搜尋</div>';
+    if(filterCountSpan) filterCountSpan.textContent='';
+    return;
+  }
   let items=DB.questions.filter(q=>{
-    if(year){ if(!q.year) return false; if(exam){ if(q.year!==yearKey) return false; } else { if(!q.year.startsWith(year)) return false; } }
+    if(year){
+      if(!q.year) return false;
+      if(exam){
+        if(q.year!==yearKey) return false;
+      } else {
+        if(!q.year.startsWith(year)) return false;
+      }
+    }
     if(subj && q.subject!==subj) return false;
-    if(kw && !q.q.toLowerCase().includes(kw) && !(q.opts||[]).join(' ').toLowerCase().includes(kw) && !(q.exp||'').toLowerCase().includes(kw)) return false;
+    if(kw && !q.q.toLowerCase().includes(kw)
+      && !(q.opts||[]).join(' ').toLowerCase().includes(kw)
+      && !(q.exp||'').toLowerCase().includes(kw)) return false;
     return true;
   });
   const subjOrder=['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
@@ -554,11 +512,17 @@ function renderQList(){
     return (a.id||'').localeCompare(b.id||'');
   });
   if(filterCountSpan) filterCountSpan.textContent=`共 ${items.length} 題`;
-  if(!items.length){ wrap.innerHTML='<div style="padding:32px;text-align:center;color:var(--gray);font-size:13px">無符合題目</div>'; return; }
+  if(!items.length){
+    wrap.innerHTML='<div style="padding:32px;text-align:center;color:var(--gray);font-size:13px">無符合題目</div>';
+    return;
+  }
   let html='';
   if(!subj && !kw){
     const groups=new Map();
-    items.forEach(q=>{ if(!groups.has(q.subject)) groups.set(q.subject,[]); groups.get(q.subject).push(q); });
+    items.forEach(q=>{
+      if(!groups.has(q.subject)) groups.set(q.subject,[]);
+      groups.get(q.subject).push(q);
+    });
     groups.forEach((qs,s)=>{
       const col=COLORS[s]||'#888';
       html+=`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;margin-top:8px"><span style="font-size:12px;font-weight:700;color:${col}">${s}</span><span style="font-size:11px;background:white;color:var(--gray);padding:2px 8px;border-radius:10px;margin-left:auto">${qs.length} 題</span></div>`;
@@ -569,11 +533,12 @@ function renderQList(){
   }
   wrap.innerHTML=html;
 }
+
 function buildQRow(q,idx){
   const ansLetters=correctLetters(q);
   const qNo=extractQuestionNumber(q)||(idx+1);
   const isMulti=Array.isArray(q.ans)&&q.ans.length>1;
-  const safeId=q.id.replace(/'/g,"\'");
+  const safeId=q.id.replace(/'/g,"\\'");
   const cardId=q.id.replace(/[^a-z0-9]/gi,'_');
   return `<div style="background:white;border:1px solid var(--border);border-bottom:none;padding:12px 14px;cursor:pointer" class="qrow" onclick="expandQ(this,'${safeId}')" id="qcard_${cardId}">` +
     `<div style="display:flex;align-items:flex-start;gap:10px">` +
@@ -592,9 +557,69 @@ function buildQRow(q,idx){
     (q.exp&&q.exp.trim()?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:'') +
     `</div></div>`;
 }
-function expandQ(el,id){ const detail=el.querySelector('.qdetail'); const isOpen=detail.style.display!=='none'; document.querySelectorAll('.qdetail').forEach(d=>d.style.display='none'); if(!isOpen) detail.style.display='block'; }
-function deleteQ(){ if(editId){ if(!confirm('確定刪除此題？'))return; DB.questions=DB.questions.filter(q=>q.id!=editId); save(); populateFilterSelects(); renderQList(); buildSubjFilter(); populateExamSubjs(); updateHeader(); closeModal('addModal'); showToast('已刪除'); } }
 
+function expandQ(el,id){
+  const detail=el.querySelector('.qdetail');
+  const isOpen=detail.style.display!=='none';
+  document.querySelectorAll('.qdetail').forEach(d=>d.style.display='none');
+  if(!isOpen) detail.style.display='block';
+}
+
+// 新增：編輯既有題目
+function openEdit(id){
+  const q = DB.questions.find(x => x.id === id);
+  if (!q) {
+    showToast('找不到這一題');
+    return;
+  }
+
+  // 開啟「新增/編輯題目」的 modal
+  openAdd();
+
+  const fSubj = document.getElementById('fSubj');
+  const fYear = document.getElementById('fYear');
+  const fSrc  = document.getElementById('fSrc');
+  const fQ    = document.getElementById('fQ');
+  const fExp  = document.getElementById('fExp');
+
+  if (fSubj) fSubj.value = q.subject || '';
+  if (fYear) fYear.value = q.year || '';
+  if (fSrc)  fSrc.value  = q.src || '';
+  if (fQ)    fQ.value    = q.q || '';
+  if (fExp)  fExp.value  = q.exp || '';
+
+  if (Array.isArray(q.opts)) {
+    q.opts.forEach((optText, i) => {
+      const inp = document.querySelector(`#optInputs input[data-idx="${i}"]`);
+      if (inp) inp.value = optText;
+    });
+  }
+
+  if (q.ans !== undefined) {
+    const ansIdx = Array.isArray(q.ans) ? q.ans[0] : q.ans;
+    const btns = document.querySelectorAll('#ansSel .ans-btn');
+    btns.forEach((btn, i) => {
+      btn.classList.toggle('sel', i === ansIdx);
+    });
+  }
+
+  editId = q.id;
+}
+
+function deleteQ(){
+  if(editId){
+    if(!confirm('確定刪除此題？'))return;
+    DB.questions=DB.questions.filter(q=>q.id!=editId);
+    save();
+    populateFilterSelects();
+    renderQList();
+    buildSubjFilter();
+    populateExamSubjs();
+    updateHeader();
+    closeModal('addModal');
+    showToast('已刪除');
+  }
+}
 // ===== 匯入匯出 =====
 function openImport(){ document.getElementById('importText').value=''; document.getElementById('importPreview').textContent=''; openModal('importModal'); }
 function openBkImport(){ document.getElementById('bkFile').value=''; openModal('bkModal'); }
