@@ -331,10 +331,15 @@ function switchTab(tab,el){
   if(el)el.classList.add('active');
   if(tab==='wrong')renderWrong();
   if(tab==='stats')renderStats();
-  if(tab==='manage'){populateFilterSelects();renderQList();}
+  if(tab==='manage'){initExamFilters();renderQList();}
   if(tab==='essay'){populateEssayYearFilter();renderEssayList();}
 }
-function switchTabByName(t){const tabs=['practice','exam','wrong','aisearch','stats','essay','manage'];const i=tabs.indexOf(t);const btn=document.querySelectorAll('.tab-btn')[i];switchTab(t,btn);}
+function switchTabByName(t){
+  const tabs=['practice','exam','wrong','aisearch','stats','essay','manage'];
+  const i=tabs.indexOf(t);
+  const btn=document.querySelectorAll('.tab-btn')[i];
+  switchTab(t,btn);
+}
 
 // ===== 科目與年度篩選 =====
 function buildSubjFilter(){ document.getElementById('subjFilter').innerHTML=uniqueSubjs().map(s=>`<button class="subj-btn${s==='全部'?' active':''}" onclick="filterSubj('${s}',this)">${s}</button>`).join(''); buildYearFilter(); }
