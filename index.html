@@ -350,7 +350,7 @@ function renderPQ(){
   const src=document.getElementById('qSrcTag');
   if(q.src){src.textContent=q.src;src.style.display='';}else src.style.display='none';
   document.getElementById('qText').textContent=q.q;
-  document.getElementById('qOpts').innerHTML=q.opts.map((o,i)=>`<button class="opt" onclick="pickAns(${i})" id="opt${i}"><span class="opt-lbl">${'ABCD'[i]}</span><span>${o}</span></button>`).join('');
+  document.getElementById('qOpts').innerHTML=(Array.isArray(q.opts)?q.opts:[]).map((o,i)=>`<button class="opt" onclick="pickAns(${i})" id="opt${i}"><span class="opt-lbl">${'ABCD'[i]}</span><span>${o}</span></button>`).join('');
   document.getElementById('rbadge').style.display='none';
   document.getElementById('exp').className='exp';
   document.getElementById('aiExpArea').style.display='none';
@@ -406,7 +406,7 @@ function renderEQ(){
   document.getElementById('eqYear').textContent=q.year||'';
   document.getElementById('eqText').textContent=q.q;
   const sv=E.answers[E.idx];
-  document.getElementById('eqOpts').innerHTML=q.opts.map((o,i)=>`<button class="opt${sv===i?' sel':''}" onclick="pickEAns(${i})" id="eopt${i}"><span class="opt-lbl">${'ABCD'[i]}</span><span>${o}</span></button>`).join('');
+  document.getElementById('eqOpts').innerHTML=(Array.isArray(q.opts)?q.opts:[]).map((o,i)=>`<button class="opt${sv===i?' sel':''}" onclick="pickEAns(${i})" id="eopt${i}"><span class="opt-lbl">${'ABCD'[i]}</span><span>${o}</span></button>`).join('');
   document.getElementById('eNextBtn').disabled=(sv===-1);
   if(E.timeLimit>0){clearInterval(E.timerID);E.secsLeft=E.timeLimit;updET();E.timerID=setInterval(()=>{E.secsLeft--;updET();if(E.secsLeft<=0){clearInterval(E.timerID);examNext();}},1000);}
 }
@@ -442,7 +442,7 @@ function renderWrong(){
   const list=document.getElementById('wrongList'),empty=document.getElementById('wrongEmpty'),acts=document.getElementById('wrongActs');
   if(!DB.wrong.length){list.innerHTML='';empty.style.display='block';acts.style.display='none';return;}
   empty.style.display='none';acts.style.display='flex';
-  list.innerHTML=DB.wrong.map(q=>`<div class="witem"><div style="font-size:10px;color:var(--gray);margin-bottom:4px">${q.subject}·${q.year||''}·答錯${q.count||1}次</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">${q.q}</div><div style="font-size:11px;color:#555;margin-bottom:6px">${q.opts.map((o,i)=>`${' ABCD'[i+1]}. ${o}`).join('　')}</div><div style="display:flex;gap:12px;font-size:11px;flex-wrap:wrap;margin-bottom:${q.exp?'6px':'0'}"><span style="color:var(--red)">✗ ${'ABCD'[q.myAns]}. ${q.opts[q.myAns]}</span><span style="color:var(--green)">✓ ${correctLetters(q)}. ${getCorrectIdxs(q).map(c=>q.opts[c]).join(' / ')}</span></div>${q.exp?`<div style="font-size:11px;color:#4a4030;background:#fffcf0;padding:7px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:''}</div>`).join('');
+  list.innerHTML=DB.wrong.map(q=>`<div class="witem"><div style="font-size:10px;color:var(--gray);margin-bottom:4px">${q.subject}·${q.year||''}·答錯${q.count||1}次</div><div style="font-size:14px;font-weight:500;margin-bottom:6px">${q.q}</div><div style="font-size:11px;color:#555;margin-bottom:6px">${(Array.isArray(q.opts)?q.opts:[]).map((o,i)=>`${' ABCD'[i+1]}. ${o}`).join('　')}</div><div style="display:flex;gap:12px;font-size:11px;flex-wrap:wrap;margin-bottom:${q.exp?'6px':'0'}"><span style="color:var(--red)">✗ ${'ABCD'[q.myAns]}. ${q.opts[q.myAns]}</span><span style="color:var(--green)">✓ ${correctLetters(q)}. ${getCorrectIdxs(q).map(c=>q.opts[c]).join(' / ')}</span></div>${q.exp?`<div style="font-size:11px;color:#4a4030;background:#fffcf0;padding:7px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:''}</div>`).join('');
 }
 function practiceWrong(){ if(!DB.wrong.length)return; P.pool=shuffle([...DB.wrong]);P.idx=0;P.answered=false; clearInterval(P.timerID); document.getElementById('noBank').style.display='none'; document.getElementById('practiceMain').style.display='block'; startPracticeTimer();renderPQ(); switchTabByName('practice'); showToast('已載入'+DB.wrong.length+'道錯題'); }
 function clearWrong(){ if(!confirm('確定清除所有錯題？'))return; DB.wrong=[]; save(); renderWrong(); showToast('錯題已清除'); }
@@ -575,7 +575,7 @@ function buildQRow(q,idx){
     (IS_DEV?`<button class="btn btn-gold btn-sm" style="flex-shrink:0;font-size:10px" onclick="event.stopPropagation();openEdit('${safeId}')">✏️</button>`:'') +
     `</div>` +
     `<div class="qdetail" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">` +
-    `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">${q.opts.map((o,i)=>`<div style="display:flex;gap:8px;padding:7px 10px;border:1.5px solid ${isCorrect(q,i)?'var(--green)':'var(--border)'};border-radius:6px;background:${isCorrect(q,i)?'#eafaf1':'var(--paper)'}"><span style="font-size:11px;font-weight:700;width:18px;color:${isCorrect(q,i)?'var(--green)':'var(--gray)'}">${'ABCD'[i]}.</span><span style="font-size:13px">${o}</span></div>`).join('')}</div>` +
+    `<div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">${(Array.isArray(q.opts)?q.opts:[]).map((o,i)=>`<div style="display:flex;gap:8px;padding:7px 10px;border:1.5px solid ${isCorrect(q,i)?'var(--green)':'var(--border)'};border-radius:6px;background:${isCorrect(q,i)?'#eafaf1':'var(--paper)'}"><span style="font-size:11px;font-weight:700;width:18px;color:${isCorrect(q,i)?'var(--green)':'var(--gray)'}">${'ABCD'[i]}.</span><span style="font-size:13px">${o}</span></div>`).join('')}</div>` +
     (q.exp&&q.exp.trim()?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:'') +
     `</div></div>`;
 }
