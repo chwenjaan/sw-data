@@ -816,7 +816,8 @@ async function init(){
   if(count){ document.getElementById('loadingMsg').textContent=`✅ 載入完成（${count} 題）`; document.getElementById('loadingBar').style.width='100%'; await fetchExplanations(); }
   const fixedCount=cleanData(); if(fixedCount>0) console.log(`修復了 ${fixedCount} 筆資料`);
   closeLoading();
-  runStep([()=>buildSubjFilter(),()=>populateExamSubjs(),()=>loadPractice(),()=>updateHeader(),()=>applyDevMode(),()=>flushPendingOnStart(),()=>populateFilterSelects(),()=>renderQList()]);
+  runStep([  () => buildSubjFilter(),  () => populateExamSubjs(),  () => loadPractice(),  () => updateHeader(),  () => applyDevMode(),  () => populateFilterSelects(),  () => renderQList()
+]);
 }
 init();
 
