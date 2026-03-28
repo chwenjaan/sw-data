@@ -619,7 +619,7 @@ async function requestEssayAI(id){
 function populateEssayYearFilter(){ const sel=document.getElementById('essayFilterYear'); if(!sel) return; const years=[...new Set(getEssays().map(q=>q.year).filter(Boolean))].sort((a,b)=>b.localeCompare(a)); sel.innerHTML='<option value="">全部年度</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join(''); }
 
 // ===== AI 搜尋 =====
-const KEYWORD_MAP={
+const KEYWORD_MAP = {
   '充權':['充權','增能','empowerment','自決','掌控','賦權'],
   '危機介入':['危機','crisis','介入','干預','緊急','危急'],
   '依附理論':['依附','attachment','Bowlby','鮑比','安全型','迴避型','焦慮型'],
@@ -640,21 +640,139 @@ const KEYWORD_MAP={
   '身心障礙':['身心障礙','障礙','輔具','庇護','就業','鑑定'],
   '家庭暴力':['家庭暴力','家暴','保護令','受暴','施暴','親密關係暴力'],
 };
-function quickSearch(kw){ document.getElementById('aiSearchInput').value=kw; doAiSearch(); }
-function doAiSearch(){
-  const raw=document.getElementById('aiSearchInput').value.trim(); if(!raw){ showToast('請輸入關鍵字'); return; }
-  if(!DB.questions.length){ document.getElementById('aiSearchResult').innerHTML=`<div class="empty-state" style="padding:32px 0"><div class="icon">⚠️</div><div style="font-size:14px;font-weight:500">題庫尚未載入</div><div style="font-size:12px;margin-top:4px">請稍後再試，或點「統計」頁的「重置題庫」重新從 GitHub 載入</div></div>`; return; }
-  const result=document.getElementById('aiSearchResult'); result.innerHTML='';
-  let keywords=[raw.toLowerCase()];
-  for(const [key,synonyms] of Object.entries(KEYWORD_MAP)){ if(raw.includes(key) || synonyms.some(s=>raw.toLowerCase().includes(s.toLowerCase()))){ keywords.push(...synonyms.map(s=>s.toLowerCase())); } }
-  raw.split(/[\s,，、]+/).forEach(w=>{ if(w) keywords.push(w.toLowerCase()); }); keywords=[...new Set(keywords)];
-  const matched=DB.questions.filter(q=>{ const searchTarget=(q.q+q.subject+q.opts.join(' ')+(q.exp||'')).toLowerCase(); return keywords.some(kw=>searchTarget.includes(kw)); });
-  if(!matched.length){ result.innerHTML=`<div class="empty-state" style="padding:32px 0"><div class="icon">🔍</div><div style="font-size:14px;font-weight:500">找不到相關題目</div><div style="font-size:12px;margin-top:4px">試試其他關鍵字</div></div>`; return; }
-  const scored=matched.map(q=>{ const target=(q.q+q.opts.join(' ')+(q.exp||'')).toLowerCase(); const score=keywords.reduce((n,kw)=>n+(target.split(kw).length-1),0); return {q,score}; }).sort((a,b)=>b.score-a.score);
-  window._aiSearchPool=scored.map(s=>s.q);
-  result.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px"><div><span style="font-size:14px;font-weight:600">「${raw}」</span><span style="font-size:12px;color:var(--gray)"> 找到 ${matched.length} 道相關題目</span></div><button class="btn btn-primary btn-sm" onclick="practiceAiSearch()">練習這些題目 →</button></div>${scored.map(({q})=>{ const col=COLORS[q.subject]||'#888'; let qtext=q.q; keywords.forEach(kw=>{ if(kw.length<2) return; qtext=qtext.replace(new RegExp(kw,'gi'),m=>`<mark style="background:#fff3cd;border-radius:2px">${m}</mark>`); }); return `<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px"><div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap"><span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#eef3fb;color:${col};font-weight:500">${q.subject}</span><span style="font-size:10px;padding:2px 7px;border-radius:3px;background:var(--cream);color:var(--gray)">${q.year||''}</span></div><div style="font-size:13px;line-height:1.7;color:var(--ink)">${qtext}</div><div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">${q.opts.map((o,j)=>`<div style="font-size:12px;padding:5px 9px;border-radius:5px;background:${isCorrect(q,j)?'#eafaf1':'var(--paper)'};border:1px solid ${isCorrect(q,j)?'var(--green)':'var(--border)'}"><span style="font-weight:700;color:${isCorrect(q,j)?'var(--green)':'var(--gray)'}">${'ABCD'[j]}.</span> ${o}</div>`).join('')}</div>${q.exp?`<div style="margin-top:8px;font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${q.exp}</div>`:''}</div>`; }).join('')}`;
+
+function quickSearch(kw) {
+  document.getElementById('aiSearchInput').value = kw;
+  doAiSearch();
 }
-function practiceAiSearch(){ const pool=window._aiSearchPool; if(!pool||!pool.length){ showToast('請先搜尋題目'); return; } P.pool=shuffle([...pool]); P.idx=0; P.answered=false; clearInterval(P.timerID); document.getElementById('noBank').style.display='none'; document.getElementById('practiceMain').style.display='block'; startPracticeTimer(); renderPQ(); switchTabByName('practice'); showToast('已載入 '+pool.length+' 道相關題目'); }
+
+function doAiSearch() {
+  const inputEl = document.getElementById('aiSearchInput');
+  const raw = (inputEl.value || '').trim();
+  if (!raw) {
+    showToast('請輸入關鍵字');
+    return;
+  }
+  if (!DB.questions || !DB.questions.length) {
+    document.getElementById('aiSearchResult').innerHTML = `
+      <div class="empty-state" style="padding:32px 0">
+        <div class="icon">⚠️</div>
+        <div style="font-size:14px;font-weight:500">題庫尚未載入</div>
+        <div style="font-size:12px;margin-top:4px">
+          請稍後再試，或點「統計」頁的「重置題庫」重新從 GitHub 載入
+        </div>
+      </div>`;
+    return;
+  }
+
+  const result = document.getElementById('aiSearchResult');
+  result.innerHTML = '';
+
+  // 建立關鍵字集合
+  let keywords = [raw.toLowerCase()];
+  for (const [key, synonyms] of Object.entries(KEYWORD_MAP)) {
+    const rawLower = raw.toLowerCase();
+    if (raw.includes(key) || synonyms.some(s => rawLower.includes(s.toLowerCase()))) {
+      keywords.push(...synonyms.map(s => s.toLowerCase()));
+    }
+  }
+  raw.split(/[\s,，、]+/).forEach(w => {
+    if (w) keywords.push(w.toLowerCase());
+  });
+  keywords = [...new Set(keywords)];
+
+  // 搜尋題庫（加防呆，避免 undefined.join）
+  const matched = DB.questions.filter(q => {
+    if (!q) return false;
+    const qtext = (q.q || '');
+    const subj = (q.subject || '');
+    const opts = Array.isArray(q.opts) ? q.opts : [];
+    const exp = (q.exp || '');
+    const searchTarget = (qtext + subj + opts.join(' ') + exp).toLowerCase();
+    return keywords.some(kw => searchTarget.includes(kw));
+  });
+
+  if (!matched.length) {
+    result.innerHTML = `
+      <div class="empty-state" style="padding:32px 0">
+        <div class="icon">🔍</div>
+        <div style="font-size:14px;font-weight:500">找不到相關題目</div>
+        <div style="font-size:12px;margin-top:4px">試試其他關鍵字</div>
+      </div>`;
+    return;
+  }
+
+  // 依關鍵字出現次數打分排序（同樣加 opts 防呆）
+  const scored = matched.map(q => {
+    const opts = Array.isArray(q.opts) ? q.opts : [];
+    const target = ( (q.q || '') + opts.join(' ') + (q.exp || '') ).toLowerCase();
+    const score = keywords.reduce((n, kw) => n + (target.split(kw).length - 1), 0);
+    return { q, score };
+  }).sort((a, b) => b.score - a.score);
+
+  window._aiSearchPool = scored.map(s => s.q);
+
+  result.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div>
+        <span style="font-size:14px;font-weight:600">「${raw}」</span>
+        <span style="font-size:12px;color:var(--gray)"> 找到 ${matched.length} 道相關題目</span>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="practiceAiSearch()">練習這些題目 →</button>
+    </div>
+    ${scored.map(({q}) => {
+      const col = COLORS[q.subject] || '#888';
+      let qtext = q.q || '';
+      keywords.forEach(kw => {
+        if (kw.length < 2) return;
+        qtext = qtext.replace(
+          new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),'gi'),
+          m => `<mark style="background:#fff3cd;border-radius:2px">${m}</mark>`
+        );
+      });
+      const opts = Array.isArray(q.opts) ? q.opts : [];
+      return `
+        <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">
+          <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+            <span style="font-size:10px;padding:2px 7px;border-radius:3px;background:#eef3fb;color:${col};font-weight:500">${q.subject}</span>
+            <span style="font-size:10px;padding:2px 7px;border-radius:3px;background:var(--cream);color:var(--gray)">${q.year || ''}</span>
+          </div>
+          <div style="font-size:13px;line-height:1.7;color:var(--ink)">${qtext}</div>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
+            ${opts.map((o,j) => `
+              <div style="font-size:12px;padding:5px 9px;border-radius:5px;background:${isCorrect(q,j)?'#eafaf1':'var(--paper)'};border:1px solid ${isCorrect(q,j)?'var(--green)':'var(--border)'}">
+                <span style="font-weight:700;color:${isCorrect(q,j)?'var(--green)':'var(--gray)'}">${'ABCD'[j]}.</span> ${o}
+              </div>
+            `).join('')}
+          </div>
+          ${q.exp ? `
+            <div style="margin-top:8px;font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)">
+              <strong>解析：</strong>${q.exp}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('')}
+  `;
+}
+
+function practiceAiSearch() {
+  const pool = window._aiSearchPool;
+  if (!pool || !pool.length) {
+    showToast('請先搜尋題目');
+    return;
+  }
+  P.pool = shuffle([...pool]);
+  P.idx = 0;
+  P.answered = false;
+  clearInterval(P.timerID);
+  document.getElementById('noBank').style.display = 'none';
+  document.getElementById('practiceMain').style.display = 'block';
+  startPracticeTimer();
+  renderPQ();
+  switchTabByName('practice');
+  showToast('已載入 ' + pool.length + ' 道相關題目');
+}
 
 // ===== AI 解析 =====
 async function requestAiExp(){
