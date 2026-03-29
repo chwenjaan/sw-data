@@ -369,21 +369,21 @@
 
         <!-- 快速開始 -->
         <div style="margin-bottom:16px">
-          <label style="font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.5px;display:block;margin-bottom:8px">選擇年份</label>
+          <label for="homeYear" style="font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.5px;display:block;margin-bottom:8px">選擇年份</label>
           <select id="homeYear" onchange="updateHomeSubj()" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--paper);appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><path d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px">
             <option value="">全部年份</option>
           </select>
         </div>
 
         <div style="margin-bottom:20px">
-          <label style="font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.5px;display:block;margin-bottom:8px">選擇科目</label>
+          <label for="homeSubj" style="font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.5px;display:block;margin-bottom:8px">選擇科目</label>
           <select id="homeSubj" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--paper);appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><path d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px">
             <option value="all">全部科目</option>
-            <option>社會工作</option>
-            <option>社會工作直接服務</option>
-            <option>社會政策與社會立法</option>
-            <option>人類行為與社會環境</option>
-            <option>社會工作研究方法</option>
+            <option value="社會工作">社會工作</option>
+            <option value="社會工作直接服務">社會工作直接服務</option>
+            <option value="社會政策與社會立法">社會政策與社會立法</option>
+            <option value="人類行為與社會環境">人類行為與社會環境</option>
+            <option value="社會工作研究方法">社會工作研究方法</option>
           </select>
         </div>
 
@@ -692,19 +692,19 @@
         <div style="font-size:11px;font-weight:600;color:var(--gray);margin-bottom:10px;letter-spacing:.5px">選擇考卷</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
           <div>
-            <label style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">年度</label>
+            <label for="filterYear" style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">年度</label>
             <select id="filterYear" onchange="onFilterYearChange()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit">
               <option value="">— 選擇年度 —</option>
             </select>
           </div>
           <div>
-            <label style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">考試次別</label>
+            <label for="filterExam" style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">考試次別</label>
             <select id="filterExam" onchange="onFilterExamChange()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit" disabled>
               <option value="">— 先選年度 —</option>
             </select>
           </div>
           <div>
-            <label style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">科目</label>
+            <label for="filterSubjNew" style="font-size:10px;color:var(--gray);display:block;margin-bottom:4px">科目</label>
             <select id="filterSubjNew" onchange="renderQList()" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;background:var(--paper);font-family:inherit" disabled>
               <option value="">— 先選年度 —</option>
             </select>
