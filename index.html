@@ -9,6 +9,22 @@
   <meta name="apple-mobile-web-app-title" content="社工師考試練習">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a2e">
+
+  <!-- ===== Google Analytics GA4 ===== -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-0ZD4JDYCKH"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-0ZD4JDYCKH');
+  </script>
+
+  <!-- ===== Google AdSense ===== -->
+  <!-- 申請通過後，將 ca-pub-XXXXXXXXXXXXXXXX 換成你的 Publisher ID -->
+  <!--
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  -->
+
   <style>
     :root{
       --ink:#1a1a2e;
@@ -274,6 +290,7 @@
       <button class="tab-btn" onclick="switchTab('stats',this)">📊 統計</button>
       <button class="tab-btn" onclick="switchTab('essay',this)">✍️ 申論</button>
       <button class="tab-btn dev-only" onclick="switchTab('manage',this)">⚙️ 題庫</button>
+      <button class="tab-btn" onclick="switchTab('privacy',this)">🔒 隱私權</button>
     </div>
   </div>
 
@@ -324,7 +341,11 @@
           <div id="aiExpResult" style="display:none;margin-top:10px;background:linear-gradient(135deg,#1a1a2e,#2c2c4a);border-radius:8px;padding:14px;color:#f5f0e8">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:8px">
               <span style="font-size:14px">🤖</span>
-              <span style="font-size:12px;font-weight:600">AI 解析（已儲存）</span>
+              <span style="font-size:12px;font-weight:600">AI 解析（已儲存到本機）</span>
+              <!-- 一般使用者：傳給管理員 -->
+              <button id="sendToAdminBtn" onclick="sendExpToAdmin()" style="display:none;margin-left:auto;padding:4px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.6);background:rgba(201,168,76,.15);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">✉️ 傳給管理員</button>
+              <!-- DEV：推送 GitHub -->
+              <button id="devPushExpBtn" onclick="devPushExp()" style="display:none;margin-left:auto;padding:4px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.6);background:rgba(201,168,76,.15);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">☁️ 推送 GitHub</button>
             </div>
             <div id="aiExpText" style="font-size:13px;line-height:1.9"></div>
           </div>
@@ -466,9 +487,63 @@
         <button class="btn btn-outline btn-sm dev-only" onclick="showGeminiModal()" style="color:var(--blue)">🔑 Gemini Key</button>
         <button class="btn btn-outline btn-sm" id="devModeBtn" onclick="ISDEV?exitDev():toggleDev()" style="color:var(--gray);font-size:10px">⚙️ DEV</button>
       </div>
+      <!-- 廣告版位（AdSense 申請通過後啟用） -->
+      <div id="adSlotStats" style="margin-top:16px;text-align:center;min-height:100px;background:var(--cream);border:1px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gray);font-size:11px">
+        <!-- 申請 AdSense 通過後，將此區塊替換為廣告程式碼：
+        <ins class="adsbygoogle"
+          style="display:block"
+          data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+          data-ad-slot="XXXXXXXXXX"
+          data-ad-format="auto"
+          data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        -->
+        廣告版位（即將啟用）
+      </div>
+
     </div>
 
-    <!-- 題庫管理 panel -->
+    <!-- 隱私權政策 panel -->
+    <div class="panel" id="panel-privacy">
+      <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:20px;font-size:13px;line-height:1.9;color:#333">
+        <h2 style="font-size:16px;font-weight:700;margin-bottom:12px">隱私權政策</h2>
+        <p style="color:var(--gray);font-size:11px;margin-bottom:16px">最後更新：2025年</p>
+
+        <div style="margin-bottom:14px">
+          <strong>一、資料蒐集</strong>
+          <p style="margin-top:6px">本網站（社工師考試練習）不會主動蒐集任何個人識別資訊。您的作答紀錄、錯題及統計資料僅儲存於您的裝置本機（localStorage），不會上傳至任何伺服器。</p>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <strong>二、Google Analytics</strong>
+          <p style="margin-top:6px">本網站使用 Google Analytics 4（GA4）分析服務，用以了解整體使用狀況（如造訪人數、使用裝置類型等）。GA4 可能蒐集匿名化的使用資料，包括 IP 位址（已匿名處理）、瀏覽器類型及頁面瀏覽紀錄。您可透過 <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" style="color:var(--blue)">Google Analytics 選擇退出工具</a> 停用追蹤。</p>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <strong>三、Google AdSense 廣告</strong>
+          <p style="margin-top:6px">本網站使用 Google AdSense 提供廣告服務。Google 可能依據您過去造訪本網站或其他網站的紀錄，向您投放個人化廣告。您可前往 <a href="https://www.google.com/settings/ads" target="_blank" style="color:var(--blue)">Google 廣告設定</a> 管理個人化廣告偏好，或造訪 <a href="https://www.aboutads.info/" target="_blank" style="color:var(--blue)">AboutAds.info</a> 了解更多資訊。</p>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <strong>四、Cookie</strong>
+          <p style="margin-top:6px">本網站本身不使用 Cookie。Google Analytics 及 Google AdSense 服務可能使用 Cookie 以提供服務及分析流量。您可透過瀏覽器設定停用 Cookie。</p>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <strong>五、第三方連結</strong>
+          <p style="margin-top:6px">本網站可能提供 Perplexity AI 等第三方服務之連結，點擊後將離開本網站，第三方網站之隱私權政策請參閱各該網站之規定。</p>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <strong>六、政策變更</strong>
+          <p style="margin-top:6px">本隱私權政策如有修訂，將於本頁面公告，修訂後繼續使用本網站即視為同意修訂後之政策。</p>
+        </div>
+
+        <div style="margin-top:20px;padding:12px;background:var(--cream);border-radius:6px;font-size:12px;color:var(--gray)">
+          如有任何隱私權相關疑問，請透過 GitHub Issues 與我們聯繫。
+        </div>
+      </div>
+    </div>
     <div class="panel" id="panel-manage">
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
         <span class="sec-title" style="margin-bottom:0">題庫管理</span>
@@ -571,6 +646,16 @@
   <div class="modal-bg" id="addModal">
     <div class="modal">
       <h3 id="modalTitle">新增題目</h3>
+
+      <!-- 題型切換 -->
+      <div class="f-row" style="margin-bottom:14px">
+        <label>題型 *</label>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button id="typeChoice" class="ans-btn sel" onclick="setQType('choice',this)" style="width:auto;padding:6px 18px;border-radius:8px;font-size:12px">選擇題</button>
+          <button id="typeEssay" class="ans-btn" onclick="setQType('essay',this)" style="width:auto;padding:6px 18px;border-radius:8px;font-size:12px">申論題</button>
+        </div>
+      </div>
+
       <div class="f-grid2">
         <div class="f-row">
           <label>科目 *</label>
@@ -595,17 +680,22 @@
         <label>題目 *</label>
         <textarea id="fQ" rows="3" placeholder="輸入題目內容"></textarea>
       </div>
-      <div class="f-row">
-        <label>選項 *（點 ABCD 設定正確答案）</label>
-        <div id="optInputs"></div>
+
+      <!-- 選擇題專用欄位 -->
+      <div id="choiceFields">
+        <div class="f-row">
+          <label>選項 *（點 ABCD 設定正確答案）</label>
+          <div id="optInputs"></div>
+        </div>
+        <div class="f-row">
+          <label>正確答案</label>
+          <div class="ans-sel" id="ansSel"></div>
+        </div>
       </div>
-      <div class="f-row">
-        <label>正確答案</label>
-        <div class="ans-sel" id="ansSel"></div>
-      </div>
+
       <div class="f-row">
         <label>解析（選填）</label>
-        <textarea id="fExp" rows="2" placeholder="輸入解析內容"></textarea>
+        <textarea id="fExp" rows="3" placeholder="輸入解析內容（可換行）"></textarea>
       </div>
       <div class="action-row">
         <button class="btn btn-primary" onclick="saveQ()">儲存</button>
@@ -1163,7 +1253,7 @@ function applyDevMode(){
     if(tab==='essay'){populateEssayYearFilter();renderEssayList();}
   }
   function switchTabByName(t){
-    const tabs=['practice','exam','wrong','aisearch','stats','essay','manage'];
+    const tabs=['practice','exam','wrong','aisearch','stats','essay','manage','privacy'];
     const i=tabs.indexOf(t);
     const btn=document.querySelectorAll('.tab-btn')[i];
     switchTab(t,btn);
@@ -1767,14 +1857,33 @@ function startExam(){
   }
 
   // ===== 題庫新增 / 編輯 =====
+  let currentQType = 'choice'; // 'choice' | 'essay'
+
+  function setQType(type, btn){
+    currentQType = type;
+    document.querySelectorAll('#addModal .ans-btn[id^="type"]').forEach(b=>b.classList.remove('sel'));
+    btn.classList.add('sel');
+    const cf = document.getElementById('choiceFields');
+    if(type === 'essay'){
+      cf.style.display = 'none';
+    } else {
+      cf.style.display = 'block';
+    }
+  }
+
   function openAdd(){
     editId=null;
+    currentQType='choice';
     document.getElementById('modalTitle').textContent='新增題目';
     document.getElementById('fSubj').value='社會工作';
     document.getElementById('fYear').value='';
     document.getElementById('fSrc').value='';
     document.getElementById('fQ').value='';
     document.getElementById('fExp').value='';
+    // 重設題型按鈕
+    document.getElementById('typeChoice').classList.add('sel');
+    document.getElementById('typeEssay').classList.remove('sel');
+    document.getElementById('choiceFields').style.display='block';
     const optWrap=document.getElementById('optInputs');
     optWrap.innerHTML=['A','B','C','D'].map((lbl,i)=>`
       <div class="orow">
@@ -1801,36 +1910,54 @@ function startExam(){
     const src=document.getElementById('fSrc').value.trim();
     const q=document.getElementById('fQ').value.trim();
     const exp=document.getElementById('fExp').value.trim();
-    const opts=['A','B','C','D'].map((_,i)=>document.getElementById('optInput'+i).value.trim());
-    if(!subj||!q||opts.some(o=>!o)||selAns===-1){
-      showToast('請填寫科目、題目、選項與正確答案');
+    const isEssay = currentQType === 'essay';
+
+    if(!subj||!q){
+      showToast('請填寫科目與題目');
       return;
     }
-    if(editId){
-      const idx=DB.questions.findIndex(x=>x.id===editId);
-      if(idx>=0){
-        const item=DB.questions[idx];
-        item.subject=subj;
-        item.year=year;
-        item.src=src;
-        item.q=q;
-        item.opts=opts;
-        item.ans=selAns;
-        item.exp=exp;
+    if(!isEssay){
+      const opts=['A','B','C','D'].map((_,i)=>document.getElementById('optInput'+i).value.trim());
+      if(opts.some(o=>!o)||selAns===-1){
+        showToast('請填寫選項與正確答案');
+        return;
       }
-    }else{
-      const id='Q'+(Date.now());
-      DB.questions.push({id,subject:subj,year,src,q,opts,ans:selAns,exp});
+      if(editId){
+        const idx=DB.questions.findIndex(x=>x.id===editId);
+        if(idx>=0){
+          const item=DB.questions[idx];
+          item.subject=subj; item.year=year; item.src=src;
+          item.q=q; item.opts=opts; item.ans=selAns; item.exp=exp;
+          item.type='choice';
+        }
+      }else{
+        const opts2=['A','B','C','D'].map((_,i)=>document.getElementById('optInput'+i).value.trim());
+        DB.questions.push({id:'Q'+Date.now(),subject:subj,year,src,q,opts:opts2,ans:selAns,exp,type:'choice'});
+      }
+    } else {
+      // 申論題
+      if(editId){
+        const idx=DB.questions.findIndex(x=>x.id===editId);
+        if(idx>=0){
+          const item=DB.questions[idx];
+          item.subject=subj; item.year=year; item.src=src;
+          item.q=q; item.exp=exp; item.type='essay';
+          item.opts=[]; item.ans=-1;
+        }
+      }else{
+        DB.questions.push({id:'Q'+Date.now(),subject:subj,year,src,q,exp,type:'essay',opts:[],ans:-1});
+      }
     }
     save();
     buildSubjFilter();
     populateExamSubjs();
     populateFilterSelects();
     renderQList();
+    populateEssayYearFilter();
+    renderEssayList();
     updateHeader();
     showToast('已儲存題目');
     closeModal('addModal');
-    // DEV 模式且有 token，自動推送到 GitHub
     if(ISDEV && getGithubToken()){
       setTimeout(()=>pushToGitHub(true),300);
     } else if(ISDEV){
@@ -1842,22 +1969,30 @@ function startExam(){
     const q=DB.questions.find(x=>x.id===id);
     if(!q) return;
     editId=id;
+    const isEssay = q.type==='essay';
+    currentQType = isEssay ? 'essay' : 'choice';
     document.getElementById('modalTitle').textContent='編輯題目';
     document.getElementById('fSubj').value=q.subject||'';
     document.getElementById('fYear').value=q.year||'';
     document.getElementById('fSrc').value=q.src||'';
     document.getElementById('fQ').value=q.q||'';
     document.getElementById('fExp').value=q.exp||'';
-    const optWrap=document.getElementById('optInputs');
-    optWrap.innerHTML=(q.opts||['','','','']).map((o,i)=>`
-      <div class="orow i-ans">
-        <div class="olbl">${'ABCD'[i]}</div>
-        <input type="text" id="optInput${i}" value="${o.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">
-      </div>`).join('');
-    const ansSel=document.getElementById('ansSel');
-    ansSel.innerHTML=['A','B','C','D'].map((lbl,i)=>`
-      <button class="ans-btn${getCorrectIdxs(q).includes(i)?' sel':''}" onclick="setAns(${i},this)">${lbl}</button>`).join('');
-    selAns=getCorrectIdxs(q)[0]??-1;
+    // 設定題型按鈕
+    document.getElementById('typeChoice').classList.toggle('sel', !isEssay);
+    document.getElementById('typeEssay').classList.toggle('sel', isEssay);
+    document.getElementById('choiceFields').style.display = isEssay ? 'none' : 'block';
+    if(!isEssay){
+      const optWrap=document.getElementById('optInputs');
+      optWrap.innerHTML=(q.opts||['','','','']).map((o,i)=>`
+        <div class="orow i-ans">
+          <div class="olbl">${'ABCD'[i]}</div>
+          <input type="text" id="optInput${i}" value="${o.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">
+        </div>`).join('');
+      const ansSel=document.getElementById('ansSel');
+      ansSel.innerHTML=['A','B','C','D'].map((lbl,i)=>`
+        <button class="ans-btn${getCorrectIdxs(q).includes(i)?' sel':''}" onclick="setAns(${i},this)">${lbl}</button>`).join('');
+      selAns=getCorrectIdxs(q)[0]??-1;
+    }
     document.getElementById('delBtn').style.display='inline-flex';
     openModal('addModal');
   }
@@ -2019,7 +2154,7 @@ function startExam(){
       <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px">
         <div style="font-size:11px;color:var(--gray);margin-bottom:4px">${q.subject||''} · ${q.year||''} · 第 ${i+1} 題</div>
         <div style="font-size:14px;margin-bottom:7px;white-space:pre-line">${q.q||''}</div>
-        ${q.exp?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>參考解析：</strong>${q.exp}</div>`:''}
+        ${q.exp?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold);white-space:pre-line"><strong>參考解析：</strong>\n${q.exp}</div>`:''}
       </div>
     `).join('');
   }
@@ -2160,6 +2295,17 @@ D. ${(q.opts||[])[3]||''}
     document.getElementById('aiExpArea').style.display='none';
     const result = document.getElementById('aiExpResult');
     document.getElementById('aiExpText').innerHTML = text.replace(/\n/g,'<br>');
+
+    // 根據是否為 DEV 顯示不同按鈕
+    const sendBtn = document.getElementById('sendToAdminBtn');
+    const pushBtn = document.getElementById('devPushExpBtn');
+    if(ISDEV){
+      if(sendBtn) sendBtn.style.display='none';
+      if(pushBtn) pushBtn.style.display='inline-flex';
+    } else {
+      if(sendBtn) sendBtn.style.display='inline-flex';
+      if(pushBtn) pushBtn.style.display='none';
+    }
     result.style.display='block';
 
     // 同步顯示正式解析欄（expToggleBtn）
@@ -2168,7 +2314,7 @@ D. ${(q.opts||[])[3]||''}
     const t=document.getElementById('expToggleBtn');
     if(t){ t.style.display='inline-flex'; t.textContent='📖 查看解析'; }
 
-    // 暫存 pending，DEV 有 token 則自動推送
+    // 暫存 pending
     const pending = getPendingExps();
     pending[q.id] = text;
     setPendingExps(pending);
@@ -2177,11 +2323,32 @@ D. ${(q.opts||[])[3]||''}
     if(ISDEV && getGithubToken()){
       flushPendingExps('saveAiPastedExp');
       showToast('解析已儲存並推送 GitHub ✅');
-    }else if(ISDEV){
-      showToast('解析已暫存，請記得 push GitHub');
-    }else{
+    } else {
       showToast('解析已儲存到本機 ✅');
     }
+  }
+
+  async function sendExpToAdmin(){
+    const q = P.pool[P.idx];
+    if(!q) return;
+    const text = q.exp||'';
+    const content = `題目ID：${q.id}\n科目：${q.subject||''}\n年度：${q.year||''}\n\n題目：${q.q}\n\n解析：\n${text}`;
+    try{
+      await navigator.clipboard.writeText(content);
+      showToast('已複製！請貼到 GitHub Issue 或傳給管理員 📋');
+      // 開啟 GitHub Issues 頁面
+      setTimeout(()=>{
+        window.open('https://github.com/chwenjaan/sw-data/issues/new','_blank');
+      }, 500);
+    }catch(e){
+      showToast('請手動複製解析內容傳給管理員');
+    }
+  }
+
+  function devPushExp(){
+    if(!ISDEV){ showToast('僅開發者可用'); return; }
+    flushPendingExps('devPushExp');
+    showToast('推送中…');
   }
 
   function clearAiPasteBox(){
