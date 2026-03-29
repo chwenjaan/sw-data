@@ -283,7 +283,8 @@
 
   <div class="nav-wrap">
     <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('practice',this)">📝 練習</button>
+      <button class="tab-btn active" onclick="switchTab('home',this)">🏠 首頁</button>
+      <button class="tab-btn" onclick="switchTab('practice',this)">📝 練習</button>
       <button class="tab-btn" onclick="switchTab('exam',this)">📋 模擬考</button>
       <button class="tab-btn" onclick="switchTab('wrong',this)">❌ 錯題</button>
       <button class="tab-btn" onclick="switchTab('aisearch',this)">🔍 搜尋</button>
@@ -295,8 +296,138 @@
   </div>
 
   <div class="main">
+
+    <!-- 首頁 panel -->
+    <div class="panel active" id="panel-home">
+      <!-- 水豚插圖 + 標語 -->
+      <div style="text-align:center;padding:24px 16px 0">
+        <div style="font-size:15px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">社工師國考備戰</div>
+        <div style="font-size:30px;font-weight:900;color:var(--ink);line-height:1.2;margin-bottom:6px">今天先刷 <span style="color:var(--red)">10</span> 題</div>
+        <div style="font-size:14px;color:var(--gray);margin-bottom:20px">可依年份、科目快速開始練習</div>
+
+        <!-- 水豚 SVG 插圖 -->
+        <div style="position:relative;display:inline-block;margin-bottom:4px">
+          <svg viewBox="0 0 220 160" width="220" height="160" xmlns="http://www.w3.org/2000/svg">
+            <!-- 桌子 -->
+            <rect x="10" y="118" width="200" height="10" rx="3" fill="#b5a08a"/>
+            <rect x="20" y="128" width="8" height="28" rx="2" fill="#9a8472"/>
+            <rect x="192" y="128" width="8" height="28" rx="2" fill="#9a8472"/>
+            <!-- 書堆 -->
+            <rect x="15" y="88" width="52" height="10" rx="2" fill="#e8d5b7" transform="rotate(-2,41,93)"/>
+            <rect x="16" y="80" width="50" height="10" rx="2" fill="#d4c4a8" transform="rotate(1,41,85)"/>
+            <rect x="14" y="72" width="54" height="10" rx="2" fill="#c9b99a" transform="rotate(-1,41,77)"/>
+            <rect x="17" y="64" width="48" height="10" rx="2" fill="#e0cdb2" transform="rotate(2,41,69)"/>
+            <!-- 咖啡杯 -->
+            <ellipse cx="170" cy="112" rx="14" ry="6" fill="#d4b896"/>
+            <rect x="156" y="96" width="28" height="16" rx="4" fill="#e8d0b0"/>
+            <path d="M184 100 Q194 102 192 108 Q190 114 184 112" fill="none" stroke="#d4b896" stroke-width="2.5"/>
+            <ellipse cx="170" cy="97" rx="12" ry="4" fill="#6b4226"/>
+            <!-- 水豚身體 -->
+            <ellipse cx="138" cy="105" rx="42" ry="32" fill="#8B6914" opacity="0.15"/>
+            <ellipse cx="138" cy="102" rx="40" ry="30" fill="#a0845c"/>
+            <!-- 水豚頭 -->
+            <ellipse cx="148" cy="72" rx="32" ry="26" fill="#8B7355"/>
+            <!-- 耳朵 -->
+            <ellipse cx="120" cy="55" rx="9" ry="7" fill="#7a6347"/>
+            <ellipse cx="120" cy="55" rx="5" ry="4" fill="#c9a882"/>
+            <ellipse cx="174" cy="53" rx="9" ry="7" fill="#7a6347"/>
+            <ellipse cx="174" cy="53" rx="5" ry="4" fill="#c9a882"/>
+            <!-- 眼鏡框 -->
+            <circle cx="136" cy="68" r="9" fill="none" stroke="#555" stroke-width="1.5"/>
+            <circle cx="156" cy="67" r="9" fill="none" stroke="#555" stroke-width="1.5"/>
+            <line x1="145" y1="68" x2="147" y2="67" stroke="#555" stroke-width="1.5"/>
+            <line x1="127" y1="67" x2="122" y2="65" stroke="#555" stroke-width="1.5"/>
+            <line x1="165" y1="66" x2="170" y2="64" stroke="#555" stroke-width="1.5"/>
+            <!-- 眼睛（疲倦半閉） -->
+            <path d="M130 68 Q136 72 142 68" fill="#5a3e28" stroke="none"/>
+            <path d="M150 67 Q156 71 162 67" fill="#5a3e28" stroke="none"/>
+            <!-- 鼻子 -->
+            <ellipse cx="148" cy="80" rx="10" ry="6" fill="#7a6347"/>
+            <ellipse cx="144" cy="80" rx="3" ry="2.5" fill="#3d2b1a"/>
+            <ellipse cx="152" cy="80" rx="3" ry="2.5" fill="#3d2b1a"/>
+            <!-- 鉛筆 -->
+            <rect x="95" y="90" width="5" height="36" rx="1" fill="#f5c842" transform="rotate(-20,98,108)"/>
+            <rect x="95" y="90" width="5" height="6" rx="1" fill="#e8b84b" transform="rotate(-20,98,108)"/>
+            <polygon points="95,126 100,126 97.5,133" fill="#f5deb3" transform="rotate(-20,98,108)"/>
+            <!-- 汗水 -->
+            <ellipse cx="178" cy="60" rx="3" ry="5" fill="#a8d8ea" opacity="0.8"/>
+            <!-- 筆記本 -->
+            <rect x="98" y="108" width="50" height="36" rx="3" fill="white" stroke="#ddd" stroke-width="1"/>
+            <line x1="108" y1="108" x2="108" y2="144" stroke="#eee" stroke-width="1.5"/>
+            <line x1="103" y1="116" x2="143" y2="116" stroke="#ddd" stroke-width="1"/>
+            <line x1="103" y1="123" x2="143" y2="123" stroke="#ddd" stroke-width="1"/>
+            <line x1="103" y1="130" x2="143" y2="130" stroke="#ddd" stroke-width="1"/>
+            <!-- 螢光筆 -->
+            <rect x="72" y="128" width="22" height="6" rx="3" fill="#FFE066" transform="rotate(-15,83,131)"/>
+            <rect x="86" y="128" width="22" height="6" rx="3" fill="#98FB98" transform="rotate(10,97,131)"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 選擇卡片 -->
+      <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px;margin:0 4px;box-shadow:0 4px 16px var(--shadow)">
+
+        <!-- 快速開始 -->
+        <div style="margin-bottom:16px">
+          <label style="font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.5px;display:block;margin-bottom:8px">選擇年份</label>
+          <select id="homeYear" onchange="updateHomeSubj()" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--paper);appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><path d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px">
+            <option value="">全部年份</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:20px">
+          <label style="font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.5px;display:block;margin-bottom:8px">選擇科目</label>
+          <select id="homeSubj" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--paper);appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><path d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px">
+            <option value="all">全部科目</option>
+            <option>社會工作</option>
+            <option>社會工作直接服務</option>
+            <option>社會政策與社會立法</option>
+            <option>人類行為與社會環境</option>
+            <option>社會工作研究方法</option>
+          </select>
+        </div>
+
+        <button onclick="startFromHome()" style="width:100%;padding:16px;background:var(--red);color:white;border:none;border-radius:12px;font-size:18px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 12px rgba(192,57,43,.35)">
+          開始練習 →
+        </button>
+
+        <div style="font-size:11px;color:var(--gray);text-align:center;margin-top:10px">按下後會直接進入題目作答畫面</div>
+      </div>
+
+      <!-- 快速功能列 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;padding:0 4px">
+        <button onclick="switchTabByName('exam')" style="padding:14px 8px;background:white;border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="font-size:22px">📋</span>模擬考
+        </button>
+        <button onclick="switchTabByName('wrong')" style="padding:14px 8px;background:white;border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="font-size:22px">❌</span>錯題複習
+        </button>
+        <button onclick="switchTabByName('essay')" style="padding:14px 8px;background:white;border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <span style="font-size:22px">✍️</span>申論題
+        </button>
+      </div>
+
+      <!-- 統計摘要 -->
+      <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;display:flex;justify-content:space-around;text-align:center">
+        <div>
+          <div style="font-size:22px;font-weight:700;color:var(--blue)" id="homeTotal">0</div>
+          <div style="font-size:10px;color:var(--gray)">累計作答</div>
+        </div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div>
+          <div style="font-size:22px;font-weight:700;color:var(--green)" id="homeAcc">0%</div>
+          <div style="font-size:10px;color:var(--gray)">正確率</div>
+        </div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div>
+          <div style="font-size:22px;font-weight:700;color:var(--gold)" id="homeBank">0</div>
+          <div style="font-size:10px;color:var(--gray)">題庫題數</div>
+        </div>
+      </div>
+    </div>
+
     <!-- 練習 panel -->
-    <div class="panel active" id="panel-practice">
+    <div class="panel" id="panel-practice">
       <div class="subj-bar" id="subjFilter"></div>
       <div id="yearFilterBar" style="padding:6px 12px 0;display:flex;gap:6px;overflow-x:auto"></div>
       <div id="noBank" class="empty-state" style="display:none">
@@ -918,6 +1049,10 @@ function applyDevMode(){
   });
   const db = document.getElementById('devBadge');
   if(db) db.style.display = ISDEV ? 'flex' : 'none';
+  // 重新渲染申論列表，讓編輯按鈕即時出現/消失
+  if(document.getElementById('panel-essay').classList.contains('active')){
+    renderEssayList();
+  }
 }
 
 // ===== 資料清理 =====
@@ -1247,16 +1382,65 @@ function applyDevMode(){
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('panel-'+tab).classList.add('active');
     if(el) el.classList.add('active');
+    if(tab==='home'){populateHomeYear();updateHomeStats();}
     if(tab==='wrong') renderWrong();
     if(tab==='stats') renderStats();
     if(tab==='manage'){populateFilterSelects();renderQList();}
     if(tab==='essay'){populateEssayYearFilter();renderEssayList();}
   }
   function switchTabByName(t){
-    const tabs=['practice','exam','wrong','aisearch','stats','essay','manage','privacy'];
+    const tabs=['home','practice','exam','wrong','aisearch','stats','essay','manage','privacy'];
     const i=tabs.indexOf(t);
     const btn=document.querySelectorAll('.tab-btn')[i];
     switchTab(t,btn);
+  }
+
+  // ===== 首頁功能 =====
+  function populateHomeYear(){
+    const sel = document.getElementById('homeYear');
+    if(!sel) return;
+    const years = [...new Set(DB.questions.map(q=>q.year).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    sel.innerHTML = '<option value="">全部年份</option>' +
+      years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  }
+
+  function updateHomeSubj(){
+    const yr = document.getElementById('homeYear').value;
+    const sel = document.getElementById('homeSubj');
+    if(!yr){
+      sel.innerHTML = '<option value="all">全部科目</option>' +
+        ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法']
+        .map(s=>`<option value="${s}">${s}</option>`).join('');
+      return;
+    }
+    const subjs = [...new Set(DB.questions.filter(q=>q.year===yr).map(q=>q.subject).filter(Boolean))];
+    sel.innerHTML = '<option value="all">全部科目</option>' +
+      subjs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
+
+  function updateHomeStats(){
+    const st = DB.stats;
+    const total = st.total||0;
+    const acc = total ? Math.round((st.correct||0)/total*100) : 0;
+    const el = document.getElementById('homeTotal');
+    const el2 = document.getElementById('homeAcc');
+    const el3 = document.getElementById('homeBank');
+    if(el) el.textContent = total;
+    if(el2) el2.textContent = acc+'%';
+    if(el3) el3.textContent = DB.questions.length;
+  }
+
+  function startFromHome(){
+    const yr = document.getElementById('homeYear').value;
+    const subj = document.getElementById('homeSubj').value;
+    // 設定練習篩選
+    P.subj = subj==='all' ? 'all' : subj;
+    P.year = yr || null;
+    // 切換到練習 tab
+    switchTabByName('practice');
+    // 重建篩選按鈕 active 狀態，再載入題目
+    buildSubjFilter();
+    loadPractice();
   }
 
   // ===== 科目 / 年度 篩選（練習）=====
@@ -2151,12 +2335,93 @@ function startExam(){
     }
     empty.style.display='none';
     list.innerHTML=items.map((q,i)=>`
-      <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px">
-        <div style="font-size:11px;color:var(--gray);margin-bottom:4px">${q.subject||''} · ${q.year||''} · 第 ${i+1} 題</div>
+      <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px" id="essay-card-${q.id}">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <div style="font-size:11px;color:var(--gray);flex:1">${q.subject||''} · ${q.year||''} · 第 ${i+1} 題</div>
+          ${ISDEV?`<button class="btn btn-outline btn-sm" onclick="editQ('${q.id}')" style="font-size:10px;padding:3px 8px">✏️ 編輯</button>`:''}
+        </div>
         <div style="font-size:14px;margin-bottom:7px;white-space:pre-line">${q.q||''}</div>
-        ${q.exp?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold);white-space:pre-line"><strong>參考解析：</strong>\n${q.exp}</div>`:''}
+
+        ${q.exp
+          ? `<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold);white-space:pre-line"><strong>參考解析：</strong>\n${q.exp}</div>`
+          : `<div style="background:#fffcf0;border:1.5px dashed var(--gold);border-radius:8px;padding:10px;margin-top:6px">
+               <div style="font-size:11px;color:#7a6830;margin-bottom:8px;font-weight:600">📋 此題尚無解析，可複製提示詞請 AI 解析後貼回</div>
+               <div style="display:flex;gap:6px;margin-bottom:8px">
+                 <button class="btn btn-gold" onclick="copyEssayPrompt('${q.id}')" style="font-size:11px;flex:1">📋 複製提示詞</button>
+                 <button class="btn btn-outline" onclick="openEssayAi('${q.id}')" style="font-size:11px;flex:1">🔍 開啟 Perplexity</button>
+               </div>
+               <textarea id="essay-paste-${q.id}" rows="3" placeholder="將 AI 解析貼到這裡…" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:white;resize:vertical"></textarea>
+               <div style="display:flex;gap:6px;margin-top:6px">
+                 <button class="btn btn-primary" onclick="saveEssayExp('${q.id}')" style="font-size:11px">💾 儲存解析</button>
+                 <button class="btn btn-outline" onclick="document.getElementById('essay-paste-${q.id}').value=''" style="font-size:11px">清除</button>
+               </div>
+             </div>`
+        }
       </div>
     `).join('');
+  }
+
+  function buildEssayPrompt(qId){
+    const q = DB.questions.find(x=>x.id===qId);
+    if(!q) return '';
+    return `請以社工師國考標準，對下列申論題提供詳盡參考解析：
+
+科目：${q.subject||''}
+年度：${q.year||''}
+
+題目：
+${q.q}
+
+請用繁體中文分段說明，約 400-600 字，包含：
+1. 核心概念說明
+2. 分點論述（可搭配理論或法規）
+3. 實務應用或舉例`;
+  }
+
+  async function copyEssayPrompt(qId){
+    const prompt = buildEssayPrompt(qId);
+    if(!prompt) return;
+    try{
+      await navigator.clipboard.writeText(prompt);
+      showToast('提示詞已複製 ✅');
+    }catch(e){
+      const ta=document.createElement('textarea');
+      ta.value=prompt; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+      showToast('提示詞已複製');
+    }
+  }
+
+  function openEssayAi(qId){
+    copyEssayPrompt(qId);
+    setTimeout(()=>{ window.open('https://www.perplexity.ai/','_blank'); }, 300);
+  }
+
+  function saveEssayExp(qId){
+    const ta = document.getElementById('essay-paste-'+qId);
+    if(!ta){ showToast('找不到輸入框'); return; }
+    const text = ta.value.trim();
+    if(!text){ showToast('請先貼上解析內容'); return; }
+
+    const idx = DB.questions.findIndex(x=>x.id===qId);
+    if(idx>=0) DB.questions[idx].exp = text;
+
+    // 暫存 pending
+    const pending = getPendingExps();
+    pending[qId] = text;
+    setPendingExps(pending);
+    save();
+
+    if(ISDEV && getGithubToken()){
+      flushPendingExps('saveEssayExp');
+      showToast('解析已儲存並推送 GitHub ✅');
+    } else {
+      showToast('解析已儲存到本機 ✅');
+    }
+
+    // 重新渲染讓解析顯示出來
+    renderEssayList();
   }
 
   // ===== AI 搜尋 (Gemini) =====
@@ -2411,7 +2676,9 @@ D. ${(q.opts||[])[3]||''}
       ()=>applyDevMode(),
       ()=>flushPendingOnStart(),
       ()=>populateFilterSelects(),
-      ()=>renderQList()
+      ()=>renderQList(),
+      ()=>populateHomeYear(),
+      ()=>updateHomeStats()
     ]);
   }
   init();
