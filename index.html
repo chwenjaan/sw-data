@@ -496,14 +496,14 @@
         <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:20px">
           <div class="sec-title">模擬考試設定</div>
           <div class="f-row">
-            <label>科目</label>
+            <label for="examSubj">科目</label>
             <select id="examSubj">
               <option value="all">全科混合</option>
             </select>
           </div>
           <div class="f-grid2">
             <div class="f-row">
-              <label>題數</label>
+              <label for="examCount">題數</label>
               <select id="examCount">
                 <option value="10">10 題</option>
                 <option value="20" selected>20 題</option>
@@ -512,7 +512,7 @@
               </select>
             </div>
             <div class="f-row">
-              <label>每題限時</label>
+              <label for="examTime">每題限時</label>
               <select id="examTime">
                 <option value="0">不限時</option>
                 <option value="60" selected>60 秒</option>
@@ -780,7 +780,7 @@
 
       <!-- 題型切換 -->
       <div class="f-row" style="margin-bottom:14px">
-        <label>題型 *</label>
+        <div style="font-size:11px;font-weight:500;color:var(--gray)">題型 *</div>
         <div style="display:flex;gap:8px;margin-top:4px">
           <button id="typeChoice" class="ans-btn sel" onclick="setQType('choice',this)" style="width:auto;padding:6px 18px;border-radius:8px;font-size:12px">選擇題</button>
           <button id="typeEssay" class="ans-btn" onclick="setQType('essay',this)" style="width:auto;padding:6px 18px;border-radius:8px;font-size:12px">申論題</button>
@@ -789,43 +789,43 @@
 
       <div class="f-grid2">
         <div class="f-row">
-          <label>科目 *</label>
+          <label for="fSubj">科目 *</label>
           <select id="fSubj">
-            <option>社會工作</option>
-            <option>社會工作直接服務</option>
-            <option>社會政策與社會立法</option>
-            <option>人類行為與社會環境</option>
-            <option>社會工作研究方法</option>
+            <option value="社會工作">社會工作</option>
+            <option value="社會工作直接服務">社會工作直接服務</option>
+            <option value="社會政策與社會立法">社會政策與社會立法</option>
+            <option value="人類行為與社會環境">人類行為與社會環境</option>
+            <option value="社會工作研究方法">社會工作研究方法</option>
           </select>
         </div>
         <div class="f-row">
-          <label>年度</label>
+          <label for="fYear">年度</label>
           <input type="text" id="fYear" placeholder="例如：115年第二次">
         </div>
       </div>
       <div class="f-row">
-        <label>來源（選填）</label>
+        <label for="fSrc">來源（選填）</label>
         <input type="text" id="fSrc" placeholder="例如：考選部">
       </div>
       <div class="f-row">
-        <label>題目 *</label>
+        <label for="fQ">題目 *</label>
         <textarea id="fQ" rows="3" placeholder="輸入題目內容"></textarea>
       </div>
 
       <!-- 選擇題專用欄位 -->
       <div id="choiceFields">
         <div class="f-row">
-          <label>選項 *（點 ABCD 設定正確答案）</label>
+          <div style="font-size:11px;font-weight:500;color:var(--gray)">選項 *（點 ABCD 設定正確答案）</div>
           <div id="optInputs"></div>
         </div>
         <div class="f-row">
-          <label>正確答案</label>
+          <div style="font-size:11px;font-weight:500;color:var(--gray)">正確答案</div>
           <div class="ans-sel" id="ansSel"></div>
         </div>
       </div>
 
       <div class="f-row">
-        <label>解析（選填）</label>
+        <label for="fExp">解析（選填）</label>
         <textarea id="fExp" rows="3" placeholder="輸入解析內容（可換行）"></textarea>
       </div>
       <div class="action-row">
@@ -856,17 +856,17 @@
         <code>EXP: 解析</code>（選填）
       </div>
       <div class="f-row">
-        <label>未指定科目時套用</label>
+        <label for="importSubj">未指定科目時套用</label>
         <select id="importSubj">
-          <option>社會工作</option>
-          <option>社會工作直接服務</option>
-          <option>社會政策與社會立法</option>
-          <option>人類行為與社會環境</option>
-          <option>社會工作研究方法</option>
+          <option value="社會工作">社會工作</option>
+          <option value="社會工作直接服務">社會工作直接服務</option>
+          <option value="社會政策與社會立法">社會政策與社會立法</option>
+          <option value="人類行為與社會環境">人類行為與社會環境</option>
+          <option value="社會工作研究方法">社會工作研究方法</option>
         </select>
       </div>
       <div class="f-row iarea">
-        <label>題目內容</label>
+        <label for="importText">題目內容</label>
         <textarea id="importText" placeholder="貼上多題題目文字"></textarea>
       </div>
       <div id="importPreview" style="font-size:11px;margin-bottom:8px"></div>
@@ -883,6 +883,7 @@
     <div class="modal">
       <h3>匯入備份</h3>
       <p style="font-size:13px;color:var(--gray);margin-bottom:12px">選擇先前匯出的 .json 備份檔</p>
+      <label for="bkFile" style="font-size:11px;font-weight:500;color:var(--gray)">選擇檔案</label>
       <input type="file" id="bkFile" accept=".json" style="font-size:13px">
       <div class="action-row" style="margin-top:12px">
         <button class="btn btn-primary" onclick="doBkImport()">匯入</button>
@@ -896,7 +897,7 @@
     <div class="modal">
       <h3>設定 Gemini API Key</h3>
       <div class="f-row">
-        <label>API Key</label>
+        <label for="geminiKeyInput">API Key</label>
         <input type="text" id="geminiKeyInput" placeholder="貼上你的 Gemini API Key">
       </div>
       <div class="action-row">
@@ -2156,7 +2157,10 @@ function startExam(){
     const isEssay = q.type==='essay';
     currentQType = isEssay ? 'essay' : 'choice';
     document.getElementById('modalTitle').textContent='編輯題目';
-    document.getElementById('fSubj').value=q.subject||'';
+    document.getElementById('fSubj').value = (q.subject||'').trim();
+    // 若科目不在選單中則選第一個
+    const fSubj = document.getElementById('fSubj');
+    if(!fSubj.value) fSubj.selectedIndex = 0;
     document.getElementById('fYear').value=q.year||'';
     document.getElementById('fSrc').value=q.src||'';
     document.getElementById('fQ').value=q.q||'';
