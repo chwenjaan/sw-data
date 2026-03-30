@@ -2163,10 +2163,20 @@ function startExam(){
     const isEssay = q.type==='essay';
     currentQType = isEssay ? 'essay' : 'choice';
     document.getElementById('modalTitle').textContent='編輯題目';
-    document.getElementById('fSubj').value = (q.subject||'').trim();
-    // 若科目不在選單中則選第一個
+
+    // 科目：模糊比對（去空白後找最接近的 option）
     const fSubj = document.getElementById('fSubj');
-    if(!fSubj.value) fSubj.selectedIndex = 0;
+    const subjVal = (q.subject||'').trim();
+    let matched = false;
+    for(let i=0; i<fSubj.options.length; i++){
+      if(fSubj.options[i].value === subjVal || fSubj.options[i].text === subjVal){
+        fSubj.selectedIndex = i;
+        matched = true;
+        break;
+      }
+    }
+    if(!matched) fSubj.selectedIndex = 0;
+
     document.getElementById('fYear').value=q.year||'';
     document.getElementById('fSrc').value=q.src||'';
     document.getElementById('fQ').value=q.q||'';
@@ -2360,10 +2370,10 @@ function startExam(){
                  <button class="btn btn-gold" onclick="copyEssayPrompt('${q.id}')" style="font-size:11px;flex:1">📋 複製提示詞</button>
                  <button class="btn btn-outline" onclick="openEssayAi('${q.id}')" style="font-size:11px;flex:1">🔍 開啟 Perplexity</button>
                </div>
-               <textarea id="essay-paste-${q.id}" rows="3" placeholder="將 AI 解析貼到這裡…" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:white;resize:vertical"></textarea>
+               <textarea data-qid="${q.id}" rows="3" placeholder="將 AI 解析貼到這裡…" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:white;resize:vertical"></textarea>
                <div style="display:flex;gap:6px;margin-top:6px">
                  <button class="btn btn-primary" onclick="saveEssayExp('${q.id}')" style="font-size:11px">💾 儲存解析</button>
-                 <button class="btn btn-outline" onclick="document.getElementById('essay-paste-${q.id}').value=''" style="font-size:11px">清除</button>
+                 <button class="btn btn-outline" onclick="this.closest('div').previousElementSibling.value=''" style="font-size:11px">清除</button>
                </div>
              </div>`
         }
@@ -2409,7 +2419,7 @@ ${q.q}
   }
 
   function saveEssayExp(qId){
-    const ta = document.getElementById('essay-paste-'+qId);
+    const ta = document.querySelector(`textarea[data-qid="${qId}"]`);
     if(!ta){ showToast('找不到輸入框'); return; }
     const text = ta.value.trim();
     if(!text){ showToast('請先貼上解析內容'); return; }
