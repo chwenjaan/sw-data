@@ -2073,7 +2073,7 @@ function startExam(){
     optWrap.innerHTML=['A','B','C','D'].map((lbl,i)=>`
       <div class="orow">
         <div class="olbl">${lbl}</div>
-        <input type="text" data-idx="${i}" placeholder="選項${lbl}" class="opt-input">
+        <input type="text" id="optInput${i}" name="optInput${i}" data-idx="${i}" placeholder="選項${lbl}" class="opt-input">
       </div>`).join('');
     const ansSel=document.getElementById('ansSel');
     ansSel.innerHTML=['A','B','C','D'].map((lbl,i)=>`
@@ -2190,7 +2190,7 @@ function startExam(){
       optWrap.innerHTML=(q.opts||['','','','']).map((o,i)=>`
         <div class="orow i-ans">
           <div class="olbl">${'ABCD'[i]}</div>
-          <input type="text" data-idx="${i}" class="opt-input" value="${o.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">
+          <input type="text" id="optInput${i}" name="optInput${i}" data-idx="${i}" class="opt-input" value="${o.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">
         </div>`).join('');
       const ansSel=document.getElementById('ansSel');
       ansSel.innerHTML=['A','B','C','D'].map((lbl,i)=>`
