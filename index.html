@@ -1991,7 +1991,7 @@ function startExam(){
             : `<div style="font-size:11px;color:var(--gray)">答案：${correctLetters(q)}</div>`
           }
         </div>
-        <button class="btn btn-outline btn-sm" style="flex-shrink:0" onclick="editQ('${q.id}')">✏️</button>
+        <button class="btn btn-outline btn-sm edit-q-btn" style="flex-shrink:0" data-id="${q.id}" data-subj="${(q.subject||'')}">✏️</button>
       </div>
     `;
   }
@@ -2173,8 +2173,12 @@ function startExam(){
     }
   }
 
-  function editQ(id){
-    const q=DB.questions.find(x=>x.id===id);
+  function editQ(id, subj){
+    // id 可能在不同科目間重複（GitHub 資料問題），用 id+subject 雙重比對定位唯一題目
+    let q = subj
+      ? DB.questions.find(x=>x.id===id && x.subject===subj)
+      : DB.questions.find(x=>x.id===id);
+    if(!q) q = DB.questions.find(x=>x.id===id); // fallback
     if(!q) return;
     editId=id;
     const isEssay = q.type==='essay';
@@ -2395,7 +2399,7 @@ function startExam(){
       <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px" id="essay-card-${q.id}">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <div style="font-size:11px;color:var(--gray);flex:1">${q.subject||''} · ${q.year||''} · 第 ${i+1} 題</div>
-          ${ISDEV?`<button class="btn btn-outline btn-sm" onclick="editQ('${q.id}')" style="font-size:10px;padding:3px 8px">✏️ 編輯</button>`:''}
+          ${ISDEV?`<button class="btn btn-outline btn-sm edit-q-btn" data-id="${q.id}" data-subj="${q.subject||''}" style="font-size:10px;padding:3px 8px">✏️ 編輯</button>`:''}
         </div>
         <div style="font-size:14px;margin-bottom:7px;white-space:pre-line">${q.q||''}</div>
 
@@ -2738,6 +2742,15 @@ D. ${(q.opts||[])[3]||''}
       ()=>updateHomeStats()
     ]);
   }
+  // ===== 全域 edit-q-btn 事件委派（避免 q.id 含特殊字元時 onclick 字串斷裂）=====
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.edit-q-btn');
+    if(!btn) return;
+    const id = btn.getAttribute('data-id');
+    const subj = btn.getAttribute('data-subj') || '';
+    if(id) editQ(id, subj);
+  });
+
   init();
   </script>
 </body>
