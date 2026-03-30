@@ -299,137 +299,144 @@
 
     <!-- 首頁 panel -->
     <div class="panel active" id="panel-home">
-      <!-- 水豚插圖 + 標語 -->
-      <div style="text-align:center;padding:24px 16px 0">
-        <div style="font-size:15px;font-weight:700;color:var(--gray);letter-spacing:1px;margin-bottom:6px">社工師國考備戰</div>
-        <div style="font-size:30px;font-weight:900;color:var(--ink);line-height:1.2;margin-bottom:6px">今天先刷 <span style="color:var(--red)">10</span> 題</div>
-        <div style="font-size:14px;color:var(--gray);margin-bottom:20px">可依年份、科目快速開始練習</div>
 
-        <!-- 水豚 SVG 插圖 -->
-        <div style="position:relative;display:inline-block;margin-bottom:4px">
-          <svg viewBox="0 0 220 160" width="220" height="160" xmlns="http://www.w3.org/2000/svg">
-            <!-- 桌子 -->
-            <rect x="10" y="118" width="200" height="10" rx="3" fill="#b5a08a"/>
-            <rect x="20" y="128" width="8" height="28" rx="2" fill="#9a8472"/>
-            <rect x="192" y="128" width="8" height="28" rx="2" fill="#9a8472"/>
-            <!-- 書堆 -->
-            <rect x="15" y="88" width="52" height="10" rx="2" fill="#e8d5b7" transform="rotate(-2,41,93)"/>
-            <rect x="16" y="80" width="50" height="10" rx="2" fill="#d4c4a8" transform="rotate(1,41,85)"/>
-            <rect x="14" y="72" width="54" height="10" rx="2" fill="#c9b99a" transform="rotate(-1,41,77)"/>
-            <rect x="17" y="64" width="48" height="10" rx="2" fill="#e0cdb2" transform="rotate(2,41,69)"/>
-            <!-- 咖啡杯 -->
-            <ellipse cx="170" cy="112" rx="14" ry="6" fill="#d4b896"/>
-            <rect x="156" y="96" width="28" height="16" rx="4" fill="#e8d0b0"/>
-            <path d="M184 100 Q194 102 192 108 Q190 114 184 112" fill="none" stroke="#d4b896" stroke-width="2.5"/>
-            <ellipse cx="170" cy="97" rx="12" ry="4" fill="#6b4226"/>
-            <!-- 水豚身體 -->
-            <ellipse cx="138" cy="105" rx="42" ry="32" fill="#8B6914" opacity="0.15"/>
-            <ellipse cx="138" cy="102" rx="40" ry="30" fill="#a0845c"/>
-            <!-- 水豚頭 -->
-            <ellipse cx="148" cy="72" rx="32" ry="26" fill="#8B7355"/>
-            <!-- 耳朵 -->
-            <ellipse cx="120" cy="55" rx="9" ry="7" fill="#7a6347"/>
-            <ellipse cx="120" cy="55" rx="5" ry="4" fill="#c9a882"/>
-            <ellipse cx="174" cy="53" rx="9" ry="7" fill="#7a6347"/>
-            <ellipse cx="174" cy="53" rx="5" ry="4" fill="#c9a882"/>
-            <!-- 眼鏡框 -->
-            <circle cx="136" cy="68" r="9" fill="none" stroke="#555" stroke-width="1.5"/>
-            <circle cx="156" cy="67" r="9" fill="none" stroke="#555" stroke-width="1.5"/>
-            <line x1="145" y1="68" x2="147" y2="67" stroke="#555" stroke-width="1.5"/>
-            <line x1="127" y1="67" x2="122" y2="65" stroke="#555" stroke-width="1.5"/>
-            <line x1="165" y1="66" x2="170" y2="64" stroke="#555" stroke-width="1.5"/>
-            <!-- 眼睛（疲倦半閉） -->
-            <path d="M130 68 Q136 72 142 68" fill="#5a3e28" stroke="none"/>
-            <path d="M150 67 Q156 71 162 67" fill="#5a3e28" stroke="none"/>
-            <!-- 鼻子 -->
-            <ellipse cx="148" cy="80" rx="10" ry="6" fill="#7a6347"/>
-            <ellipse cx="144" cy="80" rx="3" ry="2.5" fill="#3d2b1a"/>
-            <ellipse cx="152" cy="80" rx="3" ry="2.5" fill="#3d2b1a"/>
-            <!-- 鉛筆 -->
-            <rect x="95" y="90" width="5" height="36" rx="1" fill="#f5c842" transform="rotate(-20,98,108)"/>
-            <rect x="95" y="90" width="5" height="6" rx="1" fill="#e8b84b" transform="rotate(-20,98,108)"/>
-            <polygon points="95,126 100,126 97.5,133" fill="#f5deb3" transform="rotate(-20,98,108)"/>
-            <!-- 汗水 -->
-            <ellipse cx="178" cy="60" rx="3" ry="5" fill="#a8d8ea" opacity="0.8"/>
-            <!-- 筆記本 -->
-            <rect x="98" y="108" width="50" height="36" rx="3" fill="white" stroke="#ddd" stroke-width="1"/>
-            <line x1="108" y1="108" x2="108" y2="144" stroke="#eee" stroke-width="1.5"/>
-            <line x1="103" y1="116" x2="143" y2="116" stroke="#ddd" stroke-width="1"/>
-            <line x1="103" y1="123" x2="143" y2="123" stroke="#ddd" stroke-width="1"/>
-            <line x1="103" y1="130" x2="143" y2="130" stroke="#ddd" stroke-width="1"/>
-            <!-- 螢光筆 -->
-            <rect x="72" y="128" width="22" height="6" rx="3" fill="#FFE066" transform="rotate(-15,83,131)"/>
-            <rect x="86" y="128" width="22" height="6" rx="3" fill="#98FB98" transform="rotate(10,97,131)"/>
-          </svg>
+      <!-- Hero 區塊：插圖 + 標語 -->
+      <div style="background:linear-gradient(135deg,#1a1a2e 0%,#2d2d4e 60%,#1a1a2e 100%);border-radius:20px;padding:28px 20px 24px;margin-bottom:18px;position:relative;overflow:hidden">
+        <!-- 背景裝飾圈 -->
+        <div style="position:absolute;top:-30px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(201,168,76,.08);pointer-events:none"></div>
+        <div style="position:absolute;bottom:-40px;left:-20px;width:120px;height:120px;border-radius:50%;background:rgba(192,57,43,.07);pointer-events:none"></div>
+
+        <div style="display:flex;align-items:center;gap:16px;position:relative">
+          <!-- 左：插圖 -->
+          <div style="flex-shrink:0">
+            <svg viewBox="0 0 140 140" width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+              <!-- 發光底圈 -->
+              <circle cx="70" cy="78" r="52" fill="rgba(201,168,76,0.10)"/>
+              <!-- 桌面 -->
+              <rect x="18" y="106" width="104" height="7" rx="3.5" fill="#7a6040"/>
+              <rect x="26" y="113" width="6" height="18" rx="2" fill="#5e4a30"/>
+              <rect x="108" y="113" width="6" height="18" rx="2" fill="#5e4a30"/>
+              <!-- 書堆（左） -->
+              <rect x="20" y="76" width="36" height="8" rx="2" fill="#e8c97a" transform="rotate(-3,38,80)"/>
+              <rect x="20" y="69" width="34" height="8" rx="2" fill="#c9a84c" transform="rotate(1,37,73)"/>
+              <rect x="19" y="62" width="38" height="8" rx="2" fill="#d4b460" transform="rotate(-1,38,66)"/>
+              <!-- 咖啡杯（右） -->
+              <rect x="96" y="84" width="22" height="14" rx="3" fill="#ede0c8"/>
+              <ellipse cx="107" cy="84" rx="10" ry="3.5" fill="#d4c4a0"/>
+              <ellipse cx="107" cy="85" rx="8" ry="2.5" fill="#5c3317"/>
+              <path d="M118 87 Q126 89 124 95 Q122 100 118 98" fill="none" stroke="#c9b090" stroke-width="2"/>
+              <ellipse cx="107" cy="98" rx="12" ry="4" fill="#c9b090"/>
+              <!-- 水豚身體 -->
+              <ellipse cx="80" cy="98" rx="32" ry="22" fill="#8a6f4e"/>
+              <!-- 水豚頭 -->
+              <ellipse cx="88" cy="72" rx="26" ry="22" fill="#9a7d5a"/>
+              <!-- 耳朵 -->
+              <ellipse cx="66" cy="57" rx="8" ry="6" fill="#7a6040"/>
+              <ellipse cx="66" cy="57" rx="4.5" ry="3.5" fill="#c9a882"/>
+              <ellipse cx="108" cy="55" rx="8" ry="6" fill="#7a6040"/>
+              <ellipse cx="108" cy="55" rx="4.5" ry="3.5" fill="#c9a882"/>
+              <!-- 眼鏡 -->
+              <circle cx="78" cy="68" r="8" fill="none" stroke="#c9a84c" stroke-width="1.8"/>
+              <circle cx="97" cy="67" r="8" fill="none" stroke="#c9a84c" stroke-width="1.8"/>
+              <line x1="86" y1="68" x2="89" y2="67" stroke="#c9a84c" stroke-width="1.8"/>
+              <line x1="70" y1="67" x2="65" y2="65" stroke="#c9a84c" stroke-width="1.8"/>
+              <line x1="105" y1="66" x2="110" y2="64" stroke="#c9a84c" stroke-width="1.8"/>
+              <!-- 眼睛（微笑） -->
+              <path d="M73 68 Q78 73 83 68" fill="none" stroke="#4a3020" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M92 67 Q97 72 102 67" fill="none" stroke="#4a3020" stroke-width="1.8" stroke-linecap="round"/>
+              <!-- 鼻子 -->
+              <ellipse cx="88" cy="78" rx="8" ry="5" fill="#7a6040"/>
+              <ellipse cx="85" cy="78" rx="2.5" ry="2" fill="#3d2b1a"/>
+              <ellipse cx="91" cy="78" rx="2.5" ry="2" fill="#3d2b1a"/>
+              <!-- 嘴巴（微笑） -->
+              <path d="M82 84 Q88 88 94 84" fill="none" stroke="#5a3e28" stroke-width="1.5" stroke-linecap="round"/>
+              <!-- 鉛筆 -->
+              <rect x="54" y="80" width="4" height="28" rx="1" fill="#f5c842" transform="rotate(-22,56,94)"/>
+              <polygon points="52,106 56,106 54,112" fill="#f5deb3" transform="rotate(-22,54,109)"/>
+              <!-- 汗水 -->
+              <ellipse cx="112" cy="56" rx="2.5" ry="4" fill="#a8d8ea" opacity="0.85"/>
+              <!-- 星星裝飾 -->
+              <text x="28" y="48" font-size="10" fill="#c9a84c" opacity="0.7">✦</text>
+              <text x="118" y="44" font-size="7" fill="#c9a84c" opacity="0.5">✦</text>
+              <text x="38" y="36" font-size="6" fill="#fff" opacity="0.3">✦</text>
+            </svg>
+          </div>
+          <!-- 右：標語 -->
+          <div style="flex:1">
+            <div style="font-size:11px;font-weight:600;color:rgba(201,168,76,.7);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase">社工師國考</div>
+            <div style="font-size:26px;font-weight:900;color:#f5f0e8;line-height:1.2;margin-bottom:8px">每天刷題<br><span style="color:var(--gold)">穩穩上榜</span></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(245,240,232,.6)">📚 <span id="homeBank">0</span> 題庫</div>
+              <div style="background:rgba(255,255,255,.08);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(245,240,232,.6)">✅ <span id="homeAcc">0%</span> 正確率</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 選擇卡片 -->
-      <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px;margin:0 4px;box-shadow:0 4px 16px var(--shadow)">
-
-        <!-- 快速開始 -->
-        <div style="margin-bottom:16px">
-          <label for="homeYear" style="font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.5px;display:block;margin-bottom:8px">選擇年份</label>
-          <select id="homeYear" onchange="updateHomeSubj()" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--paper);appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><path d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px">
-            <option value="">全部年份</option>
-          </select>
+      <!-- 練習設定卡片 -->
+      <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 2px 12px var(--shadow)">
+        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:6px">
+          <span style="width:3px;height:16px;background:var(--red);border-radius:2px;display:inline-block"></span>
+          選擇練習範圍
         </div>
 
-        <div style="margin-bottom:20px">
-          <label for="homeSubj" style="font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.5px;display:block;margin-bottom:8px">選擇科目</label>
-          <select id="homeSubj" style="width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:var(--paper);appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23666%22><path d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;background-size:20px">
+        <div class="f-grid2" style="margin-bottom:10px">
+          <div class="f-row">
+            <label for="homeYear">年度</label>
+            <select id="homeYear" onchange="onHomeYearChange()">
+              <option value="">全部年度</option>
+            </select>
+          </div>
+          <div class="f-row">
+            <label for="homeExam">考試次別</label>
+            <select id="homeExam" onchange="onHomeExamChange()">
+              <option value="">全部次別</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-row" style="margin-bottom:16px">
+          <label for="homeSubj">科目</label>
+          <select id="homeSubj">
             <option value="all">全部科目</option>
-            <option value="社會工作">社會工作</option>
-            <option value="社會工作直接服務">社會工作直接服務</option>
-            <option value="社會政策與社會立法">社會政策與社會立法</option>
-            <option value="人類行為與社會環境">人類行為與社會環境</option>
-            <option value="社會工作研究方法">社會工作研究方法</option>
           </select>
         </div>
 
-        <button onclick="startFromHome()" style="width:100%;padding:16px;background:var(--red);color:white;border:none;border-radius:12px;font-size:18px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 12px rgba(192,57,43,.35)">
+        <button onclick="startFromHome()" style="width:100%;padding:14px;background:var(--red);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 12px rgba(192,57,43,.3);transition:opacity .15s" onmouseenter="this.style.opacity='.88'" onmouseleave="this.style.opacity='1'">
           開始練習 →
         </button>
-
-        <div style="font-size:11px;color:var(--gray);text-align:center;margin-top:10px">按下後會直接進入題目作答畫面</div>
+        <div style="font-size:11px;color:var(--gray);text-align:center;margin-top:8px">不選擇則從全部題庫隨機出題</div>
       </div>
 
-      <!-- 快速功能列 -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;padding:0 4px">
-        <button onclick="switchTabByName('exam')" style="padding:14px 8px;background:white;border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px">
-          <span style="font-size:22px">📋</span>模擬考
-        </button>
-        <button onclick="switchTabByName('wrong')" style="padding:14px 8px;background:white;border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px">
-          <span style="font-size:22px">❌</span>錯題複習
-        </button>
-        <button onclick="switchTabByName('essay')" style="padding:14px 8px;background:white;border:1px solid var(--border);border-radius:12px;font-size:11px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:4px">
-          <span style="font-size:22px">✍️</span>申論題
-        </button>
-      </div>
-
-      <!-- 統計摘要 -->
-      <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;display:flex;justify-content:space-around;text-align:center">
-        <div>
-          <div style="font-size:22px;font-weight:700;color:var(--blue)" id="homeTotal">0</div>
-          <div style="font-size:10px;color:var(--gray)">累計作答</div>
-        </div>
-        <div style="width:1px;background:var(--border)"></div>
-        <div>
-          <div style="font-size:22px;font-weight:700;color:var(--green)" id="homeAcc">0%</div>
-          <div style="font-size:10px;color:var(--gray)">正確率</div>
-        </div>
-        <div style="width:1px;background:var(--border)"></div>
-        <div>
-          <div style="font-size:22px;font-weight:700;color:var(--gold)" id="homeBank">0</div>
-          <div style="font-size:10px;color:var(--gray)">題庫題數</div>
-        </div>
-      </div>
+      <!-- 隱藏的統計 id（供 JS 更新用） -->
+      <span id="homeTotal" style="display:none">0</span>
     </div>
 
     <!-- 練習 panel -->
     <div class="panel" id="panel-practice">
-      <div class="subj-bar" id="subjFilter"></div>
-      <div id="yearFilterBar" style="padding:6px 12px 0;display:flex;gap:6px;overflow-x:auto"></div>
+      <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+        <div class="sec-title">練習設定</div>
+        <div class="f-grid2">
+          <div class="f-row">
+            <label for="practiceYear">年度</label>
+            <select id="practiceYear" onchange="onPracticeYearChange()">
+              <option value="">全部年度</option>
+            </select>
+          </div>
+          <div class="f-row">
+            <label for="practiceExam">考試次別</label>
+            <select id="practiceExam" onchange="onPracticeExamChange()">
+              <option value="">全部次別</option>
+            </select>
+          </div>
+        </div>
+        <div class="f-row">
+          <label for="practiceSubj">科目</label>
+          <select id="practiceSubj" onchange="onPracticeSubjChange()">
+            <option value="all">全部科目</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="startPracticeFromFilter()">開始練習</button>
+      </div>
       <div id="noBank" class="empty-state" style="display:none">
         <div class="icon">📂</div>
         <div style="font-size:14px;font-weight:500">此科目沒有題目</div>
@@ -946,7 +953,7 @@
     })()
   };
 
-  let P = {pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null};
+  let P = {pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null,yearPrefix:null};
   let E = {pool:[],idx:0,answers:[],timerID:null,secsLeft:60,timeLimit:60};
   let editId = null, selAns = -1;
   let ISDEV = localStorage.getItem('swpwa-dev') === '1';
@@ -1411,26 +1418,84 @@ function applyDevMode(){
   }
 
   // ===== 首頁功能 =====
+  // ===== 首頁選單 =====
+  // 存儲年度->次別的對應
+  let _homeExamSetByYear = {};
+
   function populateHomeYear(){
-    const sel = document.getElementById('homeYear');
-    if(!sel) return;
-    const years = [...new Set(DB.questions.map(q=>q.year).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-    sel.innerHTML = '<option value="">全部年份</option>' +
-      years.map(y=>`<option value="${y}">${y}</option>`).join('');
+    const yearSel = document.getElementById('homeYear');
+    if(!yearSel) return;
+
+    const yearSet = new Set();
+    _homeExamSetByYear = {};
+    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+      const y = (q.year||'').replace(/[\s　]/g,'').trim();
+      if(!y) return;
+      const m = y.match(/^(\d+年)(.*)/);
+      if(m){
+        const yShort = m[1];
+        yearSet.add(yShort);
+        if(!_homeExamSetByYear[yShort]) _homeExamSetByYear[yShort]=new Set();
+        _homeExamSetByYear[yShort].add(y);
+      } else {
+        yearSet.add(y);
+      }
+    });
+
+    yearSel.innerHTML = '<option value="">全部年度</option>' +
+      Array.from(yearSet).sort((a,b)=>a.localeCompare(b))
+        .map(y=>`<option value="${y}">${y}</option>`).join('');
+
+    // 重置次別和科目
+    _updateHomeExam();
+    _updateHomeSubj();
   }
 
-  function updateHomeSubj(){
-    const yr = document.getElementById('homeYear').value;
-    const sel = document.getElementById('homeSubj');
-    if(!yr){
-      sel.innerHTML = '<option value="all">全部科目</option>' +
-        ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法']
-        .map(s=>`<option value="${s}">${s}</option>`).join('');
-      return;
+  function _updateHomeExam(){
+    const yearSel = document.getElementById('homeYear');
+    const examSel = document.getElementById('homeExam');
+    if(!examSel) return;
+    const y = yearSel ? yearSel.value : '';
+    examSel.innerHTML = '<option value="">全部次別</option>';
+    if(y && _homeExamSetByYear[y]){
+      Array.from(_homeExamSetByYear[y]).sort((a,b)=>a.localeCompare(b))
+        .forEach(e=>{ examSel.innerHTML += `<option value="${e}">${e}</option>`; });
     }
-    const subjs = [...new Set(DB.questions.filter(q=>q.year===yr).map(q=>q.subject).filter(Boolean))];
-    sel.innerHTML = '<option value="all">全部科目</option>' +
-      subjs.map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
+
+  function _updateHomeSubj(){
+    const yearSel = document.getElementById('homeYear');
+    const examSel = document.getElementById('homeExam');
+    const subjSel = document.getElementById('homeSubj');
+    if(!subjSel) return;
+    const y = yearSel ? yearSel.value : '';
+    const ex = examSel ? examSel.value : '';
+
+    const subjSet = new Set();
+    const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
+    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+      const qy = (q.year||'').replace(/[\s　]/g,'').trim();
+      if(y){
+        if(ex){ if(qy!==ex) return; }
+        else { if(!qy.startsWith(y)) return; }
+      }
+      if(q.subject) subjSet.add(q.subject);
+    });
+
+    subjSel.innerHTML = '<option value="all">全部科目</option>' +
+      order.filter(s=>subjSet.has(s))
+        .map(s=>`<option value="${s}">${s}</option>`).join('');
+  }
+
+  function onHomeYearChange(){
+    const examSel = document.getElementById('homeExam');
+    if(examSel) examSel.value = '';
+    _updateHomeExam();
+    _updateHomeSubj();
+  }
+
+  function onHomeExamChange(){
+    _updateHomeSubj();
   }
 
   function updateHomeStats(){
@@ -1442,48 +1507,171 @@ function applyDevMode(){
     const el3 = document.getElementById('homeBank');
     if(el) el.textContent = total;
     if(el2) el2.textContent = acc+'%';
-    if(el3) el3.textContent = DB.questions.length;
+    if(el3) el3.textContent = DB.questions.filter(q=>q.type!=='essay').length;
   }
+
+  // updateHomeSubj 保留向下相容（populateHomeYear 呼叫的舊名）
+  function updateHomeSubj(){ _updateHomeSubj(); }
 
   function startFromHome(){
     const yr = document.getElementById('homeYear').value;
+    const ex = document.getElementById('homeExam') ? document.getElementById('homeExam').value : '';
     const subj = document.getElementById('homeSubj').value;
-    // 設定練習篩選
+
     P.subj = subj==='all' ? 'all' : subj;
-    P.year = yr || null;
-    // 切換到練習 tab
+    // 次別優先，沒選次別才用年度 prefix 比對
+    if(ex){
+      P.year = ex;
+      P.yearPrefix = null;
+    } else if(yr){
+      P.year = yr;
+      P.yearPrefix = yr;
+    } else {
+      P.year = null;
+      P.yearPrefix = null;
+    }
+
     switchTabByName('practice');
-    // 重建篩選按鈕 active 狀態，再載入題目
-    buildSubjFilter();
+
+    // 同步練習 panel 下拉選單
+    populatePracticeSelects();
+    const pYear = document.getElementById('practiceYear');
+    const pExam = document.getElementById('practiceExam');
+    const pSubj = document.getElementById('practiceSubj');
+    if(pYear && yr) pYear.value = yr;
+    if(pExam && ex){ onPracticeYearChange(); pExam.value = ex; onPracticeExamChange(); }
+    if(pSubj && subj!=='all') pSubj.value = subj;
+
     loadPractice();
   }
 
-  // ===== 科目 / 年度 篩選（練習）=====
+  // ===== 科目 / 年度 篩選（練習）下拉選單版 =====
   function buildSubjFilter(){
-    document.getElementById('subjFilter').innerHTML = uniqueSubjs().map(s=>
-      `<button class="subj-btn${P.subj===s?' active':''}" onclick="filterSubj('${s}',this)">${s}</button>`
-    ).join('') + `<button class="subj-btn${P.subj==='all'?' active':''}" onclick="filterSubj('all',this)">全部科目</button>`;
-    buildYearFilter();
+    populatePracticeSelects();
   }
-  function buildYearFilter(){
-    const bar = document.getElementById('yearFilterBar');
-    if(!bar) return;
-    const years = [...new Set(DB.questions.map(q=>q.year).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-    bar.innerHTML = years.map(y=>
-      `<button class="subj-btn${P.year===y?' active':''}" style="font-size:11px;white-space:nowrap" onclick="filterYear('${y}',this)">${y}</button>`
-    ).join('') +
-    `<button class="subj-btn${P.year===null?' active':''}" style="font-size:11px;white-space:nowrap" onclick="filterYear(null,this)">全部年度</button>`;
+
+  function populatePracticeSelects(){
+    const yearSel = document.getElementById('practiceYear');
+    const examSel = document.getElementById('practiceExam');
+    const subjSel = document.getElementById('practiceSubj');
+    if(!yearSel||!examSel||!subjSel) return;
+
+    // 建立年度與次別資料
+    const yearSet = new Set();
+    const examSetByYear = {};
+    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+      const y = (q.year||'').replace(/[\s　]/g,'').trim();
+      if(!y) return;
+      const m = y.match(/^(\d+年)(.*)/);
+      if(m){
+        const yShort = m[1];
+        yearSet.add(yShort);
+        if(!examSetByYear[yShort]) examSetByYear[yShort]=new Set();
+        examSetByYear[yShort].add(y);
+      } else {
+        yearSet.add(y);
+      }
+    });
+
+    // 填年度
+    const curYear = yearSel.value;
+    yearSel.innerHTML = '<option value="">全部年度</option>';
+    Array.from(yearSet).sort((a,b)=>a.localeCompare(b)).forEach(y=>{
+      yearSel.innerHTML += `<option value="${y}"${y===curYear?' selected':''}>${y}</option>`;
+    });
+
+    // 填次別（依目前年度）
+    _updatePracticeExamOptions(examSetByYear);
+
+    // 填科目（依目前年度+次別）
+    _updatePracticeSubjOptions();
   }
-  function filterSubj(s,btn){
-    document.querySelectorAll('#subjFilter .subj-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    P.subj = s;
-    loadPractice();
+
+  function _updatePracticeExamOptions(examSetByYear){
+    const yearSel = document.getElementById('practiceYear');
+    const examSel = document.getElementById('practiceExam');
+    if(!yearSel||!examSel) return;
+    const y = yearSel.value;
+    const curExam = examSel.value;
+    examSel.innerHTML = '<option value="">全部次別</option>';
+    if(y && examSetByYear && examSetByYear[y]){
+      Array.from(examSetByYear[y]).sort((a,b)=>a.localeCompare(b)).forEach(e=>{
+        examSel.innerHTML += `<option value="${e}"${e===curExam?' selected':''}>${e}</option>`;
+      });
+    }
   }
-  function filterYear(y,btn){
-    document.querySelectorAll('#yearFilterBar .subj-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    P.year = y?y:null;
+
+  function _updatePracticeSubjOptions(){
+    const yearSel = document.getElementById('practiceYear');
+    const examSel = document.getElementById('practiceExam');
+    const subjSel = document.getElementById('practiceSubj');
+    if(!subjSel) return;
+    const y = yearSel ? yearSel.value : '';
+    const ex = examSel ? examSel.value : '';
+    const curSubj = subjSel.value;
+
+    const subjSet = new Set();
+    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+      const qy = (q.year||'').replace(/[\s　]/g,'').trim();
+      if(y){
+        if(ex){ if(qy!==ex) return; }
+        else { if(!qy.startsWith(y)) return; }
+      }
+      if(q.subject) subjSet.add(q.subject);
+    });
+
+    subjSel.innerHTML = '<option value="all">全部科目</option>';
+    const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
+    const sorted = order.filter(s=>subjSet.has(s)).concat([...subjSet].filter(s=>!order.includes(s)));
+    sorted.forEach(s=>{
+      subjSel.innerHTML += `<option value="${s}"${s===curSubj?' selected':''}>${s}</option>`;
+    });
+    subjSel.value = sorted.includes(curSubj) ? curSubj : 'all';
+  }
+
+  function onPracticeYearChange(){
+    // 年度改變時重建次別和科目
+    const yearSel = document.getElementById('practiceYear');
+    const examSel = document.getElementById('practiceExam');
+    if(examSel) examSel.value = '';
+    const yearSet = new Set();
+    const examSetByYear = {};
+    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+      const y = (q.year||'').replace(/[\s　]/g,'').trim();
+      if(!y) return;
+      const m = y.match(/^(\d+年)(.*)/);
+      if(m){
+        const yShort = m[1];
+        yearSet.add(yShort);
+        if(!examSetByYear[yShort]) examSetByYear[yShort]=new Set();
+        examSetByYear[yShort].add(y);
+      }
+    });
+    _updatePracticeExamOptions(examSetByYear);
+    _updatePracticeSubjOptions();
+  }
+
+  function onPracticeExamChange(){
+    _updatePracticeSubjOptions();
+  }
+
+  function onPracticeSubjChange(){
+    // 科目改變不需要重建其他選單
+  }
+
+  function startPracticeFromFilter(){
+    const yearSel = document.getElementById('practiceYear');
+    const examSel = document.getElementById('practiceExam');
+    const subjSel = document.getElementById('practiceSubj');
+    const y = yearSel ? yearSel.value : '';
+    const ex = examSel ? examSel.value : '';
+    const s = subjSel ? subjSel.value : 'all';
+
+    P.subj = s || 'all';
+    // 次別優先，次別沒選則用年度
+    P.year = ex || y || null;
+    P.yearPrefix = (!ex && y) ? y : null; // 只選年度（不選次別）時用 prefix 比對
+
     loadPractice();
   }
 
@@ -1571,7 +1759,14 @@ function applyDevMode(){
   // ===== 練習流程 =====
   function loadPractice(){
     let pool = getPools(P.subj);
-    if(P.year) pool = pool.filter(q=>q.year===P.year);
+    if(P.year){
+      if(P.yearPrefix){
+        // 只選年度（無次別），用 startsWith 匹配該年全部次別
+        pool = pool.filter(q=>(q.year||'').replace(/[\s　]/g,'').trim().startsWith(P.yearPrefix));
+      } else {
+        pool = pool.filter(q=>(q.year||'').replace(/[\s　]/g,'').trim()===P.year);
+      }
+    }
     P.pool = shuffle(pool.slice());
     P.idx = 0;
     P.answered=false;
