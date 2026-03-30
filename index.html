@@ -841,16 +841,22 @@
     <div class="modal">
       <h3>批次匯入題目</h3>
       <div class="ifmt">
-        <div>每題格式（題目間用空行分隔）：</div>
-        <br>
+        <div style="font-weight:600;margin-bottom:4px">【選擇題】格式（題目間用空行分隔）：</div>
         <code>Q: 題目</code><br>
-        <br>
         <code>A: 選項A</code><br>
         <code>B: 選項B</code><br>
         <code>C: 選項C</code><br>
         <code>D: 選項D</code><br>
         <code>ANS: A</code>（正確答案）<br>
-        <code>SUBJ: 社會工作</code>（科目）<br>
+        <code>SUBJ: 社會工作</code>（科目，選填）<br>
+        <code>YEAR: 115年</code>（選填）<br>
+        <code>SRC: 考選部</code>（選填）<br>
+        <code>EXP: 解析</code>（選填）<br>
+        <br>
+        <div style="font-weight:600;margin-bottom:4px">【申論題】格式：</div>
+        <code>TYPE: essay</code><br>
+        <code>Q: 題目</code><br>
+        <code>SUBJ: 社會工作</code>（科目，選填）<br>
         <code>YEAR: 115年</code>（選填）<br>
         <code>SRC: 考選部</code>（選填）<br>
         <code>EXP: 解析</code>（選填）
@@ -1061,8 +1067,16 @@ function applyDevMode(){
     let fixed=0;
     DB.questions.forEach(q=>{
       if(q.subject && !KNOWN_SUBJS.includes(q.subject)){
-        for(const ks of KNOWN_SUBJS){
-          if(q.subject.includes(ks)){q.subject=ks;fixed++;break;}
+        // 先嘗試去除空白後直接比對
+        const trimmed = q.subject.trim().replace(/[\s　]+/g,' ');
+        if(KNOWN_SUBJS.includes(trimmed)){
+          q.subject=trimmed; fixed++;
+        } else {
+          // 模糊比對：從最長科目名稱開始，避免「社會工作」誤匹配「社會工作直接服務」
+          const sortedSubjs = [...KNOWN_SUBJS].sort((a,b)=>b.length-a.length);
+          for(const ks of sortedSubjs){
+            if(q.subject.includes(ks)){q.subject=ks;fixed++;break;}
+          }
         }
       }
       if(q.year){
@@ -2167,19 +2181,23 @@ function startExam(){
     currentQType = isEssay ? 'essay' : 'choice';
     document.getElementById('modalTitle').textContent='編輯題目';
 
-    // 科目：模糊比對（去空白後找最接近的 option）
+    // 科目：先直接設值，不符合時再用模糊比對（去除空白、全形字元）
     const fSubj = document.getElementById('fSubj');
-    const subjVal = (q.subject||'').trim();
-    let matched = false;
-    for(let i=0; i<fSubj.options.length; i++){
-      if(fSubj.options[i].value === subjVal || fSubj.options[i].text === subjVal){
-        fSubj.selectedIndex = i;
-        matched = true;
-        break;
+    const subjVal = (q.subject||'').replace(/[\s　]/g,'');
+    fSubj.value = q.subject||'';
+    if(!fSubj.value){
+      // 直接設值失敗，改用模糊比對
+      let matched = false;
+      for(let i=0; i<fSubj.options.length; i++){
+        const optVal = fSubj.options[i].value.replace(/[\s　]/g,'');
+        if(optVal === subjVal){
+          fSubj.selectedIndex = i;
+          matched = true;
+          break;
+        }
       }
+      if(!matched) fSubj.selectedIndex = 0;
     }
-    if(!matched) fSubj.selectedIndex = 0;
-
     document.getElementById('fYear').value=q.year||'';
     document.getElementById('fSrc').value=q.src||'';
     document.getElementById('fQ').value=q.q||'';
@@ -2246,9 +2264,10 @@ function startExam(){
     const items=[];
     blocks.forEach(b=>{
       const lines=b.split('\n').map(l=>l.trim()).filter(Boolean);
-      let q='',A='',B='',C='',D='',ans='',subj='',year='',src='',exp='';
+      let type='choice',q='',A='',B='',C='',D='',ans='',subj='',year='',src='',exp='';
       lines.forEach(l=>{
-        if(l.startsWith('Q:')) q=l.slice(2).trim();
+        if(l.startsWith('TYPE:')) type=l.slice(5).trim().toLowerCase();
+        else if(l.startsWith('Q:')) q=l.slice(2).trim();
         else if(l.startsWith('A:')) A=l.slice(2).trim();
         else if(l.startsWith('B:')) B=l.slice(2).trim();
         else if(l.startsWith('C:')) C=l.slice(2).trim();
@@ -2257,13 +2276,20 @@ function startExam(){
         else if(l.startsWith('SUBJ:')) subj=l.slice(5).trim();
         else if(l.startsWith('YEAR:')) year=l.slice(5).trim();
         else if(l.startsWith('SRC:')) src=l.slice(5).trim();
-        else if(l.startsWith('EXP:')) exp=l.slice(5).trim();
+        else if(l.startsWith('EXP:')) exp=l.slice(4).trim();
       });
-      if(!q || !A || !B || !C || !D || !ans) return;
       const subjUse = subj || subjDefault;
-      const ansIdx = 'ABCD'.indexOf(ans.toUpperCase());
-      if(ansIdx===-1) return;
-      items.push({q,opts:[A,B,C,D],ans:ansIdx,subject:subjUse,year,src,exp});
+      if(!q) return;
+      if(type==='essay'){
+        // 申論題：不需要選項與答案
+        items.push({q,opts:[],ans:-1,subject:subjUse,year,src,exp,type:'essay'});
+      } else {
+        // 選擇題：必須有選項與答案
+        if(!A || !B || !C || !D || !ans) return;
+        const ansIdx = 'ABCD'.indexOf(ans.toUpperCase());
+        if(ansIdx===-1) return;
+        items.push({q,opts:[A,B,C,D],ans:ansIdx,subject:subjUse,year,src,exp,type:'choice'});
+      }
     });
     return items;
   }
@@ -2293,7 +2319,8 @@ function startExam(){
         q:it.q,
         opts:it.opts,
         ans:it.ans,
-        exp:it.exp
+        exp:it.exp,
+        type:it.type||'choice'
       });
     });
     save();
