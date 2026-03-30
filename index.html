@@ -1972,7 +1972,10 @@ function startExam(){
             ${q.src?`<span style="margin-left:6px;color:var(--red2)">${q.src}</span>`:''}
           </div>
           <div style="font-size:13px;line-height:1.7;margin-bottom:4px">${q.q||''}</div>
-          <div style="font-size:11px;color:var(--gray)">答案：${correctLetters(q)}</div>
+          ${q.type==='essay'
+            ? `<div style="font-size:11px;color:var(--blue)">📝 申論題</div>`
+            : `<div style="font-size:11px;color:var(--gray)">答案：${correctLetters(q)}</div>`
+          }
         </div>
         <button class="btn btn-outline btn-sm" style="flex-shrink:0" onclick="editQ('${q.id}')">✏️</button>
       </div>
@@ -2196,6 +2199,13 @@ function startExam(){
       ansSel.innerHTML=['A','B','C','D'].map((lbl,i)=>`
         <button class="ans-btn${getCorrectIdxs(q).includes(i)?' sel':''}" onclick="setAns(${i},this)">${lbl}</button>`).join('');
       selAns=getCorrectIdxs(q)[0]??-1;
+    } else {
+      // 申論題：清空選項欄位與答案選擇，避免殘留上一題的資料
+      const optWrap=document.getElementById('optInputs');
+      if(optWrap) optWrap.innerHTML='';
+      const ansSel=document.getElementById('ansSel');
+      if(ansSel) ansSel.innerHTML='';
+      selAns=-1;
     }
     document.getElementById('delBtn').style.display='inline-flex';
     openModal('addModal');
