@@ -2073,7 +2073,7 @@ function startExam(){
     optWrap.innerHTML=['A','B','C','D'].map((lbl,i)=>`
       <div class="orow">
         <div class="olbl">${lbl}</div>
-        <input type="text" id="optInput${i}" placeholder="選項${lbl}">
+        <input type="text" data-idx="${i}" placeholder="選項${lbl}" class="opt-input">
       </div>`).join('');
     const ansSel=document.getElementById('ansSel');
     ansSel.innerHTML=['A','B','C','D'].map((lbl,i)=>`
@@ -2102,7 +2102,10 @@ function startExam(){
       return;
     }
     if(!isEssay){
-      const opts=['A','B','C','D'].map((_,i)=>document.getElementById('optInput'+i).value.trim());
+      const opts=[0,1,2,3].map(i=>{
+        const el=document.querySelector(`#optInputs .opt-input[data-idx="${i}"]`);
+        return el ? el.value.trim() : '';
+      });
       if(opts.some(o=>!o)||selAns===-1){
         showToast('請填寫選項與正確答案');
         return;
@@ -2116,7 +2119,10 @@ function startExam(){
           item.type='choice';
         }
       }else{
-        const opts2=['A','B','C','D'].map((_,i)=>document.getElementById('optInput'+i).value.trim());
+        const opts2=[0,1,2,3].map(i=>{
+          const el=document.querySelector(`#optInputs .opt-input[data-idx="${i}"]`);
+          return el ? el.value.trim() : '';
+        });
         DB.questions.push({id:'Q'+Date.now(),subject:subj,year,src,q,opts:opts2,ans:selAns,exp,type:'choice'});
       }
     } else {
@@ -2174,7 +2180,7 @@ function startExam(){
       optWrap.innerHTML=(q.opts||['','','','']).map((o,i)=>`
         <div class="orow i-ans">
           <div class="olbl">${'ABCD'[i]}</div>
-          <input type="text" id="optInput${i}" value="${o.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">
+          <input type="text" data-idx="${i}" class="opt-input" value="${o.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">
         </div>`).join('');
       const ansSel=document.getElementById('ansSel');
       ansSel.innerHTML=['A','B','C','D'].map((lbl,i)=>`
