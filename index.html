@@ -855,6 +855,7 @@
         <code>C: 選項C</code><br>
         <code>D: 選項D</code><br>
         <code>ANS: A</code>（正確答案）<br>
+        <code>NO: 1</code>（題號，選填）<br>
         <code>SUBJ: 社會工作</code>（科目，選填）<br>
         <code>YEAR: 115年</code>（選填）<br>
         <code>SRC: 考選部</code>（選填）<br>
@@ -2463,7 +2464,7 @@ function startExam(){
     const items=[];
     blocks.forEach(b=>{
       const lines=b.split('\n').map(l=>l.trim()).filter(Boolean);
-      let type='choice',q='',A='',B='',C='',D='',ans='',subj='',year='',src='',exp='';
+      let type='choice',q='',A='',B='',C='',D='',ans='',subj='',year='',src='',exp='',no=null;
       lines.forEach(l=>{
         if(l.startsWith('TYPE:')) type=l.slice(5).trim().toLowerCase();
         else if(l.startsWith('Q:')) q=l.slice(2).trim();
@@ -2476,18 +2477,17 @@ function startExam(){
         else if(l.startsWith('YEAR:')) year=l.slice(5).trim();
         else if(l.startsWith('SRC:')) src=l.slice(5).trim();
         else if(l.startsWith('EXP:')) exp=l.slice(4).trim();
+        else if(l.startsWith('NO:')){const n=parseInt(l.slice(3).trim());if(!isNaN(n)&&n>=1)no=n;}
       });
       const subjUse = subj || subjDefault;
       if(!q) return;
       if(type==='essay'){
-        // 申論題：不需要選項與答案
-        items.push({q,opts:[],ans:-1,subject:subjUse,year,src,exp,type:'essay'});
+        items.push({q,opts:[],ans:-1,subject:subjUse,year,src,exp,type:'essay',no});
       } else {
-        // 選擇題：必須有選項與答案
         if(!A || !B || !C || !D || !ans) return;
         const ansIdx = 'ABCD'.indexOf(ans.toUpperCase());
         if(ansIdx===-1) return;
-        items.push({q,opts:[A,B,C,D],ans:ansIdx,subject:subjUse,year,src,exp,type:'choice'});
+        items.push({q,opts:[A,B,C,D],ans:ansIdx,subject:subjUse,year,src,exp,type:'choice',no});
       }
     });
     return items;
@@ -2502,6 +2502,21 @@ function startExam(){
     document.getElementById('importPreview').textContent=`預計匯入 ${items.length} 題。`;
   }
 
+  // 從 year+subject+no 生成有意義的 ID（如 113y一_SW_01）
+  function makeQId(year,subject,no){
+    // 年份縮寫：113年第一次→113y一，113年第二次→113y二，115年→115y一，97年→97y
+    const ym=year.match(/^(\d{2,3})年(第([一二])次)?/);
+    if(!ym)return null;
+    const yy=ym[1];
+    const seq=ym[3]||null; // 一 or 二 or null
+    const yPart=seq?`${yy}y${seq}`:`${yy}y`;
+    // 科目縮寫
+    const subjMap={'社會工作':'SW','社會工作直接服務':'DS','社會政策與社會立法':'PL','人類行為與社會環境':'HB','社會工作研究方法':'RM'};
+    const sPart=subjMap[subject]||subject.slice(0,2);
+    if(!no)return null;
+    return `${yPart}_${sPart}_${String(no).padStart(2,'0')}`;
+  }
+
   function doImport(){
     const items=parseImportText();
     if(!items || !items.length){
@@ -2509,7 +2524,8 @@ function startExam(){
       return;
     }
     items.forEach(it=>{
-      const id='Q'+(Date.now()+Math.random()).toString(36);
+      const meaningfulId=makeQId(it.year,it.subject,it.no);
+      const id=meaningfulId||'Q'+(Date.now()+Math.random()).toString(36);
       DB.questions.push({
         id,
         subject:it.subject,
@@ -2519,7 +2535,8 @@ function startExam(){
         opts:it.opts,
         ans:it.ans,
         exp:it.exp,
-        type:it.type||'choice'
+        type:it.type||'choice',
+        no:it.no||null
       });
     });
     save();
