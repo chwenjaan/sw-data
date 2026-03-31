@@ -976,7 +976,7 @@
   }
 function getPools(subj='all'){
   const s = subj === 'all' ? null : subj;
-  const all = DB.questions.filter(q => q.type !== 'essay');
+  const all = DB.questions.filter(q => q.type === 'choice');
   return s ? all.filter(q => q.subject === s) : all;
 }
   function uniqueSubjs(){
@@ -1429,7 +1429,7 @@ function applyDevMode(){
 
     const yearSet = new Set();
     _homeExamSetByYear = {};
-    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
       const y = (q.year||'').replace(/[\s　]/g,'').trim();
       if(!y) return;
       const m = y.match(/^(\d+年)(.*)/);
@@ -1474,7 +1474,7 @@ function applyDevMode(){
 
     const subjSet = new Set();
     const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
-    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
       const qy = (q.year||'').replace(/[\s　]/g,'').trim();
       if(y){
         if(ex){ if(qy!==ex) return; }
@@ -1508,7 +1508,7 @@ function applyDevMode(){
     const el3 = document.getElementById('homeBank');
     if(el) el.textContent = total;
     if(el2) el2.textContent = acc+'%';
-    if(el3) el3.textContent = DB.questions.filter(q=>q.type!=='essay').length;
+    if(el3) el3.textContent = DB.questions.filter(q=>q.type==='choice').length;
   }
 
   // updateHomeSubj 保留向下相容（populateHomeYear 呼叫的舊名）
@@ -1560,7 +1560,7 @@ function applyDevMode(){
     // 建立年度與次別資料
     const yearSet = new Set();
     const examSetByYear = {};
-    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
       const y = (q.year||'').replace(/[\s　]/g,'').trim();
       if(!y) return;
       const m = y.match(/^(\d+年)(.*)/);
@@ -1612,7 +1612,7 @@ function applyDevMode(){
     const curSubj = subjSel.value;
 
     const subjSet = new Set();
-    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
       const qy = (q.year||'').replace(/[\s　]/g,'').trim();
       if(y){
         if(ex){ if(qy!==ex) return; }
@@ -1637,7 +1637,7 @@ function applyDevMode(){
     if(examSel) examSel.value = '';
     const yearSet = new Set();
     const examSetByYear = {};
-    DB.questions.filter(q=>q.type!=='essay').forEach(q=>{
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
       const y = (q.year||'').replace(/[\s　]/g,'').trim();
       if(!y) return;
       const m = y.match(/^(\d+年)(.*)/);
@@ -1923,7 +1923,7 @@ function startExam(){
   const s = document.getElementById('examSubj').value;
   E.timeLimit = parseInt(document.getElementById('examTime').value,10);
   let pool = getPools(s === 'all' ? null : s);
-  pool = pool.filter(q => q.type !== 'essay');
+  pool = pool.filter(q => q.type === 'choice');
     if(!pool.length){
       document.getElementById('examWarn').style.display='block';
       return;
