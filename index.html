@@ -250,6 +250,15 @@
     }
     .ans-btn.sel{background:var(--green);color:white;border-color:var(--green);}
     .ans-btn:hover:not(.sel){border-color:var(--gold);color:var(--gold);}
+    /* 練習設定複選標籤 */
+    .check-tag{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:5px 12px;border:1.5px solid var(--border);border-radius:20px;
+      font-size:12px;cursor:pointer;user-select:none;
+      background:white;color:var(--gray);transition:all .15s;
+    }
+    .check-tag input{display:none;}
+    .check-tag.checked{background:var(--ink);color:var(--paper);border-color:var(--ink);}
   </style>
 </head>
 <body>
@@ -287,6 +296,7 @@
       <button class="tab-btn" onclick="switchTab('practice',this)">📝 練習</button>
       <button class="tab-btn" onclick="switchTab('exam',this)">📋 模擬考</button>
       <button class="tab-btn" onclick="switchTab('wrong',this)">❌ 錯題</button>
+      <button class="tab-btn" onclick="switchTab('search',this)">🔍 搜尋</button>
       <button class="tab-btn" onclick="switchTab('stats',this)">📊 統計</button>
       <button class="tab-btn" onclick="switchTab('essay',this)">✍️ 申論</button>
       <button class="tab-btn dev-only" onclick="switchTab('manage',this)">⚙️ 題庫</button>
@@ -416,26 +426,23 @@
     <div class="panel" id="panel-practice">
       <div id="practiceStart" style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
         <div class="sec-title">練習設定</div>
-        <div class="f-grid2">
-          <div class="f-row">
-            <label for="practiceYear">年度</label>
-            <select id="practiceYear" onchange="onPracticeYearChange()">
-              <option value="">全部年度</option>
-            </select>
-          </div>
-          <div class="f-row">
-            <label for="practiceExam">考試次別</label>
-            <select id="practiceExam" onchange="onPracticeExamChange()">
-              <option value="">全部次別</option>
-            </select>
+
+        <!-- 年度複選 -->
+        <div class="f-row" style="margin-bottom:10px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
+          <div id="practiceYearChecks" style="display:flex;flex-wrap:wrap;gap:6px">
+            <!-- 由 JS 填入 -->
           </div>
         </div>
-        <div class="f-row">
-          <label for="practiceSubj">科目</label>
-          <select id="practiceSubj" onchange="onPracticeSubjChange()">
-            <option value="all">全部科目</option>
-          </select>
+
+        <!-- 科目複選 -->
+        <div class="f-row" style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
+          <div id="practiceSubjChecks" style="display:flex;flex-wrap:wrap;gap:6px">
+            <!-- 由 JS 填入 -->
+          </div>
         </div>
+
         <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="startPracticeFromFilter()">開始練習</button>
       </div>
       <div id="noBank" class="empty-state" style="display:none">
@@ -460,6 +467,20 @@
           <div class="r-badge" id="rbadge"></div>
           <div class="exp" id="exp"></div>
 
+          <!-- 個人筆記區塊（答題後顯示） -->
+          <div id="noteArea" style="display:none;margin-top:10px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
+              <button id="noteToggleBtn" onclick="toggleNote()" class="btn btn-outline btn-sm" style="font-size:11px">📝 個人筆記</button>
+              <span id="noteExistDot" style="display:none;width:7px;height:7px;background:var(--gold);border-radius:50%"></span>
+            </div>
+            <div id="noteBox" style="display:none">
+              <textarea id="noteInput" rows="4" placeholder="在這裡寫下你的重點筆記…" style="width:100%;padding:10px 12px;border:1.5px solid var(--gold);border-radius:8px;font-size:13px;font-family:inherit;background:#fffcf0;resize:vertical;line-height:1.7"></textarea>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button class="btn btn-gold btn-sm" onclick="saveNote()">💾 儲存</button>
+                <button class="btn btn-outline btn-sm" onclick="clearNote()">🗑 清除</button>
+              </div>
+            </div>
+          </div>
 
 
           <div class="action-row">
@@ -475,15 +496,23 @@
         <!-- 模擬考 panel -->
     <div class="panel" id="panel-exam">
       <div id="examStart">
-        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:20px">
+        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px">
           <div class="sec-title">模擬考試設定</div>
-          <div class="f-row">
-            <label for="examSubj">科目</label>
-            <select id="examSubj">
-              <option value="all">全科混合</option>
-            </select>
+
+          <!-- 年度複選 -->
+          <div class="f-row" style="margin-bottom:10px">
+            <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
+            <div id="examYearChecks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
           </div>
-          <div class="f-grid2">
+
+          <!-- 科目複選 -->
+          <div class="f-row" style="margin-bottom:10px">
+            <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
+            <div id="examSubjChecks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
+
+          <!-- 題數 + 限時（並排） -->
+          <div class="f-grid2" style="margin-bottom:14px">
             <div class="f-row">
               <label for="examCount">題數</label>
               <select id="examCount">
@@ -503,8 +532,9 @@
               </select>
             </div>
           </div>
+
           <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="startExam()">開始考試</button>
-          <div id="examWarn" style="font-size:11px;color:var(--red);margin-top:8px;display:none">⚠ 此科目無題目</div>
+          <div id="examWarn" style="font-size:11px;color:var(--red);margin-top:8px;display:none">⚠ 此範圍無題目</div>
         </div>
       </div>
 
@@ -562,6 +592,63 @@
       <div id="wrongActs" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px">
         <button class="btn btn-primary" onclick="practiceWrong()">練習錯題</button>
         <button class="btn btn-outline" onclick="clearWrong()" style="color:var(--red)">清除全部</button>
+      </div>
+    </div>
+
+    <!-- 搜尋 panel -->
+    <div class="panel" id="panel-search">
+
+      <!-- 設定區（搜尋條件） -->
+      <div id="searchStart" style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+        <div class="sec-title">關鍵字搜尋練習</div>
+
+        <!-- 關鍵字 -->
+        <div class="f-row" style="margin-bottom:10px">
+          <label for="searchKeyword">關鍵字</label>
+          <input type="text" id="searchKeyword" placeholder="輸入關鍵字，例如：充權、依附理論…"
+            style="padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:var(--paper)"
+            onkeydown="if(event.key==='Enter')startSearchPractice()">
+        </div>
+
+        <!-- 年度複選 -->
+        <div class="f-row" style="margin-bottom:10px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
+          <div id="searchYearChecks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+
+        <!-- 科目複選 -->
+        <div class="f-row" style="margin-bottom:14px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
+          <div id="searchSubjChecks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%" onclick="startSearchPractice()">開始練習</button>
+        <div id="searchWarn" style="font-size:11px;color:var(--red);margin-top:8px;display:none">⚠ 找不到符合題目，請換個關鍵字</div>
+      </div>
+
+      <!-- 練習區（複用練習頁的 qcard，但用獨立的狀態） -->
+      <div id="searchMain" style="display:none">
+        <div class="quiz-header">
+          <div class="quiz-info"><span id="sqNum">1</span> 題 / 共 <span id="sqTotal">1</span> 題</div>
+          <div style="font-size:12px;color:var(--gray)" id="sqKw"></div>
+        </div>
+        <div class="prog-bar"><div class="prog-fill" id="searchPF" style="width:0"></div></div>
+        <div class="qcard">
+          <div class="qmeta">
+            <span class="qtag subj" id="sqSubjTag"></span>
+            <span class="qtag year" id="sqYearTag"></span>
+          </div>
+          <div class="qtext" id="sqText"></div>
+          <div class="opts" id="sqOpts"></div>
+          <div class="r-badge" id="sqBadge"></div>
+          <div class="exp" id="sqExp"></div>
+          <div class="action-row">
+            <button class="btn btn-primary" id="sqNextBtn" onclick="searchNextQ()" disabled>下一題 →</button>
+            <button class="btn btn-outline" onclick="searchSkipQ()">跳過</button>
+            <button class="btn btn-outline btn-sm" id="sqExpBtn" onclick="toggleSearchExp()" style="display:none">📖 查看解析</button>
+            <button class="btn btn-outline btn-sm" onclick="backToSearchSettings()" style="margin-left:auto;font-size:11px">⚙ 重新設定</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -885,7 +972,7 @@
     })()
   };
 
-  let P = {pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null,yearPrefix:null};
+  let P = {pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null,yearPrefix:null,years:[],subjs:[]};
   let E = {pool:[],idx:0,answers:[],timerID:null,secsLeft:60,timeLimit:60};
   let editId = null, selAns = -1;
   let ISDEV = localStorage.getItem('swpwa-dev') === '1';
@@ -937,6 +1024,65 @@ function getPools(subj='all'){
   function save(){
     try{localStorage.setItem('swp-was',JSON.stringify(DB.stats));}catch(e){}
     try{localStorage.setItem('swp-waw',JSON.stringify(DB.wrong));}catch(e){}
+  }
+
+  // ===== 個人筆記（存 localStorage，不上傳 GitHub）=====
+  function getNotes(){
+    try{return JSON.parse(localStorage.getItem('swp-notes'))||{};}catch(e){return {};}
+  }
+  function setNotes(obj){
+    try{localStorage.setItem('swp-notes',JSON.stringify(obj));}catch(e){}
+  }
+
+  function loadNoteForQ(qId){
+    const notes = getNotes();
+    const noteInput = document.getElementById('noteInput');
+    const noteExistDot = document.getElementById('noteExistDot');
+    if(!noteInput) return;
+    const text = notes[qId]||'';
+    noteInput.value = text;
+    if(noteExistDot) noteExistDot.style.display = text ? 'inline-block' : 'none';
+    // 關閉筆記框，但保留按鈕狀態
+    const noteBox = document.getElementById('noteBox');
+    if(noteBox) noteBox.style.display='none';
+    const noteToggleBtn = document.getElementById('noteToggleBtn');
+    if(noteToggleBtn) noteToggleBtn.textContent = '📝 個人筆記';
+  }
+
+  function toggleNote(){
+    const noteBox = document.getElementById('noteBox');
+    const btn = document.getElementById('noteToggleBtn');
+    if(!noteBox) return;
+    const isOpen = noteBox.style.display !== 'none';
+    noteBox.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? '📝 個人筆記' : '📝 收起筆記';
+    if(!isOpen){
+      // 開啟時 focus textarea
+      const noteInput = document.getElementById('noteInput');
+      if(noteInput) setTimeout(()=>noteInput.focus(),50);
+    }
+  }
+
+  function saveNote(){
+    const q = P.pool[P.idx];
+    if(!q) return;
+    const text = (document.getElementById('noteInput').value||'').trim();
+    const notes = getNotes();
+    if(text){
+      notes[q.id] = text;
+    } else {
+      delete notes[q.id];
+    }
+    setNotes(notes);
+    const noteExistDot = document.getElementById('noteExistDot');
+    if(noteExistDot) noteExistDot.style.display = text ? 'inline-block' : 'none';
+    showToast(text ? '筆記已儲存 📝' : '筆記已清除');
+  }
+
+  function clearNote(){
+    const noteInput = document.getElementById('noteInput');
+    if(noteInput) noteInput.value='';
+    saveNote();
   }
 
   // ===== Toast / Modal =====
@@ -1312,12 +1458,13 @@ function applyDevMode(){
       if(nb) nb.style.display='none';
     }
     if(tab==='wrong') renderWrong();
+    if(tab==='search') populateSearchSelects();
     if(tab==='stats') renderStats();
     if(tab==='manage'){populateFilterSelects();renderQList();}
     if(tab==='essay'){populateEssayYearFilter();renderEssayList();}
   }
   function switchTabByName(t){
-    const tabs=['home','practice','exam','wrong','stats','essay','manage','privacy'];
+    const tabs=['home','practice','exam','wrong','search','stats','essay','manage','privacy'];
     const i=tabs.indexOf(t);
     const btn=document.querySelectorAll('.tab-btn')[i];
     switchTab(t,btn);
@@ -1420,150 +1567,134 @@ function applyDevMode(){
   function updateHomeSubj(){ _updateHomeSubj(); }
 
   function startFromHome(){
-    const yr = document.getElementById('homeYear').value;
-    const ex = document.getElementById('homeExam') ? document.getElementById('homeExam').value : '';
-    const subj = document.getElementById('homeSubj').value;
-
-    P.subj = subj==='all' ? 'all' : subj;
-    // 次別優先，沒選次別才用年度 prefix 比對
-    if(ex){
-      P.year = ex;
-      P.yearPrefix = null;
-    } else if(yr){
-      P.year = yr;
-      P.yearPrefix = yr;
-    } else {
-      P.year = null;
-      P.yearPrefix = null;
-    }
-
+    // 首頁已移除選單，直接跳到練習設定頁
     switchTabByName('practice');
-
-    // 同步練習 panel 下拉選單
-    populatePracticeSelects();
-    const pYear = document.getElementById('practiceYear');
-    const pExam = document.getElementById('practiceExam');
-    const pSubj = document.getElementById('practiceSubj');
-    if(pYear && yr) pYear.value = yr;
-    if(pExam && ex){ onPracticeYearChange(); pExam.value = ex; onPracticeExamChange(); }
-    if(pSubj && subj!=='all') pSubj.value = subj;
-
-    loadPractice();
   }
 
-  // ===== 科目 / 年度 篩選（練習）下拉選單版 =====
+  // ===== 科目 / 年度 篩選（練習）複選版 =====
   function buildSubjFilter(){
     populatePracticeSelects();
   }
 
-  function populatePracticeSelects(){
-    const yearSel = document.getElementById('practiceYear');
-    const examSel = document.getElementById('practiceExam');
-    const subjSel = document.getElementById('practiceSubj');
-    if(!yearSel||!examSel||!subjSel) return;
-
-    // 建立年度與次別資料
-    const yearSet = new Set();
-    const examSetByYear = {};
-    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
-      const y = (q.year||'').replace(/[\s　]/g,'').trim();
-      if(!y) return;
-      const m = y.match(/^(\d+年)(.*)/);
-      if(m){
-        const yShort = m[1];
-        yearSet.add(yShort);
-        if(!examSetByYear[yShort]) examSetByYear[yShort]=new Set();
-        examSetByYear[yShort].add(y);
-      } else {
-        yearSet.add(y);
-      }
-    });
-
-    // 填年度
-    const curYear = yearSel.value;
-    yearSel.innerHTML = '<option value="">全部年度</option>';
-    Array.from(yearSet).sort((a,b)=>a.localeCompare(b)).forEach(y=>{
-      yearSel.innerHTML += `<option value="${y}"${y===curYear?' selected':''}>${y}</option>`;
-    });
-
-    // 填次別（依目前年度）
-    _updatePracticeExamOptions(examSetByYear);
-
-    // 填科目（依目前年度+次別）
-    _updatePracticeSubjOptions();
+  // 取得目前勾選的年度（空陣列 = 全部）
+  function _getPracticeCheckedYears(){
+    return [...document.querySelectorAll('#practiceYearChecks .check-tag.checked')]
+      .map(el=>el.dataset.val).filter(v=>v!=='');
   }
 
-  function _updatePracticeExamOptions(examSetByYear){
-    const yearSel = document.getElementById('practiceYear');
-    const examSel = document.getElementById('practiceExam');
-    if(!yearSel||!examSel) return;
-    const y = yearSel.value;
-    const curExam = examSel.value;
-    examSel.innerHTML = '<option value="">全部次別</option>';
-    if(y && examSetByYear && examSetByYear[y]){
-      Array.from(examSetByYear[y]).sort((a,b)=>a.localeCompare(b)).forEach(e=>{
-        examSel.innerHTML += `<option value="${e}"${e===curExam?' selected':''}>${e}</option>`;
-      });
+  // 取得目前勾選的科目（空陣列 = 全部）
+  function _getPracticeCheckedSubjs(){
+    return [...document.querySelectorAll('#practiceSubjChecks .check-tag.checked')]
+      .map(el=>el.dataset.val).filter(v=>v!=='');
+  }
+
+  function _toggleCheckTag(el){
+    el.classList.toggle('checked');
+  }
+
+  // 年度 tag 點擊：點「全部」取消其他，點其他取消「全部」
+  function _onYearTagClick(el){
+    const wrap = document.getElementById('practiceYearChecks');
+    const tags = [...wrap.querySelectorAll('.check-tag')];
+    if(el.dataset.val === ''){
+      // 點「全部」：取消其他，自己勾上
+      tags.forEach(t=>t.classList.remove('checked'));
+      el.classList.add('checked');
+    } else {
+      // 點特定年度：取消「全部」，切換自己
+      const allTag = tags.find(t=>t.dataset.val==='');
+      if(allTag) allTag.classList.remove('checked');
+      el.classList.toggle('checked');
+      // 若全部都沒勾，自動回到「全部」
+      const anyChecked = tags.filter(t=>t.dataset.val!=='').some(t=>t.classList.contains('checked'));
+      if(!anyChecked && allTag) allTag.classList.add('checked');
+    }
+    onPracticeYearChange();
+  }
+
+  // 科目 tag 點擊：點「全部」取消其他，點其他取消「全部」
+  function _onSubjTagClick(el){
+    const wrap = document.getElementById('practiceSubjChecks');
+    const tags = [...wrap.querySelectorAll('.check-tag')];
+    if(el.dataset.val === ''){
+      tags.forEach(t=>t.classList.remove('checked'));
+      el.classList.add('checked');
+    } else {
+      const allTag = tags.find(t=>t.dataset.val==='');
+      if(allTag) allTag.classList.remove('checked');
+      el.classList.toggle('checked');
+      const anyChecked = tags.filter(t=>t.dataset.val!=='').some(t=>t.classList.contains('checked'));
+      if(!anyChecked && allTag) allTag.classList.add('checked');
     }
   }
 
-  function _updatePracticeSubjOptions(){
-    const yearSel = document.getElementById('practiceYear');
-    const examSel = document.getElementById('practiceExam');
-    const subjSel = document.getElementById('practiceSubj');
-    if(!subjSel) return;
-    const y = yearSel ? yearSel.value : '';
-    const ex = examSel ? examSel.value : '';
-    const curSubj = subjSel.value;
+  function populatePracticeSelects(){
+    const yearWrap = document.getElementById('practiceYearChecks');
+    const subjWrap = document.getElementById('practiceSubjChecks');
+    if(!yearWrap||!subjWrap) return;
 
+    // 建立年度資料
+    const yearSet = new Set();
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
+      const y = (q.year||'').replace(/[\s　]/g,'').trim();
+      if(!y) return;
+      const m = y.match(/^(\d+年)/);
+      if(m) yearSet.add(m[1]);
+      else yearSet.add(y);
+    });
+
+    // 填年度 checkbox tags（含「全部」）
+    const years = Array.from(yearSet).sort((a,b)=>a.localeCompare(b));
+    yearWrap.innerHTML =
+      `<label class="check-tag checked" data-val="" onclick="_onYearTagClick(this)"><span>全部</span></label>` +
+      years.map(y=>
+        `<label class="check-tag" data-val="${y}" onclick="_onYearTagClick(this)"><span>${y}</span></label>`
+      ).join('');
+
+    // 填科目
+    _updatePracticeSubjOptions();
+  }
+
+
+
+  function _updatePracticeSubjOptions(){
+    const subjWrap = document.getElementById('practiceSubjChecks');
+    if(!subjWrap) return;
+
+    const checkedYears = _getPracticeCheckedYears();
+
+    // 根據年度篩出可用科目
     const subjSet = new Set();
+    const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
     DB.questions.filter(q=>q.type==='choice').forEach(q=>{
       const qy = (q.year||'').replace(/[\s　]/g,'').trim();
-      if(y){
-        if(ex){ if(qy!==ex) return; }
-        else { if(!qy.startsWith(y)) return; }
+      if(checkedYears.length > 0){
+        if(!checkedYears.some(y=>qy.startsWith(y))) return;
       }
       if(q.subject) subjSet.add(q.subject);
     });
 
-    subjSel.innerHTML = '<option value="all">全部科目</option>';
-    const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
+    // 記住目前勾選的科目（排除「全部」）
+    const prevChecked = new Set(_getPracticeCheckedSubjs());
+
     const sorted = order.filter(s=>subjSet.has(s)).concat([...subjSet].filter(s=>!order.includes(s)));
-    sorted.forEach(s=>{
-      subjSel.innerHTML += `<option value="${s}"${s===curSubj?' selected':''}>${s}</option>`;
-    });
-    subjSel.value = sorted.includes(curSubj) ? curSubj : 'all';
+    const allChecked = prevChecked.size === 0; // 沒有特定勾選 = 全部
+    subjWrap.innerHTML =
+      `<label class="check-tag${allChecked?' checked':''}" data-val="" onclick="_onSubjTagClick(this)"><span>全部</span></label>` +
+      sorted.map(s=>
+        `<label class="check-tag${prevChecked.has(s)?' checked':''}" data-val="${s}" onclick="_onSubjTagClick(this)">
+          <span>${s}</span>
+        </label>`
+      ).join('');
   }
 
   function onPracticeYearChange(){
-    // 年度改變時重建次別和科目
-    const yearSel = document.getElementById('practiceYear');
-    const examSel = document.getElementById('practiceExam');
-    if(examSel) examSel.value = '';
-    const yearSet = new Set();
-    const examSetByYear = {};
-    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
-      const y = (q.year||'').replace(/[\s　]/g,'').trim();
-      if(!y) return;
-      const m = y.match(/^(\d+年)(.*)/);
-      if(m){
-        const yShort = m[1];
-        yearSet.add(yShort);
-        if(!examSetByYear[yShort]) examSetByYear[yShort]=new Set();
-        examSetByYear[yShort].add(y);
-      }
-    });
-    _updatePracticeExamOptions(examSetByYear);
     _updatePracticeSubjOptions();
   }
 
-  function onPracticeExamChange(){
-    _updatePracticeSubjOptions();
-  }
 
-  function onPracticeSubjChange(){
-    // 科目改變不需要重建其他選單
-  }
+
+
 
   function backToPracticeSettings(){
     clearInterval(P.timerID);
@@ -1576,25 +1707,104 @@ function applyDevMode(){
   }
 
   function startPracticeFromFilter(){
-    const yearSel = document.getElementById('practiceYear');
-    const examSel = document.getElementById('practiceExam');
-    const subjSel = document.getElementById('practiceSubj');
-    const y = yearSel ? yearSel.value : '';
-    const ex = examSel ? examSel.value : '';
-    const s = subjSel ? subjSel.value : 'all';
-
-    P.subj = s || 'all';
-    // 次別優先，次別沒選則用年度
-    P.year = ex || y || null;
-    P.yearPrefix = (!ex && y) ? y : null; // 只選年度（不選次別）時用 prefix 比對
-
+    const checkedYears = _getPracticeCheckedYears(); // 空陣列 = 全部
+    const checkedSubjs = _getPracticeCheckedSubjs(); // 空陣列 = 全部
+    P.years = checkedYears;
+    P.subjs = checkedSubjs;
+    P.year = null;
+    P.yearPrefix = null;
+    P.subj = checkedSubjs.length === 1 ? checkedSubjs[0] : 'all';
     loadPractice();
   }
 
   function populateExamSubjs(){
-    document.getElementById('examSubj').innerHTML =
-      `<option value="all">全科混合</option>`+
-      uniqueSubjs().map(s=>`<option value="${s}">${s}</option>`).join('');
+    populateExamSelects();
+  }
+
+  function populateExamSelects(){
+    const yearWrap = document.getElementById('examYearChecks');
+    const subjWrap = document.getElementById('examSubjChecks');
+    if(!yearWrap||!subjWrap) return;
+
+    // 年度
+    const yearSet = new Set();
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
+      const y = (q.year||'').replace(/[\s　]/g,'').trim();
+      if(!y) return;
+      const m = y.match(/^(\d+年)/);
+      if(m) yearSet.add(m[1]); else yearSet.add(y);
+    });
+    const years = Array.from(yearSet).sort((a,b)=>a.localeCompare(b));
+    yearWrap.innerHTML =
+      `<label class="check-tag checked" data-val="" onclick="_onExamYearTagClick(this)"><span>全部</span></label>` +
+      years.map(y=>
+        `<label class="check-tag" data-val="${y}" onclick="_onExamYearTagClick(this)"><span>${y}</span></label>`
+      ).join('');
+
+    // 科目
+    _updateExamSubjOptions();
+  }
+
+  function _getExamCheckedYears(){
+    return [...document.querySelectorAll('#examYearChecks .check-tag.checked')]
+      .map(el=>el.dataset.val).filter(v=>v!=='');
+  }
+
+  function _getExamCheckedSubjs(){
+    return [...document.querySelectorAll('#examSubjChecks .check-tag.checked')]
+      .map(el=>el.dataset.val).filter(v=>v!=='');
+  }
+
+  function _onExamYearTagClick(el){
+    const wrap = document.getElementById('examYearChecks');
+    const tags = [...wrap.querySelectorAll('.check-tag')];
+    if(el.dataset.val === ''){
+      tags.forEach(t=>t.classList.remove('checked'));
+      el.classList.add('checked');
+    } else {
+      const allTag = tags.find(t=>t.dataset.val==='');
+      if(allTag) allTag.classList.remove('checked');
+      el.classList.toggle('checked');
+      const anyChecked = tags.filter(t=>t.dataset.val!=='').some(t=>t.classList.contains('checked'));
+      if(!anyChecked && allTag) allTag.classList.add('checked');
+    }
+    _updateExamSubjOptions();
+  }
+
+  function _onExamSubjTagClick(el){
+    const wrap = document.getElementById('examSubjChecks');
+    const tags = [...wrap.querySelectorAll('.check-tag')];
+    if(el.dataset.val === ''){
+      tags.forEach(t=>t.classList.remove('checked'));
+      el.classList.add('checked');
+    } else {
+      const allTag = tags.find(t=>t.dataset.val==='');
+      if(allTag) allTag.classList.remove('checked');
+      el.classList.toggle('checked');
+      const anyChecked = tags.filter(t=>t.dataset.val!=='').some(t=>t.classList.contains('checked'));
+      if(!anyChecked && allTag) allTag.classList.add('checked');
+    }
+  }
+
+  function _updateExamSubjOptions(){
+    const subjWrap = document.getElementById('examSubjChecks');
+    if(!subjWrap) return;
+    const checkedYears = _getExamCheckedYears();
+    const prevChecked = new Set(_getExamCheckedSubjs());
+    const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
+    const subjSet = new Set();
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
+      const qy = (q.year||'').replace(/[\s　]/g,'').trim();
+      if(checkedYears.length > 0 && !checkedYears.some(y=>qy.startsWith(y))) return;
+      if(q.subject) subjSet.add(q.subject);
+    });
+    const sorted = order.filter(s=>subjSet.has(s)).concat([...subjSet].filter(s=>!order.includes(s)));
+    const allChecked = prevChecked.size === 0;
+    subjWrap.innerHTML =
+      `<label class="check-tag${allChecked?' checked':''}" data-val="" onclick="_onExamSubjTagClick(this)"><span>全部</span></label>` +
+      sorted.map(s=>
+        `<label class="check-tag${prevChecked.has(s)?' checked':''}" data-val="${s}" onclick="_onExamSubjTagClick(this)"><span>${s}</span></label>`
+      ).join('');
   }
 
   // ===== 題庫管理 下拉篩選 =====
@@ -1674,15 +1884,25 @@ function applyDevMode(){
 
   // ===== 練習流程 =====
   function loadPractice(){
-    let pool = getPools(P.subj);
-    if(P.year){
-      if(P.yearPrefix){
-        // 只選年度（無次別），用 startsWith 匹配該年全部次別
-        pool = pool.filter(q=>(q.year||'').replace(/[\s　]/g,'').trim().startsWith(P.yearPrefix));
-      } else {
-        pool = pool.filter(q=>(q.year||'').replace(/[\s　]/g,'').trim()===P.year);
-      }
+    // 多科目篩選
+    let pool;
+    const subjs = P.subjs && P.subjs.length > 0 ? P.subjs : null;
+    if(subjs){
+      pool = DB.questions.filter(q=>q.type!=='essay' && subjs.includes(q.subject));
+    } else {
+      pool = getPools(P.subj);
     }
+
+    // 多年度篩選（年度 checkbox）
+    const years = P.years && P.years.length > 0 ? P.years : null;
+    if(years){
+      pool = pool.filter(q=>{
+        const qy = (q.year||'').replace(/[\s　]/g,'').trim();
+        return years.some(y=>qy.startsWith(y));
+      });
+    }
+
+
     P.pool = shuffle(pool.slice());
     P.idx = 0;
     P.answered=false;
@@ -1741,6 +1961,10 @@ function applyDevMode(){
 
     document.getElementById('nextBtn').disabled=true;
     P.answered=false;
+    // 筆記：隱藏區塊，載入該題已存筆記
+    const noteArea = document.getElementById('noteArea');
+    if(noteArea) noteArea.style.display='none';
+    loadNoteForQ(q.id);
   }
 
   function pickAns(i){
@@ -1783,6 +2007,10 @@ function applyDevMode(){
 
     }
     document.getElementById('nextBtn').disabled=false;
+    // 答題後顯示筆記/搜尋區塊
+    const noteArea = document.getElementById('noteArea');
+    if(noteArea) noteArea.style.display='block';
+
     updateHeader();
     setTimeout(()=>{
       const btn=document.getElementById('nextBtn');
@@ -1828,10 +2056,22 @@ function applyDevMode(){
 
   // ===== 模擬考流程 =====
 function startExam(){
-  const s = document.getElementById('examSubj').value;
-  E.timeLimit = parseInt(document.getElementById('examTime').value,10);
-  let pool = getPools(s === 'all' ? null : s);
-  pool = pool.filter(q => q.type === 'choice');
+    const checkedYears = _getExamCheckedYears();
+    const checkedSubjs = _getExamCheckedSubjs();
+    E.timeLimit = parseInt(document.getElementById('examTime').value,10);
+
+    // 篩題目
+    let pool = DB.questions.filter(q=>q.type==='choice');
+    if(checkedYears.length > 0){
+      pool = pool.filter(q=>{
+        const qy = (q.year||'').replace(/[\s　]/g,'').trim();
+        return checkedYears.some(y=>qy.startsWith(y));
+      });
+    }
+    if(checkedSubjs.length > 0){
+      pool = pool.filter(q=>checkedSubjs.includes(q.subject));
+    }
+
     if(!pool.length){
       document.getElementById('examWarn').style.display='block';
       return;
@@ -2606,6 +2846,178 @@ ${q.q}
   }
 
 
+
+  // ===== 關鍵字搜尋練習 =====
+  let S = {pool:[], idx:0, answered:false, kw:''};
+
+  function populateSearchSelects(){
+    _buildCheckTags('searchYearChecks', _getYearList(), '_onSearchYearTagClick');
+    _buildCheckTags('searchSubjChecks', _getSubjList(), '_onSearchSubjTagClick');
+  }
+
+  function _getYearList(){
+    const yearSet = new Set();
+    DB.questions.filter(q=>q.type==='choice').forEach(q=>{
+      const y = (q.year||'').replace(/[\s　]/g,'').trim();
+      const m = y.match(/^(\d+年)/);
+      if(m) yearSet.add(m[1]); else if(y) yearSet.add(y);
+    });
+    return Array.from(yearSet).sort((a,b)=>a.localeCompare(b));
+  }
+
+  function _getSubjList(){
+    const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
+    const subjSet = new Set(DB.questions.filter(q=>q.type==='choice').map(q=>q.subject).filter(Boolean));
+    return order.filter(s=>subjSet.has(s)).concat([...subjSet].filter(s=>!order.includes(s)));
+  }
+
+  function _buildCheckTags(wrapperId, items, clickFn){
+    const wrap = document.getElementById(wrapperId);
+    if(!wrap) return;
+    wrap.innerHTML =
+      `<label class="check-tag checked" data-val="" onclick="${clickFn}(this)"><span>全部</span></label>` +
+      items.map(v=>`<label class="check-tag" data-val="${v}" onclick="${clickFn}(this)"><span>${v}</span></label>`).join('');
+  }
+
+  function _onSearchYearTagClick(el){
+    _handleTagClick(el, 'searchYearChecks');
+  }
+  function _onSearchSubjTagClick(el){
+    _handleTagClick(el, 'searchSubjChecks');
+  }
+  function _handleTagClick(el, wrapperId){
+    const wrap = document.getElementById(wrapperId);
+    const tags = [...wrap.querySelectorAll('.check-tag')];
+    if(el.dataset.val === ''){
+      tags.forEach(t=>t.classList.remove('checked'));
+      el.classList.add('checked');
+    } else {
+      const allTag = tags.find(t=>t.dataset.val==='');
+      if(allTag) allTag.classList.remove('checked');
+      el.classList.toggle('checked');
+      const any = tags.filter(t=>t.dataset.val!=='').some(t=>t.classList.contains('checked'));
+      if(!any && allTag) allTag.classList.add('checked');
+    }
+  }
+  function _getCheckedVals(wrapperId){
+    return [...document.querySelectorAll(`#${wrapperId} .check-tag.checked`)]
+      .map(el=>el.dataset.val).filter(v=>v!=='');
+  }
+
+  function startSearchPractice(){
+    const kw = (document.getElementById('searchKeyword').value||'').trim();
+    if(!kw){ showToast('請輸入關鍵字'); return; }
+    const years = _getCheckedVals('searchYearChecks');
+    const subjs = _getCheckedVals('searchSubjChecks');
+    const kwLower = kw.toLowerCase();
+
+    let pool = DB.questions.filter(q=>q.type==='choice');
+
+    // 年度篩選
+    if(years.length > 0)
+      pool = pool.filter(q=>{ const qy=(q.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
+    // 科目篩選
+    if(subjs.length > 0)
+      pool = pool.filter(q=>subjs.includes(q.subject));
+    // 關鍵字篩選（題目 + 選項 + 解析）
+    pool = pool.filter(q=>{
+      const text = [(q.q||''), ...(q.opts||[]), (q.exp||'')].join(' ').toLowerCase();
+      return text.includes(kwLower);
+    });
+
+    if(!pool.length){
+      document.getElementById('searchWarn').style.display='block';
+      return;
+    }
+    document.getElementById('searchWarn').style.display='none';
+
+    S.pool = pool;
+    S.idx = 0;
+    S.answered = false;
+    S.kw = kw;
+
+    document.getElementById('searchStart').style.display='none';
+    document.getElementById('searchMain').style.display='block';
+    document.getElementById('sqTotal').textContent = pool.length;
+    document.getElementById('sqKw').textContent = `「${kw}」`;
+    renderSQ();
+  }
+
+  function renderSQ(){
+    const q = S.pool[S.idx];
+    document.getElementById('sqNum').textContent = S.idx+1;
+    document.getElementById('searchPF').style.width = (S.idx/S.pool.length*100)+'%';
+    document.getElementById('sqSubjTag').textContent = q.subject||'';
+    document.getElementById('sqSubjTag').style.color = COLORS[q.subject]||'#555';
+    document.getElementById('sqYearTag').textContent = q.year||'';
+    document.getElementById('sqText').textContent = q.q||'';
+    document.getElementById('sqOpts').innerHTML = (q.opts||[]).map((o,i)=>
+      `<button class="opt" onclick="pickSearchAns(${i})" id="sopt${i}">
+        <span class="opt-lbl">${'ABCD'[i]}</span><span>${o}</span>
+      </button>`).join('');
+    document.getElementById('sqBadge').style.display='none';
+    document.getElementById('sqExp').className='exp';
+    const expBtn = document.getElementById('sqExpBtn');
+    if(expBtn){ expBtn.style.display='none'; expBtn.textContent='📖 查看解析'; }
+    document.getElementById('sqNextBtn').disabled=true;
+    S.answered=false;
+  }
+
+  function pickSearchAns(i){
+    if(S.answered) return;
+    S.answered=true;
+    const q = S.pool[S.idx];
+    const ok = isCorrect(q,i);
+    document.querySelectorAll('#sqOpts .opt').forEach(b=>b.disabled=true);
+    document.getElementById('sopt'+i).classList.add(ok?'correct':'wrong');
+    getCorrectIdxs(q).forEach(c=>{ if(c!==i) document.getElementById('sopt'+c).classList.add('correct'); });
+    const badge = document.getElementById('sqBadge');
+    badge.className = 'r-badge '+(ok?'rb-ok':'rb-fail');
+    badge.innerHTML = ok ? '✅ 答對' : `❌ 答錯，正解：<strong>${correctLetters(q)}</strong>`;
+    badge.style.display='flex';
+    const freshQ = DB.questions.find(x=>x.id===q.id)||q;
+    if(freshQ.exp){
+      const e = document.getElementById('sqExp');
+      e.innerHTML = `<strong>解析：</strong>${(freshQ.exp||'').replace(/\n/g,'<br>')}`;
+      const btn = document.getElementById('sqExpBtn');
+      if(btn){ btn.style.display='inline-flex'; btn.textContent='📖 查看解析'; }
+    }
+    document.getElementById('sqNextBtn').disabled=false;
+  }
+
+  function toggleSearchExp(){
+    const e = document.getElementById('sqExp');
+    const btn = document.getElementById('sqExpBtn');
+    const show = !e.classList.contains('show');
+    e.classList.toggle('show', show);
+    if(btn) btn.textContent = show ? '📖 收起解析' : '📖 查看解析';
+  }
+
+  function searchNextQ(){
+    if(S.idx < S.pool.length-1){
+      S.idx++;
+      S.answered=false;
+      renderSQ();
+    } else {
+      showToast(`本輪 ${S.pool.length} 題全部完成！`);
+      backToSearchSettings();
+    }
+  }
+
+  function searchSkipQ(){
+    if(S.idx < S.pool.length-1){
+      S.idx++;
+      S.answered=false;
+      renderSQ();
+    } else {
+      showToast('已是最後一題');
+    }
+  }
+
+  function backToSearchSettings(){
+    document.getElementById('searchStart').style.display='block';
+    document.getElementById('searchMain').style.display='none';
+  }
 
   // ===== 初始化 =====
   function runStep(steps,i=0){
