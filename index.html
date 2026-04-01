@@ -1302,6 +1302,15 @@ function applyDevMode(){
     document.getElementById('panel-'+tab).classList.add('active');
     if(el) el.classList.add('active');
     if(tab==='home'){populateHomeYear();updateHomeStats();}
+    if(tab==='practice'){
+      populatePracticeSelects();
+      const ps=document.getElementById('practiceStart');
+      const pm=document.getElementById('practiceMain');
+      const nb=document.getElementById('noBank');
+      if(ps) ps.style.display='block';
+      if(pm) pm.style.display='none';
+      if(nb) nb.style.display='none';
+    }
     if(tab==='wrong') renderWrong();
     if(tab==='stats') renderStats();
     if(tab==='manage'){populateFilterSelects();renderQList();}
