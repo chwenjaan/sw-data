@@ -287,7 +287,6 @@
       <button class="tab-btn" onclick="switchTab('practice',this)">📝 練習</button>
       <button class="tab-btn" onclick="switchTab('exam',this)">📋 模擬考</button>
       <button class="tab-btn" onclick="switchTab('wrong',this)">❌ 錯題</button>
-      <button class="tab-btn" onclick="switchTab('aisearch',this)">🔍 搜尋</button>
       <button class="tab-btn" onclick="switchTab('stats',this)">📊 統計</button>
       <button class="tab-btn" onclick="switchTab('essay',this)">✍️ 申論</button>
       <button class="tab-btn dev-only" onclick="switchTab('manage',this)">⚙️ 題庫</button>
@@ -373,47 +372,49 @@
         </div>
       </div>
 
-      <!-- 練習設定卡片 -->
-      <div style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:0 2px 12px var(--shadow)">
-        <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:6px">
-          <span style="width:3px;height:16px;background:var(--red);border-radius:2px;display:inline-block"></span>
-          選擇練習範圍
-        </div>
+      <!-- 四大功能入口 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
 
-        <div class="f-grid2" style="margin-bottom:10px">
-          <div class="f-row">
-            <label for="homeYear">年度</label>
-            <select id="homeYear" onchange="onHomeYearChange()">
-              <option value="">全部年度</option>
-            </select>
-          </div>
-          <div class="f-row">
-            <label for="homeExam">考試次別</label>
-            <select id="homeExam" onchange="onHomeExamChange()">
-              <option value="">全部次別</option>
-            </select>
-          </div>
-        </div>
-        <div class="f-row" style="margin-bottom:16px">
-          <label for="homeSubj">科目</label>
-          <select id="homeSubj">
-            <option value="all">全部科目</option>
-          </select>
-        </div>
-
-        <button onclick="startFromHome()" style="width:100%;padding:14px;background:var(--red);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 12px rgba(192,57,43,.3);transition:opacity .15s" onmouseenter="this.style.opacity='.88'" onmouseleave="this.style.opacity='1'">
-          開始練習 →
+        <!-- 練習 -->
+        <button onclick="switchTabByName('practice')" style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px 16px;text-align:left;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px var(--shadow);transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px var(--shadow)'" onmouseleave="this.style.transform='';this.style.boxShadow='0 2px 8px var(--shadow)'">
+          <div style="font-size:28px;margin-bottom:10px">📝</div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px">練習</div>
+          <div style="font-size:11px;color:var(--gray);line-height:1.5">依年度、次別、科目<br>自由選題作答</div>
         </button>
-        <div style="font-size:11px;color:var(--gray);text-align:center;margin-top:8px">不選擇則從全部題庫隨機出題</div>
+
+        <!-- 模擬考 -->
+        <button onclick="switchTabByName('exam')" style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px 16px;text-align:left;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px var(--shadow);transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px var(--shadow)'" onmouseleave="this.style.transform='';this.style.boxShadow='0 2px 8px var(--shadow)'">
+          <div style="font-size:28px;margin-bottom:10px">📋</div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px">模擬考</div>
+          <div style="font-size:11px;color:var(--gray);line-height:1.5">限時計分，模擬<br>正式考試情境</div>
+        </button>
+
+        <!-- 錯題練習 -->
+        <button onclick="switchTabByName('wrong')" style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px 16px;text-align:left;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px var(--shadow);transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px var(--shadow)'" onmouseleave="this.style.transform='';this.style.boxShadow='0 2px 8px var(--shadow)'">
+          <div style="font-size:28px;margin-bottom:10px">❌</div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px">錯題練習</div>
+          <div style="font-size:11px;color:var(--gray);line-height:1.5">複習答錯的題目<br>強化弱點科目</div>
+        </button>
+
+        <!-- 申論查看 -->
+        <button onclick="switchTabByName('essay')" style="background:white;border:1px solid var(--border);border-radius:16px;padding:20px 16px;text-align:left;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px var(--shadow);transition:transform .15s,box-shadow .15s" onmouseenter="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 18px var(--shadow)'" onmouseleave="this.style.transform='';this.style.boxShadow='0 2px 8px var(--shadow)'">
+          <div style="font-size:28px;margin-bottom:10px">✍️</div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px">申論查看</div>
+          <div style="font-size:11px;color:var(--gray);line-height:1.5">歷屆申論題目<br>與參考解析</div>
+        </button>
+
       </div>
 
       <!-- 隱藏的統計 id（供 JS 更新用） -->
       <span id="homeTotal" style="display:none">0</span>
+      <select id="homeYear" style="display:none"></select>
+      <select id="homeExam" style="display:none"></select>
+      <select id="homeSubj" style="display:none"></select>
     </div>
 
     <!-- 練習 panel -->
     <div class="panel" id="panel-practice">
-      <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+      <div id="practiceStart" style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
         <div class="sec-title">練習設定</div>
         <div class="f-grid2">
           <div class="f-row">
@@ -442,7 +443,7 @@
         <div style="font-size:14px;font-weight:500">此科目沒有題目</div>
         <div style="font-size:12px;margin-top:4px">請至「題庫」分頁匯入考古題</div>
       </div>
-      <div id="practiceMain">
+      <div id="practiceMain" style="display:none">
         <div class="quiz-header">
           <div class="quiz-info"><span id="qNum">1</span> 題 / 共 <span id="qTotal">1</span> 題</div>
           <div class="timer" id="practiceTimer">00:00</div>
@@ -459,39 +460,13 @@
           <div class="r-badge" id="rbadge"></div>
           <div class="exp" id="exp"></div>
 
-          <!-- 無解析時：複製提示詞區 -->
-          <div id="aiExpArea" style="display:none;margin-top:10px">
-            <div style="background:#fffcf0;border:1.5px dashed var(--gold);border-radius:8px;padding:12px">
-              <div style="font-size:12px;color:#7a6830;margin-bottom:8px;font-weight:600">📋 此題尚無解析，可複製提示詞請 AI 解析後貼回</div>
-              <div style="display:flex;gap:6px;margin-bottom:10px">
-                <button class="btn btn-gold" id="copyPromptBtn" onclick="copyAiPrompt()" style="font-size:12px;flex:1">📋 複製提示詞</button>
-                <button class="btn btn-outline" onclick="openAiWithPrompt('perplexity')" style="font-size:12px;flex:1">🔍 開啟 Perplexity</button>
-              </div>
-              <div style="font-size:11px;color:var(--gray);margin-bottom:6px">將 AI 回覆的解析貼到下方，儲存後下次直接顯示：</div>
-              <textarea id="aiPasteBox" rows="4" placeholder="將 AI 解析貼到這裡…" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;background:white;resize:vertical"></textarea>
-              <div style="display:flex;gap:6px;margin-top:8px">
-                <button class="btn btn-primary" onclick="saveAiPastedExp()" style="font-size:12px">💾 儲存解析</button>
-                <button class="btn btn-outline" onclick="clearAiPasteBox()" style="font-size:12px">清除</button>
-              </div>
-            </div>
-          </div>
-          <!-- 已有 AI 解析暫存結果（已存入正式前的預覽） -->
-          <div id="aiExpResult" style="display:none;margin-top:10px;background:linear-gradient(135deg,#1a1a2e,#2c2c4a);border-radius:8px;padding:14px;color:#f5f0e8">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.15);padding-bottom:8px">
-              <span style="font-size:14px">🤖</span>
-              <span style="font-size:12px;font-weight:600">AI 解析（已儲存到本機）</span>
-              <!-- 一般使用者：傳給管理員 -->
-              <button id="sendToAdminBtn" onclick="sendExpToAdmin()" style="display:none;margin-left:auto;padding:4px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.6);background:rgba(201,168,76,.15);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">✉️ 傳給管理員</button>
-              <!-- DEV：推送 GitHub -->
-              <button id="devPushExpBtn" onclick="devPushExp()" style="display:none;margin-left:auto;padding:4px 10px;border-radius:6px;border:1px solid rgba(201,168,76,.6);background:rgba(201,168,76,.15);color:var(--gold);font-size:11px;cursor:pointer;font-family:inherit">☁️ 推送 GitHub</button>
-            </div>
-            <div id="aiExpText" style="font-size:13px;line-height:1.9"></div>
-          </div>
+
 
           <div class="action-row">
             <button class="btn btn-primary" id="nextBtn" onclick="safeTap(nextQ)" disabled>下一題 →</button>
             <button class="btn btn-outline" onclick="safeTap(skipQ)">跳過</button>
             <button class="btn btn-outline btn-sm" id="expToggleBtn" onclick="toggleExp()" style="display:none">📖 查看解析</button>
+            <button class="btn btn-outline btn-sm" onclick="backToPracticeSettings()" style="font-size:11px">⚙ 重新設定</button>
             <button class="btn btn-outline btn-sm" onclick="safeTap(reshuffleQ)" style="margin-left:auto;font-size:11px">重新出題</button>
           </div>
         </div>
@@ -622,7 +597,6 @@
         <button class="btn btn-outline btn-sm dev-only" onclick="migrateExpsToFile()" style="color:#8e44ad">🔀 遷移解析檔</button>
         <button class="btn btn-outline btn-sm dev-only" onclick="clearStats()" style="color:var(--gray)">重置統計</button>
         <button class="btn btn-outline btn-sm" onclick="resetQuestionBank()" style="color:var(--red)">🔄 重置題庫</button>
-        <button class="btn btn-outline btn-sm dev-only" onclick="showGeminiModal()" style="color:var(--blue)">🔑 Gemini Key</button>
         <button class="btn btn-outline btn-sm" id="devModeBtn" onclick="ISDEV?exitDev():toggleDev()" style="color:var(--gray);font-size:10px">⚙️ DEV</button>
       </div>
       <!-- 廣告版位（AdSense 申請通過後啟用） -->
@@ -747,37 +721,6 @@
       </div>
     </div>
 
-    <!-- AI 搜尋 panel -->
-    <div class="panel" id="panel-aisearch">
-      <div style="background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden">
-        <div style="padding:14px 16px;background:var(--ink);color:var(--paper)">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-            <span style="font-size:16px">🔍</span>
-            <span style="font-size:14px;font-weight:600">AI 關鍵字搜尋</span>
-            <span style="font-size:10px;background:rgba(201,168,76,.25);color:var(--gold);padding:2px 7px;border-radius:10px;margin-left:auto">Gemini AI</span>
-          </div>
-          <div style="font-size:11px;color:rgba(245,240,232,.45)">輸入概念或關鍵字，AI 幫你找出相關題目</div>
-        </div>
-        <div style="padding:14px 16px">
-          <div style="display:flex;gap:8px;margin-bottom:10px">
-            <input type="text" id="aiSearchInput" placeholder="例如：系統觀、充權、危機介入…" style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;background:var(--paper)" onkeydown="if(event.key==='Enter'){doAiSearch()}">
-            <button class="btn btn-primary" onclick="doAiSearch()" style="flex-shrink:0">搜尋</button>
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px" id="aiSearchTags">
-            <span style="font-size:11px;color:var(--gray)">快速選擇：</span>
-            <button onclick="quickSearch('充權')" class="subj-btn" style="font-size:10px;padding:3px 9px">充權</button>
-            <button onclick="quickSearch('危機介入')" class="subj-btn" style="font-size:10px;padding:3px 9px">危機介入</button>
-            <button onclick="quickSearch('依附理論')" class="subj-btn" style="font-size:10px;padding:3px 9px">依附理論</button>
-            <button onclick="quickSearch('社會保險')" class="subj-btn" style="font-size:10px;padding:3px 9px">社會保險</button>
-            <button onclick="quickSearch('抽樣方法')" class="subj-btn" style="font-size:10px;padding:3px 9px">抽樣方法</button>
-            <button onclick="quickSearch('任務中心')" class="subj-btn" style="font-size:10px;padding:3px 9px">任務中心</button>
-            <button onclick="quickSearch('Erikson')" class="subj-btn" style="font-size:10px;padding:3px 9px">Erikson</button>
-            <button onclick="quickSearch('兒童保護')" class="subj-btn" style="font-size:10px;padding:3px 9px">兒童保護</button>
-          </div>
-          <div id="aiSearchResult" style="margin-top:14px"></div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- 新增題目 modal -->
@@ -907,20 +850,7 @@
     </div>
   </div>
 
-  <!-- Gemini Key modal -->
-  <div class="modal-bg" id="geminiModal">
-    <div class="modal">
-      <h3>設定 Gemini API Key</h3>
-      <div class="f-row">
-        <label for="geminiKeyInput">API Key</label>
-        <input type="text" id="geminiKeyInput" placeholder="貼上你的 Gemini API Key">
-      </div>
-      <div class="action-row">
-        <button class="btn btn-primary" onclick="saveGeminiKey()">儲存</button>
-        <button class="btn btn-outline" onclick="closeModal('geminiModal')">取消</button>
-      </div>
-    </div>
-  </div>
+
 
   <div class="toast" id="toast"></div>
 
@@ -1023,23 +953,12 @@ function getPools(subj='all'){
     if(e.target.classList.contains('modal-bg')) e.target.classList.remove('show');
   });
 
-  // ===== GitHub Token / Gemini Key =====
+  // ===== GitHub Token =====
   function getGithubToken(){return localStorage.getItem('swp-waghtoken')||'';}
   function setGithubToken(t){localStorage.setItem('swp-waghtoken',t);}
-  function getGeminiKey(){return localStorage.getItem('swp-wageminikey')||'';}
-  function setGeminiKey(k){localStorage.setItem('swp-wageminikey',k);}
 
-  function saveGeminiKey(){
-    const k=document.getElementById('geminiKeyInput').value.trim();
-    if(!k){showToast('請輸入 Key');return;}
-    setGeminiKey(k);
-    showToast('Gemini Key 已儲存');
-    closeModal('geminiModal');
-  }
-  function showGeminiModal(){
-    document.getElementById('geminiKeyInput').value=getGeminiKey();
-    openModal('geminiModal');
-  }
+
+
 
   // ===== DEV Mode =====
 function toggleDev(){
@@ -1115,8 +1034,7 @@ function applyDevMode(){
 
   function resetQuestionBank(){
     if(!confirm('確定要重置題庫？這會清除本機所有題庫與作答紀錄（不影響 GitHub）')) return;
-    localStorage.removeItem('swp-waq');
-    localStorage.removeItem('swp-wadbver');
+    // localStorage 舊 key 已廢棄，題庫從 GitHub 即時載入
     showToast('已重置，重新載入中…');
     setTimeout(()=>location.reload(),800);
   }
@@ -1156,19 +1074,7 @@ function applyDevMode(){
     try{localStorage.setItem('swp-wapendingexps',JSON.stringify(obj));}catch(e){}
   }
 
-  function autoSaveExp(qId,expText){
-    const idx = DB.questions.findIndex(x=>x.id===qId);
-    if(idx>=0){
-      DB.questions[idx].exp = expText;
-      save();
-    }
-    const pending = getPendingExps();
-    pending[qId]=expText;
-    setPendingExps(pending);
-    const count = Object.keys(pending).length;
-    showToast(count>=5?'解析已暫存，稍後會自動推送 GitHub':'解析已暫存');
-    if(count>=5) flushPendingExps('auto');
-  }
+
 
   async function flushPendingExps(reason){
     const pending = getPendingExps();
@@ -1221,20 +1127,9 @@ function applyDevMode(){
     }
   }
 
-  async function flushPendingOnStart(){
-    const pending = getPendingExps();
-    if(!Object.keys(pending).length) return;
-    const token = getGithubToken();
-    if(!token) return;
-    await flushPendingExps('onStart');
-  }
 
-  window.addEventListener('beforeunload',()=>{
-    const pending = getPendingExps();
-    if(Object.keys(pending).length){
-      console.log('leave with pending exps',Object.keys(pending).length);
-    }
-  });
+
+
 
   // ===== GitHub 題庫載入 / 同步 =====
   async function fetchFromGitHub(showLoading=true,retries=3){
@@ -1413,7 +1308,7 @@ function applyDevMode(){
     if(tab==='essay'){populateEssayYearFilter();renderEssayList();}
   }
   function switchTabByName(t){
-    const tabs=['home','practice','exam','wrong','aisearch','stats','essay','manage','privacy'];
+    const tabs=['home','practice','exam','wrong','stats','essay','manage','privacy'];
     const i=tabs.indexOf(t);
     const btn=document.querySelectorAll('.tab-btn')[i];
     switchTab(t,btn);
@@ -1661,6 +1556,16 @@ function applyDevMode(){
     // 科目改變不需要重建其他選單
   }
 
+  function backToPracticeSettings(){
+    clearInterval(P.timerID);
+    const ps = document.getElementById('practiceStart');
+    const pm = document.getElementById('practiceMain');
+    const nb = document.getElementById('noBank');
+    if(ps) ps.style.display='block';
+    if(pm) pm.style.display='none';
+    if(nb) nb.style.display='none';
+  }
+
   function startPracticeFromFilter(){
     const yearSel = document.getElementById('practiceYear');
     const examSel = document.getElementById('practiceExam');
@@ -1776,13 +1681,16 @@ function applyDevMode(){
     clearInterval(P.timerID);
     const nb = document.getElementById('noBank');
     const pm = document.getElementById('practiceMain');
+    const ps = document.getElementById('practiceStart');
     if(!P.pool.length){
       nb.style.display='block';
       pm.style.display='none';
+      if(ps) ps.style.display='block';
       return;
     }
     nb.style.display='none';
     pm.style.display='block';
+    if(ps) ps.style.display='none';
     startPracticeTimer();
     renderPQ();
   }
@@ -1816,20 +1724,12 @@ function applyDevMode(){
       </button>`).join('');
     document.getElementById('rbadge').style.display='none';
     document.getElementById('exp').className='exp';
-    document.getElementById('aiExpArea').style.display='none';
-    document.getElementById('aiExpResult').style.display='none';
-    const pasteBox=document.getElementById('aiPasteBox');
-    if(pasteBox) pasteBox.value='';
     const expToggle=document.getElementById('expToggleBtn');
     if(expToggle){
       expToggle.style.display='none';
       expToggle.textContent='📖 查看解析';
     }
-    const aiBtn=document.getElementById('aiExpBtn');
-    if(aiBtn){
-      aiBtn.disabled=false;
-      aiBtn.textContent='🤖 AI 解析這題';
-    }
+
     document.getElementById('nextBtn').disabled=true;
     P.answered=false;
   }
@@ -1871,9 +1771,7 @@ function applyDevMode(){
       }
     }else{
       // 無解析：顯示複製提示詞區（所有使用者皆可用）
-      document.getElementById('aiExpArea').style.display='block';
-      document.getElementById('aiPasteBox').value='';
-      document.getElementById('aiExpResult').style.display='none';
+
     }
     document.getElementById('nextBtn').disabled=false;
     updateHeader();
@@ -2698,222 +2596,7 @@ ${q.q}
     renderEssayList();
   }
 
-  // ===== AI 搜尋 (Gemini) =====
-  async function callGeminiAPI(prompt){
-    const key=getGeminiKey();
-    if(!key){showToast('尚未設定 Gemini API Key');return null;}
-    try{
-      const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          contents:[{parts:[{text:prompt}]}],
-          generationConfig:{temperature:0.2,maxOutputTokens:4000}
-        })
-      });
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-      const data=await resp.json();
-      return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
-    }catch(e){
-      console.error('Gemini error',e);
-      return null;
-    }
-  }
 
-  function quickSearch(k){
-    document.getElementById('aiSearchInput').value=k;
-    doAiSearch();
-  }
-
-  async function doAiSearch(){
-    const kw=document.getElementById('aiSearchInput').value.trim();
-    if(!kw){showToast('請先輸入關鍵字');return;}
-    const box=document.getElementById('aiSearchResult');
-    box.innerHTML='<div style="font-size:12px;color:var(--gray)">AI 分析中…</div>';
-    const context=DB.questions.slice(0,300).map((q,i)=>`[${i}] ${q.subject||''} ${q.year||''}：${q.q}`).join('\n');
-    const prompt=`你是一位社會工作考試老師，下面是部分選擇題題目清單（括號內為題號）：
-${context}
-
-請根據使用者輸入的關鍵字「${kw}」，找出最相關的 10 題題號，並用 JSON 格式回覆，格式如下：
-{"ids":[1,5,6,...]}
-
-只輸出 JSON，不要多餘說明。`;
-    const text=await callGeminiAPI(prompt);
-    if(!text){box.innerHTML='<div style="font-size:12px;color:var(--gray)">AI 搜尋失敗，請稍後再試。</div>';return;}
-    let ids=[];
-    try{
-      const m=text.match(/\{[\s\S]*\}/);
-      const obj=JSON.parse(m?m[0]:text);
-      ids=obj.ids||[];
-    }catch(e){
-      box.innerHTML='<div style="font-size:12px;color:var(--gray)">AI 回應格式無法解析。</div>';
-      return;
-    }
-    if(!Array.isArray(ids)||!ids.length){
-      box.innerHTML='<div style="font-size:12px;color:var(--gray)">AI 沒有找到相關題目。</div>';
-      return;
-    }
-    const picks=ids.map(i=>DB.questions[i]).filter(Boolean);
-    if(!picks.length){
-      box.innerHTML='<div style="font-size:12px;color:var(--gray)">AI 沒有找到相關題目。</div>';
-      return;
-    }
-    box.innerHTML=picks.map((q,idx)=>`
-      <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px">
-        <div style="font-size:11px;color:var(--gray);margin-bottom:4px">${q.subject||''} · ${q.year||''} · AI 推薦第 ${idx+1} 題</div>
-        <div style="font-size:14px;margin-bottom:7px">${q.q||''}</div>
-        <div style="font-size:11px;color:var(--gray)">正確答案：${correctLetters(q)}</div>
-      </div>
-    `).join('');
-  }
-
-  // ===== 複製提示詞 / 貼回解析 =====
-  function buildAiPrompt(){
-    const q = P.pool[P.idx];
-    if(!q) return '';
-    return `請以社工師國考標準，對下列考題提供詳盡解析：
-
-題目：${q.q}
-
-選項：
-A. ${(q.opts||[])[0]||''}
-B. ${(q.opts||[])[1]||''}
-C. ${(q.opts||[])[2]||''}
-D. ${(q.opts||[])[3]||''}
-
-正確答案：${correctLetters(q)}
-
-請用繁體中文條列重點說明，約 200-400 字，包含：
-1. 正確答案的理由
-2. 其他選項錯誤的原因
-3. 相關社工考試重點提示`;
-  }
-
-  async function copyAiPrompt(){
-    const prompt = buildAiPrompt();
-    if(!prompt) return;
-    try{
-      await navigator.clipboard.writeText(prompt);
-      const btn = document.getElementById('copyPromptBtn');
-      btn.textContent = '✅ 已複製！';
-      setTimeout(()=>{ btn.textContent = '📋 複製提示詞'; }, 2000);
-    }catch(e){
-      // fallback
-      const ta = document.createElement('textarea');
-      ta.value = prompt;
-      ta.style.position='fixed';ta.style.opacity='0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      showToast('提示詞已複製');
-    }
-  }
-
-  function openAiWithPrompt(target){
-    const urls = {
-      perplexity: 'https://www.perplexity.ai/',
-      copilot:    'https://copilot.microsoft.com/'
-    };
-    copyAiPrompt();
-    setTimeout(()=>{ window.open(urls[target],'_blank'); }, 300);
-  }
-
-  function saveAiPastedExp(){
-    const q = P.pool[P.idx];
-    if(!q) return;
-    const text = (document.getElementById('aiPasteBox').value||'').trim();
-    if(!text){ showToast('請先貼上解析內容'); return; }
-
-    // 更新記憶體中的題目
-    const idx = DB.questions.findIndex(x=>x.id===q.id);
-    if(idx>=0) DB.questions[idx].exp = text;
-    q.exp = text;
-
-    // 顯示剛存的解析
-    document.getElementById('aiExpArea').style.display='none';
-    const result = document.getElementById('aiExpResult');
-    document.getElementById('aiExpText').innerHTML = text.replace(/\n/g,'<br>');
-
-    // 根據是否為 DEV 顯示不同按鈕
-    const sendBtn = document.getElementById('sendToAdminBtn');
-    const pushBtn = document.getElementById('devPushExpBtn');
-    if(ISDEV){
-      if(sendBtn) sendBtn.style.display='none';
-      if(pushBtn) pushBtn.style.display='inline-flex';
-    } else {
-      if(sendBtn) sendBtn.style.display='inline-flex';
-      if(pushBtn) pushBtn.style.display='none';
-    }
-    result.style.display='block';
-
-    // 同步顯示正式解析欄（expToggleBtn）
-    const e=document.getElementById('exp');
-    e.innerHTML = `<strong>解析：</strong>${text.replace(/\n/g,'<br>')}`;
-    const t=document.getElementById('expToggleBtn');
-    if(t){ t.style.display='inline-flex'; t.textContent='📖 查看解析'; }
-
-    // 暫存 pending
-    const pending = getPendingExps();
-    pending[q.id] = text;
-    setPendingExps(pending);
-    save();
-
-    if(ISDEV && getGithubToken()){
-      flushPendingExps('saveAiPastedExp');
-      showToast('解析已儲存並推送 GitHub ✅');
-    } else {
-      showToast('解析已儲存到本機 ✅');
-    }
-  }
-
-  async function sendExpToAdmin(){
-    const q = P.pool[P.idx];
-    if(!q) return;
-    const text = q.exp||'';
-    const content = `題目ID：${q.id}\n科目：${q.subject||''}\n年度：${q.year||''}\n\n題目：${q.q}\n\n解析：\n${text}`;
-    try{
-      await navigator.clipboard.writeText(content);
-      showToast('已複製！請貼到 GitHub Issue 或傳給管理員 📋');
-      // 開啟 GitHub Issues 頁面
-      setTimeout(()=>{
-        window.open('https://github.com/chwenjaan/sw-data/issues/new','_blank');
-      }, 500);
-    }catch(e){
-      showToast('請手動複製解析內容傳給管理員');
-    }
-  }
-
-  function devPushExp(){
-    if(!ISDEV){ showToast('僅開發者可用'); return; }
-    flushPendingExps('devPushExp');
-    showToast('推送中…');
-  }
-
-  function clearAiPasteBox(){
-    document.getElementById('aiPasteBox').value='';
-  }
-
-  // ===== AI 單題解析（舊 Gemini，保留備用） =====
-  async function requestAiExp(){
-    const q=P.pool[P.idx];
-    const btn=document.getElementById('aiExpBtn');
-    if(!q){return;}
-    btn.disabled=true;
-    btn.textContent='產生中…';
-    const prompt=buildAiPrompt();
-    const text=await callGeminiAPI(prompt);
-    btn.disabled=false;
-    btn.textContent='🤖 AI 解析這題';
-    if(!text){showToast('AI 解析失敗');return;}
-    document.getElementById('aiExpArea').style.display='none';
-    const box=document.getElementById('aiExpResult');
-    document.getElementById('aiExpText').innerHTML = (text || '').replace(/\n/g, '<br>');
-    box.style.display='block';
-    if(ISDEV && q.id){
-      autoSaveExp(q.id,text);
-    }
-  }
 
   // ===== 初始化 =====
   function runStep(steps,i=0){
@@ -2948,7 +2631,6 @@ D. ${(q.opts||[])[3]||''}
       ()=>loadPractice(),
       ()=>updateHeader(),
       ()=>applyDevMode(),
-      ()=>flushPendingOnStart(),
       ()=>populateFilterSelects(),
       ()=>renderQList(),
       ()=>populateHomeYear(),
