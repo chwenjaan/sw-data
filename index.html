@@ -467,6 +467,16 @@
           <div class="r-badge" id="rbadge"></div>
           <div class="exp" id="exp"></div>
 
+          <!-- 難度標記（答題後顯示） -->
+          <div id="diffArea" style="display:none;margin-top:10px">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--gray);font-weight:500">難度標記：</span>
+              <button class="diff-btn" data-level="0" onclick="markDiff(0)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--green);background:white;color:var(--green);cursor:pointer;font-family:inherit">✅ 熟悉</button>
+              <button class="diff-btn" data-level="1" onclick="markDiff(1)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--gold);background:white;color:#b8860b;cursor:pointer;font-family:inherit">⚠️ 不確定</button>
+              <button class="diff-btn" data-level="2" onclick="markDiff(2)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--red);background:white;color:var(--red);cursor:pointer;font-family:inherit">❌ 完全不會</button>
+            </div>
+          </div>
+
           <!-- 個人筆記區塊（答題後顯示） -->
           <div id="noteArea" style="display:none;margin-top:10px">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
@@ -551,6 +561,16 @@
           </div>
           <div class="qtext" id="eqText"></div>
           <div class="opts" id="eqOpts"></div>
+          <!-- 難度標記（模擬考） -->
+          <div id="eqDiffArea" style="display:none;margin-top:10px">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--gray);font-weight:500">難度標記：</span>
+              <button class="eq-diff-btn" data-level="0" onclick="markEqDiff(0)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--green);background:white;color:var(--green);cursor:pointer;font-family:inherit">✅ 熟悉</button>
+              <button class="eq-diff-btn" data-level="1" onclick="markEqDiff(1)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--gold);background:white;color:#b8860b;cursor:pointer;font-family:inherit">⚠️ 不確定</button>
+              <button class="eq-diff-btn" data-level="2" onclick="markEqDiff(2)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--red);background:white;color:var(--red);cursor:pointer;font-family:inherit">❌ 完全不會</button>
+            </div>
+          </div>
+
           <div class="action-row">
             <button class="btn btn-primary" id="eNextBtn" onclick="examNext()" disabled>下一題 →</button>
             <button class="btn btn-outline" onclick="examSkip()">跳過</button>
@@ -582,18 +602,83 @@
 
     <!-- 錯題 panel -->
     <div class="panel" id="panel-wrong">
-      <div class="sec-title">錯題紀錄</div>
-      <div id="wrongList"></div>
-      <div id="wrongEmpty" class="empty-state" style="display:none">
-        <div class="icon">✅</div>
-        <div style="font-size:14px;font-weight:500">沒有錯題</div>
-        <div style="font-size:12px;margin-top:4px">繼續練習吧！</div>
+      <!-- 三大區塊切換 -->
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <button class="check-tag checked" id="wrongTab0" onclick="switchWrongTab(0)">❌ 常錯題</button>
+        <button class="check-tag" id="wrongTab1" onclick="switchWrongTab(1)">⚠️ 不確定</button>
+        <button class="check-tag" id="wrongTab2" onclick="switchWrongTab(2)">🚫 完全不會</button>
       </div>
-      <div id="wrongActs" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px">
-        <button class="btn btn-primary" onclick="practiceWrong()">練習錯題</button>
-        <button class="btn btn-outline" onclick="clearWrong()" style="color:var(--red)">清除全部</button>
+
+      <!-- 常錯題區塊 -->
+      <div id="wrongSection0">
+        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
+          <div id="wrongYearChecks0" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
+          <div id="wrongSubjChecks0" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="applyWrongFilter()">套用篩選</button>
+            <button class="btn btn-outline" onclick="clearWrong()" style="color:var(--red)">清除全部錯題</button>
+          </div>
+        </div>
+        <div id="wrongList"></div>
+        <div id="wrongEmpty" class="empty-state" style="display:none">
+          <div class="icon">✅</div>
+          <div style="font-size:14px;font-weight:500">沒有符合的錯題</div>
+          <div style="font-size:12px;margin-top:4px">繼續練習吧！</div>
+        </div>
+        <div id="wrongActs" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button class="btn btn-primary" onclick="practiceWrongFiltered()">練習這些錯題</button>
+        </div>
+      </div>
+
+      <!-- 不確定區塊 -->
+      <div id="wrongSection1" style="display:none">
+        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
+          <div id="wrongYearChecks1" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
+          <div id="wrongSubjChecks1" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="applyDiffFilter(1)">套用篩選</button>
+            <button class="btn btn-outline" onclick="clearDiffMarks(1)" style="color:var(--gray)">清除不確定標記</button>
+          </div>
+        </div>
+        <div id="diffCount1" style="font-size:12px;color:var(--gray);margin-bottom:8px"></div>
+        <div id="diffList1"></div>
+        <div id="diffEmpty1" class="empty-state" style="display:none">
+          <div class="icon">👌</div>
+          <div style="font-size:14px;font-weight:500">沒有標記為「不確定」的題目</div>
+        </div>
+        <div id="diffActs1" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button class="btn btn-primary" onclick="startDiffPracticeFiltered(1)">練習這些題目</button>
+        </div>
+      </div>
+
+      <!-- 完全不會區塊 -->
+      <div id="wrongSection2" style="display:none">
+        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
+          <div id="wrongYearChecks2" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
+          <div id="wrongSubjChecks2" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="applyDiffFilter(2)">套用篩選</button>
+            <button class="btn btn-outline" onclick="clearDiffMarks(2)" style="color:var(--gray)">清除完全不會標記</button>
+          </div>
+        </div>
+        <div id="diffCount2" style="font-size:12px;color:var(--gray);margin-bottom:8px"></div>
+        <div id="diffList2"></div>
+        <div id="diffEmpty2" class="empty-state" style="display:none">
+          <div class="icon">💪</div>
+          <div style="font-size:14px;font-weight:500">沒有標記為「完全不會」的題目</div>
+        </div>
+        <div id="diffActs2" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button class="btn btn-primary" onclick="startDiffPracticeFiltered(2)">練習這些題目</button>
+        </div>
       </div>
     </div>
+
 
     <!-- 搜尋 panel -->
     <div class="panel" id="panel-search">
@@ -642,6 +727,31 @@
           <div class="opts" id="sqOpts"></div>
           <div class="r-badge" id="sqBadge"></div>
           <div class="exp" id="sqExp"></div>
+          <!-- 難度標記（搜尋頁） -->
+          <div id="sqDiffArea" style="display:none;margin-top:10px">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--gray);font-weight:500">難度標記：</span>
+              <button class="sq-diff-btn" data-level="0" onclick="markSqDiff(0)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--green);background:white;color:var(--green);cursor:pointer;font-family:inherit">✅ 熟悉</button>
+              <button class="sq-diff-btn" data-level="1" onclick="markSqDiff(1)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--gold);background:white;color:#b8860b;cursor:pointer;font-family:inherit">⚠️ 不確定</button>
+              <button class="sq-diff-btn" data-level="2" onclick="markSqDiff(2)" style="font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--red);background:white;color:var(--red);cursor:pointer;font-family:inherit">❌ 完全不會</button>
+            </div>
+          </div>
+
+          <!-- 個人筆記（搜尋頁） -->
+          <div id="sqNoteArea" style="display:none;margin-top:10px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+              <button id="sqNoteToggleBtn" onclick="toggleSqNote()" class="btn btn-outline btn-sm" style="font-size:11px">📝 個人筆記</button>
+              <span id="sqNoteExistDot" style="display:none;width:7px;height:7px;background:var(--gold);border-radius:50%"></span>
+            </div>
+            <div id="sqNoteBox" style="display:none">
+              <textarea id="sqNoteInput" rows="4" placeholder="在這裡寫下你的重點筆記…" style="width:100%;padding:10px 12px;border:1.5px solid var(--gold);border-radius:8px;font-size:13px;font-family:inherit;background:#fffcf0;resize:vertical;line-height:1.7"></textarea>
+              <div style="display:flex;gap:6px;margin-top:6px">
+                <button class="btn btn-gold btn-sm" onclick="saveSqNote()">💾 儲存</button>
+                <button class="btn btn-outline btn-sm" onclick="clearSqNote()">🗑 清除</button>
+              </div>
+            </div>
+          </div>
+
           <div class="action-row">
             <button class="btn btn-primary" id="sqNextBtn" onclick="searchNextQ()" disabled>下一題 →</button>
             <button class="btn btn-outline" onclick="searchSkipQ()">跳過</button>
@@ -1457,7 +1567,7 @@ function applyDevMode(){
       if(pm) pm.style.display='none';
       if(nb) nb.style.display='none';
     }
-    if(tab==='wrong') renderWrong();
+    if(tab==='wrong'){ renderWrong(); switchWrongTab(0); }
     if(tab==='search') populateSearchSelects();
     if(tab==='stats') renderStats();
     if(tab==='manage'){populateFilterSelects();renderQList();}
@@ -1961,7 +2071,9 @@ function applyDevMode(){
 
     document.getElementById('nextBtn').disabled=true;
     P.answered=false;
-    // 筆記：隱藏區塊，載入該題已存筆記
+    // 難度標記 + 筆記：隱藏區塊，載入該題已存筆記
+    const diffArea = document.getElementById('diffArea');
+    if(diffArea) diffArea.style.display='none';
     const noteArea = document.getElementById('noteArea');
     if(noteArea) noteArea.style.display='none';
     loadNoteForQ(q.id);
@@ -2003,11 +2115,12 @@ function applyDevMode(){
         t.textContent='📖 查看解析';
       }
     }else{
-      // 無解析：顯示複製提示詞區（所有使用者皆可用）
-
     }
     document.getElementById('nextBtn').disabled=false;
-    // 答題後顯示筆記/搜尋區塊
+    // 答題後顯示難度標記 + 筆記
+    const diffArea = document.getElementById('diffArea');
+    if(diffArea) diffArea.style.display='block';
+    updateDiffBtns(P.pool[P.idx].id);
     const noteArea = document.getElementById('noteArea');
     if(noteArea) noteArea.style.display='block';
 
@@ -2090,6 +2203,8 @@ function startExam(){
   }
 
   function renderEQ(){
+    const eqDiffArea = document.getElementById('eqDiffArea');
+    if(eqDiffArea) eqDiffArea.style.display='none';
     const q=E.pool[E.idx];
     document.getElementById('eqNum').textContent=E.idx+1;
     document.getElementById('examPF').style.width=(E.idx/E.pool.length*100)+'%';
@@ -2132,6 +2247,9 @@ function startExam(){
       b.classList.toggle('sel',j===i);
     });
     document.getElementById('eNextBtn').disabled=false;
+    const eqDiffArea = document.getElementById('eqDiffArea');
+    if(eqDiffArea) eqDiffArea.style.display='block';
+    updateEqDiffBtns(E.pool[E.idx].id);
   }
   function examNext(){
     if(E.idx<E.pool.length-1){
@@ -2218,10 +2336,15 @@ function startExam(){
   }
 
   function renderWrong(){
+    const years = _getWrongFilterYears(0);
+    const subjs = _getWrongFilterSubjs(0);
     const list=document.getElementById('wrongList');
     const empty=document.getElementById('wrongEmpty');
     const acts=document.getElementById('wrongActs');
-    if(!DB.wrong.length){
+    let items = DB.wrong.slice();
+    if(years.length) items = items.filter(w=>{ const qy=(w.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
+    if(subjs.length) items = items.filter(w=>subjs.includes(w.subject));
+    if(!items.length){
       list.innerHTML='';
       empty.style.display='block';
       acts.style.display='none';
@@ -2229,7 +2352,7 @@ function startExam(){
     }
     empty.style.display='none';
     acts.style.display='flex';
-    list.innerHTML = DB.wrong.map(w=>{
+    list.innerHTML = items.map(w=>{
       const corr = correctLetters(w);
       const your = w.myAns>=0?('ABCD'[w.myAns]+'. '+(w.opts[w.myAns]||'')):'(未作答)';
       return `
@@ -2755,97 +2878,78 @@ function startExam(){
       return;
     }
     empty.style.display='none';
-    list.innerHTML=items.map((q,i)=>`
+    const notes = getNotes();
+    list.innerHTML=items.map((q,i)=>{
+      const hasExp = !!(q.exp && q.exp.trim());
+      const hasNote = !!notes[q.id];
+      const expHtml = hasExp
+        ? `<div id="essay-exp-${q.id}" style="display:none;font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold);white-space:pre-line;margin-top:6px"><strong>參考解析：</strong>\n${q.exp}</div>`
+        : `<div style="font-size:11px;color:var(--gray);padding:4px 0;font-style:italic">解析尚未收錄</div>`;
+      const noteHtml = `
+        <div id="essay-note-box-${q.id}" style="display:none;margin-top:6px">
+          <textarea id="essay-note-input-${q.id}" rows="4" placeholder="在這裡寫下你的重點筆記…" style="width:100%;padding:10px 12px;border:1.5px solid var(--gold);border-radius:8px;font-size:13px;font-family:inherit;background:#fffcf0;resize:vertical;line-height:1.7">${(notes[q.id]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button class="btn btn-gold btn-sm" onclick="saveEssayNote('${q.id}')">💾 儲存</button>
+            <button class="btn btn-outline btn-sm" onclick="clearEssayNote('${q.id}')">🗑 清除</button>
+          </div>
+        </div>`;
+      return `
       <div style="background:white;border:1px solid var(--border);border-radius:8px;padding:12px" id="essay-card-${q.id}">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
           <div style="font-size:11px;color:var(--gray);flex:1">${q.subject||''} · ${q.year||''} · 第 ${i+1} 題</div>
           ${ISDEV?`<button class="btn btn-outline btn-sm edit-q-btn" data-id="${q.id}" data-subj="${q.subject||''}" style="font-size:10px;padding:3px 8px">✏️ 編輯</button>`:''}
         </div>
-        <div style="font-size:14px;margin-bottom:7px;white-space:pre-line">${q.q||''}</div>
-
-        ${q.exp
-          ? `<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold);white-space:pre-line"><strong>參考解析：</strong>\n${q.exp}</div>`
-          : `<div style="background:#fffcf0;border:1.5px dashed var(--gold);border-radius:8px;padding:10px;margin-top:6px">
-               <div style="font-size:11px;color:#7a6830;margin-bottom:8px;font-weight:600">📋 此題尚無解析，可複製提示詞請 AI 解析後貼回</div>
-               <div style="display:flex;gap:6px;margin-bottom:8px">
-                 <button class="btn btn-gold" onclick="copyEssayPrompt('${q.id}')" style="font-size:11px;flex:1">📋 複製提示詞</button>
-                 <button class="btn btn-outline" onclick="openEssayAi('${q.id}')" style="font-size:11px;flex:1">🔍 開啟 Perplexity</button>
-               </div>
-               <textarea data-qid="${q.id}" rows="3" placeholder="將 AI 解析貼到這裡…" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:white;resize:vertical"></textarea>
-               <div style="display:flex;gap:6px;margin-top:6px">
-                 <button class="btn btn-primary" onclick="saveEssayExp('${q.id}')" style="font-size:11px">💾 儲存解析</button>
-                 <button class="btn btn-outline" onclick="this.closest('div').previousElementSibling.value=''" style="font-size:11px">清除</button>
-               </div>
-             </div>`
-        }
-      </div>
-    `).join('');
+        <div style="font-size:14px;margin-bottom:8px;white-space:pre-line">${q.q||''}</div>
+        ${expHtml}
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+          ${hasExp ? `<button id="essay-exp-btn-${q.id}" class="btn btn-outline btn-sm" onclick="toggleEssayExp('${q.id}')" style="font-size:11px">📖 查看解析</button>` : ''}
+          <button class="btn btn-outline btn-sm essay-note-toggle" data-qid="${q.id}" onclick="toggleEssayNote('${q.id}')" style="font-size:11px">📝 個人筆記</button>
+          <span id="essay-note-dot-${q.id}" style="display:${hasNote?'inline-block':'none'};width:7px;height:7px;background:var(--gold);border-radius:50%"></span>
+        </div>
+        ${noteHtml}
+      </div>`;
+    }).join('');
+  }
+  // ===== 申論題個人筆記 =====
+  function toggleEssayExp(qId){
+    const box = document.getElementById(`essay-exp-${qId}`);
+    const btn = document.getElementById(`essay-exp-btn-${qId}`);
+    if(!box) return;
+    const isOpen = box.style.display !== 'none';
+    box.style.display = isOpen ? 'none' : 'block';
+    if(btn) btn.textContent = isOpen ? '📖 查看解析' : '📖 收起解析';
   }
 
-  function buildEssayPrompt(qId){
-    const q = DB.questions.find(x=>x.id===qId);
-    if(!q) return '';
-    return `請以社工師國考標準，對下列申論題提供詳盡參考解析：
-
-科目：${q.subject||''}
-年度：${q.year||''}
-
-題目：
-${q.q}
-
-請用繁體中文分段說明，約 400-600 字，包含：
-1. 核心概念說明
-2. 分點論述（可搭配理論或法規）
-3. 實務應用或舉例`;
-  }
-
-  async function copyEssayPrompt(qId){
-    const prompt = buildEssayPrompt(qId);
-    if(!prompt) return;
-    try{
-      await navigator.clipboard.writeText(prompt);
-      showToast('提示詞已複製 ✅');
-    }catch(e){
-      const ta=document.createElement('textarea');
-      ta.value=prompt; ta.style.position='fixed'; ta.style.opacity='0';
-      document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); document.body.removeChild(ta);
-      showToast('提示詞已複製');
+  function toggleEssayNote(qId){
+    const box = document.getElementById(`essay-note-box-${qId}`);
+    const btn = document.querySelector(`[data-qid="${qId}"].essay-note-toggle`);
+    if(!box) return;
+    const isOpen = box.style.display !== 'none';
+    box.style.display = isOpen ? 'none' : 'block';
+    if(btn) btn.textContent = isOpen ? '📝 個人筆記' : '📝 收起筆記';
+    if(!isOpen){
+      const input = document.getElementById(`essay-note-input-${qId}`);
+      if(input) setTimeout(()=>input.focus(), 50);
     }
   }
 
-  function openEssayAi(qId){
-    copyEssayPrompt(qId);
-    setTimeout(()=>{ window.open('https://www.perplexity.ai/','_blank'); }, 300);
+  function saveEssayNote(qId){
+    const input = document.getElementById(`essay-note-input-${qId}`);
+    if(!input) return;
+    const text = input.value.trim();
+    const notes = getNotes();
+    if(text) notes[qId]=text; else delete notes[qId];
+    setNotes(notes);
+    const dot = document.getElementById(`essay-note-dot-${qId}`);
+    if(dot) dot.style.display = text ? 'inline-block' : 'none';
+    showToast(text ? '筆記已儲存 📝' : '筆記已清除');
   }
 
-  function saveEssayExp(qId){
-    const ta = document.querySelector(`textarea[data-qid="${qId}"]`);
-    if(!ta){ showToast('找不到輸入框'); return; }
-    const text = ta.value.trim();
-    if(!text){ showToast('請先貼上解析內容'); return; }
-
-    const idx = DB.questions.findIndex(x=>x.id===qId);
-    if(idx>=0) DB.questions[idx].exp = text;
-
-    // 暫存 pending
-    const pending = getPendingExps();
-    pending[qId] = text;
-    setPendingExps(pending);
-    save();
-
-    if(ISDEV && getGithubToken()){
-      flushPendingExps('saveEssayExp');
-      showToast('解析已儲存並推送 GitHub ✅');
-    } else {
-      showToast('解析已儲存到本機 ✅');
-    }
-
-    // 重新渲染讓解析顯示出來
-    renderEssayList();
+  function clearEssayNote(qId){
+    const input = document.getElementById(`essay-note-input-${qId}`);
+    if(input) input.value='';
+    saveEssayNote(qId);
   }
-
-
 
   // ===== 關鍵字搜尋練習 =====
   let S = {pool:[], idx:0, answered:false, kw:''};
@@ -2961,6 +3065,12 @@ ${q.q}
     if(expBtn){ expBtn.style.display='none'; expBtn.textContent='📖 查看解析'; }
     document.getElementById('sqNextBtn').disabled=true;
     S.answered=false;
+    // 隱藏筆記區，載入該題筆記
+    const sqDiffArea = document.getElementById('sqDiffArea');
+    if(sqDiffArea) sqDiffArea.style.display='none';
+    const sqNoteArea = document.getElementById('sqNoteArea');
+    if(sqNoteArea) sqNoteArea.style.display='none';
+    loadSqNoteForQ(S.pool[S.idx].id);
   }
 
   function pickSearchAns(i){
@@ -2983,6 +3093,11 @@ ${q.q}
       if(btn){ btn.style.display='inline-flex'; btn.textContent='📖 查看解析'; }
     }
     document.getElementById('sqNextBtn').disabled=false;
+    const sqDiffArea = document.getElementById('sqDiffArea');
+    if(sqDiffArea) sqDiffArea.style.display='block';
+    updateSqDiffBtns(S.pool[S.idx].id);
+    const sqNoteArea = document.getElementById('sqNoteArea');
+    if(sqNoteArea) sqNoteArea.style.display='block';
   }
 
   function toggleSearchExp(){
@@ -3017,6 +3132,282 @@ ${q.q}
   function backToSearchSettings(){
     document.getElementById('searchStart').style.display='block';
     document.getElementById('searchMain').style.display='none';
+  }
+
+  // 搜尋頁筆記（共用 getNotes/setNotes，id 前綴 sq）
+  function loadSqNoteForQ(qId){
+    const notes = getNotes();
+    const input = document.getElementById('sqNoteInput');
+    const dot = document.getElementById('sqNoteExistDot');
+    if(!input) return;
+    const text = notes[qId]||'';
+    input.value = text;
+    if(dot) dot.style.display = text ? 'inline-block' : 'none';
+    const box = document.getElementById('sqNoteBox');
+    if(box) box.style.display='none';
+    const btn = document.getElementById('sqNoteToggleBtn');
+    if(btn) btn.textContent='📝 個人筆記';
+  }
+
+  function toggleSqNote(){
+    const box = document.getElementById('sqNoteBox');
+    const btn = document.getElementById('sqNoteToggleBtn');
+    if(!box) return;
+    const isOpen = box.style.display !== 'none';
+    box.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? '📝 個人筆記' : '📝 收起筆記';
+    if(!isOpen){
+      const input = document.getElementById('sqNoteInput');
+      if(input) setTimeout(()=>input.focus(),50);
+    }
+  }
+
+  function saveSqNote(){
+    const q = S.pool[S.idx];
+    if(!q) return;
+    const text = (document.getElementById('sqNoteInput').value||'').trim();
+    const notes = getNotes();
+    if(text) notes[q.id]=text; else delete notes[q.id];
+    setNotes(notes);
+    const dot = document.getElementById('sqNoteExistDot');
+    if(dot) dot.style.display = text ? 'inline-block' : 'none';
+    showToast(text ? '筆記已儲存 📝' : '筆記已清除');
+  }
+
+  function clearSqNote(){
+    const input = document.getElementById('sqNoteInput');
+    if(input) input.value='';
+    saveSqNote();
+  }
+
+  // ===== 難度標記 =====
+  function getDiffMarks(){
+    try{ return JSON.parse(localStorage.getItem('swp-diff'))||{}; }catch(e){ return {}; }
+  }
+  function setDiffMarks(obj){
+    try{ localStorage.setItem('swp-diff', JSON.stringify(obj)); }catch(e){}
+  }
+
+  // level: 0=熟悉, 1=不確定, 2=完全不會
+  function markDiff(level){
+    const q = P.pool[P.idx];
+    if(!q) return;
+    _setDiff(q.id, level);
+    updateDiffBtns(q.id);
+    const labels = ['熟悉','不確定','完全不會'];
+    showToast(`已標記：${['✅','⚠️','❌'][level]} ${labels[level]}`);
+  }
+
+  function markSqDiff(level){
+    const q = S.pool[S.idx];
+    if(!q) return;
+    _setDiff(q.id, level);
+    updateSqDiffBtns(q.id);
+    const labels = ['熟悉','不確定','完全不會'];
+    showToast(`已標記：${['✅','⚠️','❌'][level]} ${labels[level]}`);
+  }
+
+  function _setDiff(qId, level){
+    const marks = getDiffMarks();
+    if(level === 0){ delete marks[qId]; } // 熟悉 = 移除標記
+    else { marks[qId] = level; }
+    setDiffMarks(marks);
+  }
+
+  function updateDiffBtns(qId){
+    const marks = getDiffMarks();
+    const level = marks[qId] ?? 0;
+    const colors = [
+      {border:'var(--green)', color:'var(--green)'},
+      {border:'var(--gold)',  color:'#b8860b'},
+      {border:'var(--red)',   color:'var(--red)'},
+    ];
+    document.querySelectorAll('.diff-btn').forEach(btn=>{
+      const lv = parseInt(btn.dataset.level);
+      const active = lv === level;
+      btn.style.background = active ? (lv===0?'#eafaf1':lv===1?'#fffbe6':'#fdedec') : 'white';
+      btn.style.fontWeight = active ? '700' : '400';
+    });
+  }
+
+  function updateSqDiffBtns(qId){
+    const marks = getDiffMarks();
+    const level = marks[qId] ?? 0;
+    document.querySelectorAll('.sq-diff-btn').forEach(btn=>{
+      const lv = parseInt(btn.dataset.level);
+      const active = lv === level;
+      btn.style.background = active ? (lv===0?'#eafaf1':lv===1?'#fffbe6':'#fdedec') : 'white';
+      btn.style.fontWeight = active ? '700' : '400';
+    });
+  }
+
+  // ===== 難度練習分頁 =====
+  function renderDiffPanel(){
+    // 已整合進 renderWrong，此函式保留相容性
+  }
+
+  function switchWrongTab(idx){
+    [0,1,2].forEach(i=>{
+      const sec = document.getElementById(`wrongSection${i}`);
+      const tab = document.getElementById(`wrongTab${i}`);
+      if(sec) sec.style.display = i===idx ? 'block' : 'none';
+      if(tab) tab.classList.toggle('checked', i===idx);
+    });
+    _buildWrongFilterChecks(idx);
+    if(idx===0) renderWrong();
+    if(idx===1) renderDiffList(1);
+    if(idx===2) renderDiffList(2);
+  }
+
+  function _buildWrongFilterChecks(section){
+    const years = _getYearList();
+    const subjs = _getSubjList();
+    const yWrap = document.getElementById(`wrongYearChecks${section}`);
+    const sWrap = document.getElementById(`wrongSubjChecks${section}`);
+    if(yWrap) yWrap.innerHTML =
+      `<label class="check-tag checked" data-val="" onclick="_handleTagClick(this,'wrongYearChecks${section}')"><span>全部</span></label>` +
+      years.map(y=>`<label class="check-tag" data-val="${y}" onclick="_handleTagClick(this,'wrongYearChecks${section}')"><span>${y}</span></label>`).join('');
+    if(sWrap) sWrap.innerHTML =
+      `<label class="check-tag checked" data-val="" onclick="_handleTagClick(this,'wrongSubjChecks${section}')"><span>全部</span></label>` +
+      subjs.map(s=>`<label class="check-tag" data-val="${s}" onclick="_handleTagClick(this,'wrongSubjChecks${section}')"><span>${s}</span></label>`).join('');
+  }
+
+  function applyWrongFilter(){
+    renderWrong();
+  }
+
+  function applyDiffFilter(level){
+    renderDiffList(level);
+  }
+
+  function _getWrongFilterYears(section){
+    return _getCheckedVals(`wrongYearChecks${section}`);
+  }
+  function _getWrongFilterSubjs(section){
+    return _getCheckedVals(`wrongSubjChecks${section}`);
+  }
+
+  function practiceWrongFiltered(){
+    const years = _getWrongFilterYears(0);
+    const subjs = _getWrongFilterSubjs(0);
+    let pool = DB.wrong.map(w=>DB.questions.find(x=>x.id===w.id)||w).filter(Boolean);
+    if(years.length) pool = pool.filter(q=>{ const qy=(q.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
+    if(subjs.length) pool = pool.filter(q=>subjs.includes(q.subject));
+    if(!pool.length){ showToast('沒有符合的題目'); return; }
+    P.years=[]; P.subjs=[]; P.year=null; P.yearPrefix=null; P.subj='all';
+    P.pool = shuffle(pool.slice());
+    P.idx=0; P.answered=false; P.seconds=0;
+    clearInterval(P.timerID);
+    switchTabByName('practice');
+    document.getElementById('practiceStart').style.display='none';
+    document.getElementById('practiceMain').style.display='block';
+    document.getElementById('noBank').style.display='none';
+    startPracticeTimer();
+    renderPQ();
+  }
+
+  function startDiffPracticeFiltered(level){
+    const years = _getWrongFilterYears(level);
+    const subjs = _getWrongFilterSubjs(level);
+    const marks = getDiffMarks();
+    const ids = Object.entries(marks).filter(([,v])=>v===level).map(([id])=>id);
+    let pool = DB.questions.filter(q=>q.type==='choice' && ids.includes(q.id));
+    if(years.length) pool = pool.filter(q=>{ const qy=(q.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
+    if(subjs.length) pool = pool.filter(q=>subjs.includes(q.subject));
+    if(!pool.length){ showToast('沒有符合的題目'); return; }
+    P.years=[]; P.subjs=[]; P.year=null; P.yearPrefix=null; P.subj='all';
+    P.pool = shuffle(pool.slice());
+    P.idx=0; P.answered=false; P.seconds=0;
+    clearInterval(P.timerID);
+    switchTabByName('practice');
+    document.getElementById('practiceStart').style.display='none';
+    document.getElementById('practiceMain').style.display='block';
+    document.getElementById('noBank').style.display='none';
+    startPracticeTimer();
+    renderPQ();
+  }
+
+  function renderDiffList(level){
+    const years = _getWrongFilterYears(level);
+    const subjs = _getWrongFilterSubjs(level);
+    const marks = getDiffMarks();
+    const ids = Object.entries(marks).filter(([,v])=>v===level).map(([id])=>id);
+    let pool = DB.questions.filter(q=>q.type==='choice' && ids.includes(q.id));
+    if(years.length) pool = pool.filter(q=>{ const qy=(q.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
+    if(subjs.length) pool = pool.filter(q=>subjs.includes(q.subject));
+    const listEl = document.getElementById(`diffList${level}`);
+    const emptyEl = document.getElementById(`diffEmpty${level}`);
+    const actsEl  = document.getElementById(`diffActs${level}`);
+    const countEl = document.getElementById(`diffCount${level}`);
+    if(!listEl) return;
+    if(countEl) countEl.textContent = `共 ${pool.length} 題`;
+    if(!pool.length){
+      listEl.innerHTML='';
+      if(emptyEl) emptyEl.style.display='block';
+      if(actsEl)  actsEl.style.display='none';
+      return;
+    }
+    if(emptyEl) emptyEl.style.display='none';
+    if(actsEl)  actsEl.style.display='flex';
+    listEl.innerHTML = pool.map(q=>`
+      <div style="background:white;border:1px solid var(--border);border-left:3px solid ${level===1?'var(--gold)':'var(--red)'};border-radius:8px;padding:12px;margin-bottom:8px;font-size:13px;line-height:1.8">
+        <div style="font-size:10px;color:var(--gray);margin-bottom:4px">
+          <span style="color:${COLORS[q.subject]||'#888'};font-weight:600">${q.subject||''}</span>
+          <span style="margin-left:6px">${q.year||''}</span>
+        </div>
+        <div>${q.q||''}</div>
+        <div style="font-size:11px;color:var(--gray);margin-top:4px">正確答案：${correctLetters(q)}</div>
+      </div>`).join('');
+  }
+
+  function markEqDiff(level){
+    const q = E.pool[E.idx];
+    if(!q) return;
+    _setDiff(q.id, level);
+    updateEqDiffBtns(q.id);
+    const labels = ['熟悉','不確定','完全不會'];
+    showToast(`已標記：${['✅','⚠️','❌'][level]} ${labels[level]}`);
+  }
+
+  function updateEqDiffBtns(qId){
+    const marks = getDiffMarks();
+    const level = marks[qId] ?? 0;
+    document.querySelectorAll('.eq-diff-btn').forEach(btn=>{
+      const lv = parseInt(btn.dataset.level);
+      const active = lv === level;
+      btn.style.background = active ? (lv===0?'#eafaf1':lv===1?'#fffbe6':'#fdedec') : 'white';
+      btn.style.fontWeight = active ? '700' : '400';
+    });
+  }
+
+  function startDiffPractice(level){
+    const marks = getDiffMarks();
+    const ids = Object.entries(marks).filter(([,v])=>v===level).map(([id])=>id);
+    const pool = DB.questions.filter(q=>q.type==='choice' && ids.includes(q.id));
+    if(!pool.length){
+      showToast('目前沒有這個標記的題目');
+      return;
+    }
+    P.years=[]; P.subjs=[]; P.year=null; P.yearPrefix=null; P.subj='all';
+    P.pool = shuffle(pool.slice());
+    P.idx=0; P.answered=false; P.seconds=0;
+    clearInterval(P.timerID);
+    switchTabByName('practice');
+    document.getElementById('practiceStart').style.display='none';
+    document.getElementById('practiceMain').style.display='block';
+    document.getElementById('noBank').style.display='none';
+    startPracticeTimer();
+    renderPQ();
+  }
+
+  function clearDiffMarks(level){
+    const label = level===1?'不確定':'完全不會';
+    if(!confirm(`確定清除所有「${label}」標記？`)) return;
+    const marks = getDiffMarks();
+    Object.keys(marks).forEach(id=>{ if(marks[id]===level) delete marks[id]; });
+    setDiffMarks(marks);
+    renderDiffPanel();
+    showToast(`已清除所有「${label}」標記`);
   }
 
   // ===== 初始化 =====
