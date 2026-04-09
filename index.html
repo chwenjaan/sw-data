@@ -605,70 +605,43 @@
 
       <!-- 常錯題區塊 -->
       <div id="wrongSection0">
-        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px">
           <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
           <div id="wrongYearChecks0" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
           <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
           <div id="wrongSubjChecks0" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="applyWrongFilter()">套用篩選</button>
+            <button class="btn btn-primary" onclick="practiceWrongFiltered()">開始練習</button>
             <button class="btn btn-outline" onclick="clearWrong()" style="color:var(--red)">清除全部錯題</button>
           </div>
-        </div>
-        <div id="wrongList"></div>
-        <div id="wrongEmpty" class="empty-state" style="display:none">
-          <div class="icon">✅</div>
-          <div style="font-size:14px;font-weight:500">沒有符合的錯題</div>
-          <div style="font-size:12px;margin-top:4px">繼續練習吧！</div>
-        </div>
-        <div id="wrongActs" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px">
-          <button class="btn btn-primary" onclick="practiceWrongFiltered()">練習這些錯題</button>
         </div>
       </div>
 
       <!-- 不確定區塊 -->
       <div id="wrongSection1" style="display:none">
-        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px">
           <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
           <div id="wrongYearChecks1" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
           <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
           <div id="wrongSubjChecks1" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="applyDiffFilter(1)">套用篩選</button>
+            <button class="btn btn-primary" onclick="startDiffPracticeFiltered(1)">開始練習</button>
             <button class="btn btn-outline" onclick="clearDiffMarks(1)" style="color:var(--gray)">清除不確定標記</button>
           </div>
-        </div>
-        <div id="diffCount1" style="font-size:12px;color:var(--gray);margin-bottom:8px"></div>
-        <div id="diffList1"></div>
-        <div id="diffEmpty1" class="empty-state" style="display:none">
-          <div class="icon">👌</div>
-          <div style="font-size:14px;font-weight:500">沒有標記為「不確定」的題目</div>
-        </div>
-        <div id="diffActs1" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px">
-          <button class="btn btn-primary" onclick="startDiffPracticeFiltered(1)">練習這些題目</button>
         </div>
       </div>
 
       <!-- 完全不會區塊 -->
       <div id="wrongSection2" style="display:none">
-        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+        <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:14px">
           <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
           <div id="wrongYearChecks2" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
           <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">科目（可複選）</div>
           <div id="wrongSubjChecks2" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="applyDiffFilter(2)">套用篩選</button>
+            <button class="btn btn-primary" onclick="startDiffPracticeFiltered(2)">開始練習</button>
             <button class="btn btn-outline" onclick="clearDiffMarks(2)" style="color:var(--gray)">清除完全不會標記</button>
           </div>
-        </div>
-        <div id="diffCount2" style="font-size:12px;color:var(--gray);margin-bottom:8px"></div>
-        <div id="diffList2"></div>
-        <div id="diffEmpty2" class="empty-state" style="display:none">
-          <div class="icon">💪</div>
-          <div style="font-size:14px;font-weight:500">沒有標記為「完全不會」的題目</div>
-        </div>
-        <div id="diffActs2" style="display:none;gap:8px;flex-wrap:wrap;margin-top:12px">
-          <button class="btn btn-primary" onclick="startDiffPracticeFiltered(2)">練習這些題目</button>
         </div>
       </div>
     </div>
@@ -1552,7 +1525,7 @@ function applyDevMode(){
       if(pm) pm.style.display='none';
       if(nb) nb.style.display='none';
     }
-    if(tab==='wrong'){ renderWrong(); switchWrongTab(0); }
+    if(tab==='wrong') switchWrongTab(0);
     if(tab==='search') populateSearchSelects();
     if(tab==='stats') renderStats();
     if(tab==='manage'){populateFilterSelects();renderQList();}
@@ -2322,45 +2295,6 @@ function startExam(){
     save();
   }
 
-  function renderWrong(showList=false){
-    const years = _getWrongFilterYears(0);
-    const subjs = _getWrongFilterSubjs(0);
-    const list=document.getElementById('wrongList');
-    const empty=document.getElementById('wrongEmpty');
-    const acts=document.getElementById('wrongActs');
-    // 未套用篩選前隱藏列表
-    if(!showList){
-      list.innerHTML='';
-      empty.style.display='none';
-      acts.style.display='none';
-      return;
-    }
-    let items = DB.wrong.slice();
-    if(years.length) items = items.filter(w=>{ const qy=(w.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
-    if(subjs.length) items = items.filter(w=>subjs.includes(w.subject));
-    if(!items.length){
-      list.innerHTML='';
-      empty.style.display='block';
-      acts.style.display='none';
-      return;
-    }
-    empty.style.display='none';
-    acts.style.display='flex';
-    list.innerHTML = items.map(w=>{
-      const corr = correctLetters(w);
-      const your = w.myAns>=0?('ABCD'[w.myAns]+'. '+(w.opts[w.myAns]||'')):'(未作答)';
-      return `
-        <div class="w-item">
-          <div style="font-size:10px;color:var(--gray);margin-bottom:4px">${w.subject||''} · ${w.year||''} · 做錯 ${w.count||1} 次</div>
-          <div style="font-size:14px;margin-bottom:7px">${w.q}</div>
-          <div style="font-size:11px;color:var(--red);margin-bottom:2px">你的答案：${your}</div>
-          <div style="font-size:11px;color:var(--green);margin-bottom:${w.exp?6:0}px">正確答案：${corr}</div>
-          ${w.exp?`<div style="font-size:12px;color:#4a4030;background:#fffcf0;padding:8px;border-radius:4px;border-left:2px solid var(--gold)"><strong>解析：</strong>${w.exp}</div>`:''}
-        </div>
-      `;
-    }).join('');
-  }
-
   function practiceWrong(){
     if(!DB.wrong.length) return;
     P.pool = shuffle(DB.wrong.map(w=>{
@@ -2377,7 +2311,7 @@ function startExam(){
     if(!confirm('確定要清除所有錯題紀錄？')) return;
     DB.wrong=[];
     save();
-    renderWrong(false);
+    showToast('錯題已清除');
   }
 
   // ===== 統計 =====
@@ -3250,9 +3184,7 @@ function startExam(){
       if(tab) tab.classList.toggle('checked', i===idx);
     });
     _buildWrongFilterChecks(idx);
-    if(idx===0) renderWrong();
-    if(idx===1) renderDiffList(1);
-    if(idx===2) renderDiffList(2);
+
   }
 
   function _buildWrongFilterChecks(section){
@@ -3266,14 +3198,6 @@ function startExam(){
     if(sWrap) sWrap.innerHTML =
       `<label class="check-tag checked" data-val="" onclick="_handleTagClick(this,'wrongSubjChecks${section}')"><span>全部</span></label>` +
       subjs.map(s=>`<label class="check-tag" data-val="${s}" onclick="_handleTagClick(this,'wrongSubjChecks${section}')"><span>${s}</span></label>`).join('');
-  }
-
-  function applyWrongFilter(){
-    renderWrong(true);
-  }
-
-  function applyDiffFilter(level){
-    renderDiffList(level, true);
   }
 
   function _getWrongFilterYears(section){
@@ -3323,47 +3247,6 @@ function startExam(){
     renderPQ();
   }
 
-  function renderDiffList(level, showList=false){
-    const listEl = document.getElementById(`diffList${level}`);
-    const emptyEl = document.getElementById(`diffEmpty${level}`);
-    const actsEl  = document.getElementById(`diffActs${level}`);
-    const countEl = document.getElementById(`diffCount${level}`);
-    if(!listEl) return;
-    // 未套用篩選前隱藏列表
-    if(!showList){
-      listEl.innerHTML='';
-      if(emptyEl) emptyEl.style.display='none';
-      if(actsEl)  actsEl.style.display='none';
-      if(countEl) countEl.textContent='';
-      return;
-    }
-    const years = _getWrongFilterYears(level);
-    const subjs = _getWrongFilterSubjs(level);
-    const marks = getDiffMarks();
-    const ids = Object.entries(marks).filter(([,v])=>v===level).map(([id])=>id);
-    let pool = DB.questions.filter(q=>q.type==='choice' && ids.includes(q.id));
-    if(years.length) pool = pool.filter(q=>{ const qy=(q.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
-    if(subjs.length) pool = pool.filter(q=>subjs.includes(q.subject));
-    if(countEl) countEl.textContent = `共 ${pool.length} 題`;
-    if(!pool.length){
-      listEl.innerHTML='';
-      if(emptyEl) emptyEl.style.display='block';
-      if(actsEl)  actsEl.style.display='none';
-      return;
-    }
-    if(emptyEl) emptyEl.style.display='none';
-    if(actsEl)  actsEl.style.display='flex';
-    listEl.innerHTML = pool.map(q=>`
-      <div style="background:white;border:1px solid var(--border);border-left:3px solid ${level===1?'var(--gold)':'var(--red)'};border-radius:8px;padding:12px;margin-bottom:8px;font-size:13px;line-height:1.8">
-        <div style="font-size:10px;color:var(--gray);margin-bottom:4px">
-          <span style="color:${COLORS[q.subject]||'#888'};font-weight:600">${q.subject||''}</span>
-          <span style="margin-left:6px">${q.year||''}</span>
-        </div>
-        <div>${q.q||''}</div>
-        <div style="font-size:11px;color:var(--gray);margin-top:4px">正確答案：${correctLetters(q)}</div>
-      </div>`).join('');
-  }
-
   function markEqDiff(level){
     const q = E.pool[E.idx];
     if(!q) return;
@@ -3410,7 +3293,6 @@ function startExam(){
     const marks = getDiffMarks();
     Object.keys(marks).forEach(id=>{ if(marks[id]===level) delete marks[id]; });
     setDiffMarks(marks);
-    renderDiffList(level, false);
     showToast(`已清除所有「${label}」標記`);
   }
 
