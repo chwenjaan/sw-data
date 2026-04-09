@@ -3210,7 +3210,12 @@ function startExam(){
   function practiceWrongFiltered(){
     const years = _getWrongFilterYears(0);
     const subjs = _getWrongFilterSubjs(0);
-    let pool = DB.wrong.map(w=>DB.questions.find(x=>x.id===w.id)||w).filter(Boolean);
+    let pool = DB.wrong.map(w=>{
+      // 先用 id 比對，找不到改用題目文字比對（id 可能因格式更新而不同）
+      return DB.questions.find(x=>x.id===w.id)
+          || DB.questions.find(x=>x.q===w.q && x.subject===w.subject)
+          || w;
+    }).filter(Boolean);
     if(years.length) pool = pool.filter(q=>{ const qy=(q.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
     if(subjs.length) pool = pool.filter(q=>subjs.includes(q.subject));
     if(!pool.length){ showToast('沒有符合的題目'); return; }
