@@ -2322,12 +2322,19 @@ function startExam(){
     save();
   }
 
-  function renderWrong(){
+  function renderWrong(showList=false){
     const years = _getWrongFilterYears(0);
     const subjs = _getWrongFilterSubjs(0);
     const list=document.getElementById('wrongList');
     const empty=document.getElementById('wrongEmpty');
     const acts=document.getElementById('wrongActs');
+    // 未套用篩選前隱藏列表
+    if(!showList){
+      list.innerHTML='';
+      empty.style.display='none';
+      acts.style.display='none';
+      return;
+    }
     let items = DB.wrong.slice();
     if(years.length) items = items.filter(w=>{ const qy=(w.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
     if(subjs.length) items = items.filter(w=>subjs.includes(w.subject));
@@ -2370,7 +2377,7 @@ function startExam(){
     if(!confirm('確定要清除所有錯題紀錄？')) return;
     DB.wrong=[];
     save();
-    renderWrong();
+    renderWrong(false);
   }
 
   // ===== 統計 =====
@@ -3262,11 +3269,11 @@ function startExam(){
   }
 
   function applyWrongFilter(){
-    renderWrong();
+    renderWrong(true);
   }
 
   function applyDiffFilter(level){
-    renderDiffList(level);
+    renderDiffList(level, true);
   }
 
   function _getWrongFilterYears(section){
@@ -3316,7 +3323,20 @@ function startExam(){
     renderPQ();
   }
 
-  function renderDiffList(level){
+  function renderDiffList(level, showList=false){
+    const listEl = document.getElementById(`diffList${level}`);
+    const emptyEl = document.getElementById(`diffEmpty${level}`);
+    const actsEl  = document.getElementById(`diffActs${level}`);
+    const countEl = document.getElementById(`diffCount${level}`);
+    if(!listEl) return;
+    // 未套用篩選前隱藏列表
+    if(!showList){
+      listEl.innerHTML='';
+      if(emptyEl) emptyEl.style.display='none';
+      if(actsEl)  actsEl.style.display='none';
+      if(countEl) countEl.textContent='';
+      return;
+    }
     const years = _getWrongFilterYears(level);
     const subjs = _getWrongFilterSubjs(level);
     const marks = getDiffMarks();
@@ -3324,11 +3344,6 @@ function startExam(){
     let pool = DB.questions.filter(q=>q.type==='choice' && ids.includes(q.id));
     if(years.length) pool = pool.filter(q=>{ const qy=(q.year||'').replace(/[\s　]/g,'').trim(); return years.some(y=>qy.startsWith(y)); });
     if(subjs.length) pool = pool.filter(q=>subjs.includes(q.subject));
-    const listEl = document.getElementById(`diffList${level}`);
-    const emptyEl = document.getElementById(`diffEmpty${level}`);
-    const actsEl  = document.getElementById(`diffActs${level}`);
-    const countEl = document.getElementById(`diffCount${level}`);
-    if(!listEl) return;
     if(countEl) countEl.textContent = `共 ${pool.length} 題`;
     if(!pool.length){
       listEl.innerHTML='';
@@ -3395,7 +3410,7 @@ function startExam(){
     const marks = getDiffMarks();
     Object.keys(marks).forEach(id=>{ if(marks[id]===level) delete marks[id]; });
     setDiffMarks(marks);
-    renderDiffPanel();
+    renderDiffList(level, false);
     showToast(`已清除所有「${label}」標記`);
   }
 
