@@ -186,7 +186,7 @@
     .stat-card .lbl{font-size:11px;color:var(--gray);}
     .subj-stat{background:white;border:1px solid var(--border);border-radius:8px;padding:14px;}
     .s-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-    .s-name{font-size:11px;flex-shrink:0;width:100px;}
+    .s-name{font-size:11px;flex-shrink:0;width:130px;}
     .s-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
     .s-bar-fill{height:100%;border-radius:3px;transition:width .5s;}
     .s-pct-lbl{width:32px;text-align:right;font-size:10px;color:var(--gray);}
@@ -477,28 +477,22 @@
             </div>
           </div>
 
-          <!-- 個人筆記區塊（答題後顯示） -->
-          <div id="noteArea" style="display:none;margin-top:10px">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap">
-              <button id="noteToggleBtn" onclick="toggleNote()" class="btn btn-outline btn-sm" style="font-size:11px">📝 個人筆記</button>
-              <span id="noteExistDot" style="display:none;width:7px;height:7px;background:var(--gold);border-radius:50%"></span>
-            </div>
-            <div id="noteBox" style="display:none">
-              <textarea id="noteInput" rows="4" placeholder="在這裡寫下你的重點筆記…" style="width:100%;padding:10px 12px;border:1.5px solid var(--gold);border-radius:8px;font-size:13px;font-family:inherit;background:#fffcf0;resize:vertical;line-height:1.7"></textarea>
-              <div style="display:flex;gap:6px;margin-top:6px">
-                <button class="btn btn-gold btn-sm" onclick="saveNote()">💾 儲存</button>
-                <button class="btn btn-outline btn-sm" onclick="clearNote()">🗑 清除</button>
-              </div>
-            </div>
-          </div>
-
-
           <div class="action-row">
             <button class="btn btn-primary" id="nextBtn" onclick="safeTap(nextQ)" disabled>下一題 →</button>
             <button class="btn btn-outline" onclick="safeTap(skipQ)">跳過</button>
             <button class="btn btn-outline btn-sm" id="expToggleBtn" onclick="toggleExp()" style="display:none">📖 查看解析</button>
+            <button class="btn btn-outline btn-sm" id="noteToggleBtn" onclick="toggleNote()" style="display:none">📝 筆記<span id="noteExistDot" style="display:none;width:6px;height:6px;background:var(--gold);border-radius:50%;margin-left:4px;vertical-align:middle;display:inline-block"></span></button>
             <button class="btn btn-outline btn-sm" onclick="backToPracticeSettings()" style="font-size:11px">⚙ 重新設定</button>
             <button class="btn btn-outline btn-sm" onclick="safeTap(reshuffleQ)" style="margin-left:auto;font-size:11px">重新出題</button>
+          </div>
+
+          <!-- 筆記輸入框（展開後顯示） -->
+          <div id="noteBox" style="display:none;margin-top:10px">
+            <textarea id="noteInput" rows="4" placeholder="在這裡寫下你的重點筆記…" style="width:100%;padding:10px 12px;border:1.5px solid var(--gold);border-radius:8px;font-size:13px;font-family:inherit;background:#fffcf0;resize:vertical;line-height:1.7"></textarea>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button class="btn btn-gold btn-sm" onclick="saveNote()">💾 儲存</button>
+              <button class="btn btn-outline btn-sm" onclick="clearNote()">🗑 清除</button>
+            </div>
           </div>
         </div>
       </div>
@@ -737,26 +731,21 @@
             </div>
           </div>
 
-          <!-- 個人筆記（搜尋頁） -->
-          <div id="sqNoteArea" style="display:none;margin-top:10px">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-              <button id="sqNoteToggleBtn" onclick="toggleSqNote()" class="btn btn-outline btn-sm" style="font-size:11px">📝 個人筆記</button>
-              <span id="sqNoteExistDot" style="display:none;width:7px;height:7px;background:var(--gold);border-radius:50%"></span>
-            </div>
-            <div id="sqNoteBox" style="display:none">
-              <textarea id="sqNoteInput" rows="4" placeholder="在這裡寫下你的重點筆記…" style="width:100%;padding:10px 12px;border:1.5px solid var(--gold);border-radius:8px;font-size:13px;font-family:inherit;background:#fffcf0;resize:vertical;line-height:1.7"></textarea>
-              <div style="display:flex;gap:6px;margin-top:6px">
-                <button class="btn btn-gold btn-sm" onclick="saveSqNote()">💾 儲存</button>
-                <button class="btn btn-outline btn-sm" onclick="clearSqNote()">🗑 清除</button>
-              </div>
-            </div>
-          </div>
-
           <div class="action-row">
             <button class="btn btn-primary" id="sqNextBtn" onclick="searchNextQ()" disabled>下一題 →</button>
             <button class="btn btn-outline" onclick="searchSkipQ()">跳過</button>
             <button class="btn btn-outline btn-sm" id="sqExpBtn" onclick="toggleSearchExp()" style="display:none">📖 查看解析</button>
+            <button class="btn btn-outline btn-sm" id="sqNoteToggleBtn" onclick="toggleSqNote()" style="display:none">📝 筆記<span id="sqNoteExistDot" style="display:none;width:6px;height:6px;background:var(--gold);border-radius:50%;margin-left:4px;vertical-align:middle;display:inline-block"></span></button>
             <button class="btn btn-outline btn-sm" onclick="backToSearchSettings()" style="margin-left:auto;font-size:11px">⚙ 重新設定</button>
+          </div>
+
+          <!-- 筆記輸入框（展開後顯示，搜尋頁） -->
+          <div id="sqNoteBox" style="display:none;margin-top:10px">
+            <textarea id="sqNoteInput" rows="4" placeholder="在這裡寫下你的重點筆記…" style="width:100%;padding:10px 12px;border:1.5px solid var(--gold);border-radius:8px;font-size:13px;font-family:inherit;background:#fffcf0;resize:vertical;line-height:1.7"></textarea>
+            <div style="display:flex;gap:6px;margin-top:6px">
+              <button class="btn btn-gold btn-sm" onclick="saveSqNote()">💾 儲存</button>
+              <button class="btn btn-outline btn-sm" onclick="clearSqNote()">🗑 清除</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1152,22 +1141,18 @@ function getPools(subj='all'){
     const text = notes[qId]||'';
     noteInput.value = text;
     if(noteExistDot) noteExistDot.style.display = text ? 'inline-block' : 'none';
-    // 關閉筆記框，但保留按鈕狀態
     const noteBox = document.getElementById('noteBox');
     if(noteBox) noteBox.style.display='none';
     const noteToggleBtn = document.getElementById('noteToggleBtn');
-    if(noteToggleBtn) noteToggleBtn.textContent = '📝 個人筆記';
+    if(noteToggleBtn) noteToggleBtn.textContent = '📝 筆記';
   }
 
   function toggleNote(){
     const noteBox = document.getElementById('noteBox');
-    const btn = document.getElementById('noteToggleBtn');
     if(!noteBox) return;
     const isOpen = noteBox.style.display !== 'none';
     noteBox.style.display = isOpen ? 'none' : 'block';
-    btn.textContent = isOpen ? '📝 個人筆記' : '📝 收起筆記';
     if(!isOpen){
-      // 開啟時 focus textarea
       const noteInput = document.getElementById('noteInput');
       if(noteInput) setTimeout(()=>noteInput.focus(),50);
     }
@@ -2074,8 +2059,10 @@ function applyDevMode(){
     // 難度標記 + 筆記：隱藏區塊，載入該題已存筆記
     const diffArea = document.getElementById('diffArea');
     if(diffArea) diffArea.style.display='none';
-    const noteArea = document.getElementById('noteArea');
-    if(noteArea) noteArea.style.display='none';
+    const noteToggleBtn = document.getElementById('noteToggleBtn');
+    if(noteToggleBtn) noteToggleBtn.style.display='none';
+    const noteBox = document.getElementById('noteBox');
+    if(noteBox) noteBox.style.display='none';
     loadNoteForQ(q.id);
   }
 
@@ -2121,8 +2108,8 @@ function applyDevMode(){
     const diffArea = document.getElementById('diffArea');
     if(diffArea) diffArea.style.display='block';
     updateDiffBtns(P.pool[P.idx].id);
-    const noteArea = document.getElementById('noteArea');
-    if(noteArea) noteArea.style.display='block';
+    const noteToggleBtn = document.getElementById('noteToggleBtn');
+    if(noteToggleBtn) noteToggleBtn.style.display='inline-flex';
 
     updateHeader();
     setTimeout(()=>{
@@ -2926,7 +2913,7 @@ function startExam(){
     if(!box) return;
     const isOpen = box.style.display !== 'none';
     box.style.display = isOpen ? 'none' : 'block';
-    if(btn) btn.textContent = isOpen ? '📝 個人筆記' : '📝 收起筆記';
+    // 按鈕文字不變，用 noteBox 開關狀態判斷
     if(!isOpen){
       const input = document.getElementById(`essay-note-input-${qId}`);
       if(input) setTimeout(()=>input.focus(), 50);
@@ -3068,8 +3055,10 @@ function startExam(){
     // 隱藏筆記區，載入該題筆記
     const sqDiffArea = document.getElementById('sqDiffArea');
     if(sqDiffArea) sqDiffArea.style.display='none';
-    const sqNoteArea = document.getElementById('sqNoteArea');
-    if(sqNoteArea) sqNoteArea.style.display='none';
+    const sqNoteToggleBtn = document.getElementById('sqNoteToggleBtn');
+    if(sqNoteToggleBtn) sqNoteToggleBtn.style.display='none';
+    const sqNoteBox = document.getElementById('sqNoteBox');
+    if(sqNoteBox) sqNoteBox.style.display='none';
     loadSqNoteForQ(S.pool[S.idx].id);
   }
 
@@ -3096,8 +3085,8 @@ function startExam(){
     const sqDiffArea = document.getElementById('sqDiffArea');
     if(sqDiffArea) sqDiffArea.style.display='block';
     updateSqDiffBtns(S.pool[S.idx].id);
-    const sqNoteArea = document.getElementById('sqNoteArea');
-    if(sqNoteArea) sqNoteArea.style.display='block';
+    const sqNoteToggleBtn = document.getElementById('sqNoteToggleBtn');
+    if(sqNoteToggleBtn) sqNoteToggleBtn.style.display='inline-flex';
   }
 
   function toggleSearchExp(){
@@ -3146,7 +3135,7 @@ function startExam(){
     const box = document.getElementById('sqNoteBox');
     if(box) box.style.display='none';
     const btn = document.getElementById('sqNoteToggleBtn');
-    if(btn) btn.textContent='📝 個人筆記';
+    if(btn) btn.textContent='📝 筆記';
   }
 
   function toggleSqNote(){
