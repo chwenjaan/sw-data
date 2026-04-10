@@ -427,6 +427,12 @@
       <div id="practiceStart" style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
         <div class="sec-title">練習設定</div>
 
+        <!-- 考試類別複選 -->
+        <div class="f-row" style="margin-bottom:10px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">考試類別（可複選）</div>
+          <div id="practiceExamChecks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+
         <!-- 年度複選 -->
         <div class="f-row" style="margin-bottom:10px">
           <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">年度（可複選）</div>
@@ -502,6 +508,12 @@
       <div id="examStart">
         <div style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px">
           <div class="sec-title">模擬考試設定</div>
+
+          <!-- 考試類別複選 -->
+          <div class="f-row" style="margin-bottom:10px">
+            <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">考試類別（可複選）</div>
+            <div id="examExamChecks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          </div>
 
           <!-- 年度複選 -->
           <div class="f-row" style="margin-bottom:10px">
@@ -660,6 +672,12 @@
           <input type="text" id="searchKeyword" placeholder="輸入關鍵字，例如：充權、依附理論…"
             style="padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:14px;font-family:inherit;background:var(--paper)"
             onkeydown="if(event.key==='Enter')startSearchPractice()">
+        </div>
+
+        <!-- 考試類別複選 -->
+        <div class="f-row" style="margin-bottom:10px">
+          <div style="font-size:11px;font-weight:500;color:var(--gray);margin-bottom:6px">考試類別（可複選）</div>
+          <div id="searchExamChecks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
 
         <!-- 年度複選 -->
@@ -898,19 +916,28 @@
 
       <div class="f-grid2">
         <div class="f-row">
-          <label for="fSubj">科目 *</label>
-          <select id="fSubj">
-            <option value="社會工作">社會工作</option>
-            <option value="社會工作直接服務">社會工作直接服務</option>
-            <option value="社會政策與社會立法">社會政策與社會立法</option>
-            <option value="人類行為與社會環境">人類行為與社會環境</option>
-            <option value="社會工作研究方法">社會工作研究方法</option>
+          <label for="fExam">考試類別</label>
+          <select id="fExam">
+            <option value="社工師">社工師</option>
+            <option value="初等考試">初等考試</option>
+            <option value="普考">普考</option>
+            <option value="基層特考">基層特考</option>
           </select>
         </div>
         <div class="f-row">
           <label for="fYear">年度</label>
           <input type="text" id="fYear" placeholder="例如：115年第二次">
         </div>
+      </div>
+      <div class="f-row">
+        <label for="fSubj">科目 *</label>
+        <select id="fSubj">
+          <option value="社會工作">社會工作</option>
+          <option value="社會工作直接服務">社會工作直接服務</option>
+          <option value="社會政策與社會立法">社會政策與社會立法</option>
+          <option value="人類行為與社會環境">人類行為與社會環境</option>
+          <option value="社會工作研究方法">社會工作研究方法</option>
+        </select>
       </div>
       <div class="f-row">
         <label for="fSrc">來源（選填）</label>
@@ -959,6 +986,7 @@
         <code>ANS: A</code>（正確答案）<br>
         <code>NO: 1</code>（題號，1–40）<br>
         <code>SUBJ: 社會工作</code>（科目，選填）<br>
+        <code>EXAM: 社工師</code>（考試類別，選填，預設社工師）<br>
         <code>YEAR: 115年第一次</code>（選填）<br>
         <code>SRC: 考選部115年第一次社工師考試</code>（選填）<br>
         <code>EXP: 解析</code>（選填）<br>
@@ -968,6 +996,7 @@
         <code>Q: 題目</code><br>
         <code>NO: 1</code>（題號，1 或 2）<br>
         <code>SUBJ: 社會工作</code>（科目，選填）<br>
+        <code>EXAM: 社工師</code>（考試類別，選填，預設社工師）<br>
         <code>YEAR: 115年第一次</code>（選填）<br>
         <code>SRC: 考選部115年第一次社工師考試</code>（選填）<br>
         <code>EXP: 解析</code>（選填）
@@ -1044,7 +1073,7 @@
     })()
   };
 
-  let P = {pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null,yearPrefix:null,years:[],subjs:[]};
+  let P = {pool:[],idx:0,answered:false,timerID:null,seconds:0,streak:0,subj:'all',year:null,yearPrefix:null,years:[],subjs:[],exams:[]};
   let E = {pool:[],idx:0,answers:[],timerID:null,secsLeft:60,timeLimit:60};
   let editId = null, selAns = -1;
   let ISDEV = localStorage.getItem('swpwa-dev') === '1';
@@ -1208,6 +1237,8 @@ function applyDevMode(){
   function cleanData(){
     let fixed=0;
     DB.questions.forEach(q=>{
+      // 補 exam 預設值
+      if(!q.exam){ q.exam='社工師'; fixed++; }
       if(q.subject && !KNOWN_SUBJS.includes(q.subject)){
         // 先嘗試去除空白後直接比對
         const trimmed = q.subject.trim().replace(/[\s　]+/g,' ');
@@ -1697,30 +1728,46 @@ function applyDevMode(){
   }
 
   function populatePracticeSelects(){
+    const examWrap = document.getElementById('practiceExamChecks');
     const yearWrap = document.getElementById('practiceYearChecks');
     const subjWrap = document.getElementById('practiceSubjChecks');
     if(!yearWrap||!subjWrap) return;
 
-    // 建立年度資料
+    // 填考試類別
+    if(examWrap){
+      const exams = _getExamList();
+      examWrap.innerHTML =
+        `<label class="check-tag checked" data-val="" onclick="_handleTagClick(this,'practiceExamChecks');_updatePracticeYearOptions();_updatePracticeSubjOptions()"><span>全部</span></label>` +
+        exams.map(e=>
+          `<label class="check-tag" data-val="${e}" onclick="_handleTagClick(this,'practiceExamChecks');_updatePracticeYearOptions();_updatePracticeSubjOptions()"><span>${e}</span></label>`
+        ).join('');
+    }
+
+    // 填年度
+    _updatePracticeYearOptions();
+
+    // 填科目
+    _updatePracticeSubjOptions();
+  }
+
+  function _updatePracticeYearOptions(){
+    const yearWrap = document.getElementById('practiceYearChecks');
+    if(!yearWrap) return;
+    const checkedExams = _getCheckedExams('practiceExamChecks');
     const yearSet = new Set();
     DB.questions.filter(q=>q.type==='choice').forEach(q=>{
+      if(checkedExams.length > 0 && !checkedExams.includes(q.exam||'社工師')) return;
       const y = (q.year||'').replace(/[\s　]/g,'').trim();
       if(!y) return;
       const m = y.match(/^(\d+年)/);
-      if(m) yearSet.add(m[1]);
-      else yearSet.add(y);
+      if(m) yearSet.add(m[1]); else yearSet.add(y);
     });
-
-    // 填年度 checkbox tags（含「全部」）
     const years = Array.from(yearSet).sort((a,b)=>a.localeCompare(b));
     yearWrap.innerHTML =
       `<label class="check-tag checked" data-val="" onclick="_onYearTagClick(this)"><span>全部</span></label>` +
       years.map(y=>
         `<label class="check-tag" data-val="${y}" onclick="_onYearTagClick(this)"><span>${y}</span></label>`
       ).join('');
-
-    // 填科目
-    _updatePracticeSubjOptions();
   }
 
 
@@ -1729,12 +1776,14 @@ function applyDevMode(){
     const subjWrap = document.getElementById('practiceSubjChecks');
     if(!subjWrap) return;
 
+    const checkedExams = _getCheckedExams('practiceExamChecks');
     const checkedYears = _getPracticeCheckedYears();
 
-    // 根據年度篩出可用科目
+    // 根據考試類別+年度篩出可用科目
     const subjSet = new Set();
     const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
     DB.questions.filter(q=>q.type==='choice').forEach(q=>{
+      if(checkedExams.length > 0 && !checkedExams.includes(q.exam||'社工師')) return;
       const qy = (q.year||'').replace(/[\s　]/g,'').trim();
       if(checkedYears.length > 0){
         if(!checkedYears.some(y=>qy.startsWith(y))) return;
@@ -1775,8 +1824,10 @@ function applyDevMode(){
   }
 
   function startPracticeFromFilter(){
-    const checkedYears = _getPracticeCheckedYears(); // 空陣列 = 全部
-    const checkedSubjs = _getPracticeCheckedSubjs(); // 空陣列 = 全部
+    const checkedExams = _getCheckedExams('practiceExamChecks');
+    const checkedYears = _getPracticeCheckedYears();
+    const checkedSubjs = _getPracticeCheckedSubjs();
+    P.exams = checkedExams;
     P.years = checkedYears;
     P.subjs = checkedSubjs;
     P.year = null;
@@ -1790,13 +1841,35 @@ function applyDevMode(){
   }
 
   function populateExamSelects(){
+    const examExamWrap = document.getElementById('examExamChecks');
     const yearWrap = document.getElementById('examYearChecks');
     const subjWrap = document.getElementById('examSubjChecks');
     if(!yearWrap||!subjWrap) return;
 
+    // 考試類別
+    if(examExamWrap){
+      const exams = _getExamList();
+      examExamWrap.innerHTML =
+        `<label class="check-tag checked" data-val="" onclick="_handleTagClick(this,'examExamChecks');_updateExamYearOptions();_updateExamSubjOptions()"><span>全部</span></label>` +
+        exams.map(e=>
+          `<label class="check-tag" data-val="${e}" onclick="_handleTagClick(this,'examExamChecks');_updateExamYearOptions();_updateExamSubjOptions()"><span>${e}</span></label>`
+        ).join('');
+    }
+
     // 年度
+    _updateExamYearOptions();
+
+    // 科目
+    _updateExamSubjOptions();
+  }
+
+  function _updateExamYearOptions(){
+    const yearWrap = document.getElementById('examYearChecks');
+    if(!yearWrap) return;
+    const checkedExams = _getCheckedExams('examExamChecks');
     const yearSet = new Set();
     DB.questions.filter(q=>q.type==='choice').forEach(q=>{
+      if(checkedExams.length > 0 && !checkedExams.includes(q.exam||'社工師')) return;
       const y = (q.year||'').replace(/[\s　]/g,'').trim();
       if(!y) return;
       const m = y.match(/^(\d+年)/);
@@ -1808,9 +1881,6 @@ function applyDevMode(){
       years.map(y=>
         `<label class="check-tag" data-val="${y}" onclick="_onExamYearTagClick(this)"><span>${y}</span></label>`
       ).join('');
-
-    // 科目
-    _updateExamSubjOptions();
   }
 
   function _getExamCheckedYears(){
@@ -1857,11 +1927,13 @@ function applyDevMode(){
   function _updateExamSubjOptions(){
     const subjWrap = document.getElementById('examSubjChecks');
     if(!subjWrap) return;
+    const checkedExams = _getCheckedExams('examExamChecks');
     const checkedYears = _getExamCheckedYears();
     const prevChecked = new Set(_getExamCheckedSubjs());
     const order = ['社會工作','社會工作直接服務','社會政策與社會立法','人類行為與社會環境','社會工作研究方法'];
     const subjSet = new Set();
     DB.questions.filter(q=>q.type==='choice').forEach(q=>{
+      if(checkedExams.length > 0 && !checkedExams.includes(q.exam||'社工師')) return;
       const qy = (q.year||'').replace(/[\s　]/g,'').trim();
       if(checkedYears.length > 0 && !checkedYears.some(y=>qy.startsWith(y))) return;
       if(q.subject) subjSet.add(q.subject);
@@ -1952,13 +2024,17 @@ function applyDevMode(){
 
   // ===== 練習流程 =====
   function loadPractice(){
-    // 多科目篩選
+    // 考試類別篩選
     let pool;
+    const exams = P.exams && P.exams.length > 0 ? P.exams : null;
     const subjs = P.subjs && P.subjs.length > 0 ? P.subjs : null;
     if(subjs){
       pool = DB.questions.filter(q=>q.type!=='essay' && subjs.includes(q.subject));
     } else {
       pool = getPools(P.subj);
+    }
+    if(exams){
+      pool = pool.filter(q=>exams.includes(q.exam||'社工師'));
     }
 
     // 多年度篩選（年度 checkbox）
@@ -2129,12 +2205,15 @@ function applyDevMode(){
 
   // ===== 模擬考流程 =====
 function startExam(){
+    const checkedExams = _getCheckedExams('examExamChecks');
     const checkedYears = _getExamCheckedYears();
     const checkedSubjs = _getExamCheckedSubjs();
     E.timeLimit = parseInt(document.getElementById('examTime').value,10);
 
-    // 篩題目
     let pool = DB.questions.filter(q=>q.type==='choice');
+    if(checkedExams.length > 0){
+      pool = pool.filter(q=>checkedExams.includes(q.exam||'社工師'));
+    }
     if(checkedYears.length > 0){
       pool = pool.filter(q=>{
         const qy = (q.year||'').replace(/[\s　]/g,'').trim();
@@ -2503,6 +2582,7 @@ function startExam(){
 
   function saveQ(){
     const subj=document.getElementById('fSubj').value.trim();
+    const examVal=(document.getElementById('fExam')?.value||'社工師').trim();
     const year=document.getElementById('fYear').value.trim();
     const src=document.getElementById('fSrc').value.trim();
     const q=document.getElementById('fQ').value.trim();
@@ -2528,14 +2608,14 @@ function startExam(){
           const item=DB.questions[idx];
           item.subject=subj; item.year=year; item.src=src;
           item.q=q; item.opts=opts; item.ans=selAns; item.exp=exp;
-          item.type='choice';
+          item.type='choice'; item.exam=examVal;
         }
       }else{
         const opts2=[0,1,2,3].map(i=>{
           const el=document.querySelector(`#optInputs .opt-input[data-idx="${i}"]`);
           return el ? el.value.trim() : '';
         });
-        DB.questions.push({id:'Q'+Date.now(),subject:subj,year,src,q,opts:opts2,ans:selAns,exp,type:'choice'});
+        DB.questions.push({id:'Q'+Date.now(),subject:subj,year,src,q,opts:opts2,ans:selAns,exp,type:'choice',exam:examVal});
       }
     } else {
       // 申論題
@@ -2545,10 +2625,10 @@ function startExam(){
           const item=DB.questions[idx];
           item.subject=subj; item.year=year; item.src=src;
           item.q=q; item.exp=exp; item.type='essay';
-          item.opts=[]; item.ans=-1;
+          item.opts=[]; item.ans=-1; item.exam=examVal;
         }
       }else{
-        DB.questions.push({id:'Q'+Date.now(),subject:subj,year,src,q,exp,type:'essay',opts:[],ans:-1});
+        DB.questions.push({id:'Q'+Date.now(),subject:subj,year,src,q,exp,type:'essay',opts:[],ans:-1,exam:examVal});
       }
     }
     save();
@@ -2598,6 +2678,7 @@ function startExam(){
       if(!matched) fSubj.selectedIndex = 0;
     }
     document.getElementById('fYear').value=q.year||'';
+    const fExamEl=document.getElementById('fExam'); if(fExamEl) fExamEl.value=q.exam||'社工師';
     document.getElementById('fSrc').value=q.src||'';
     document.getElementById('fQ').value=q.q||'';
     document.getElementById('fExp').value=q.exp||'';
@@ -2663,9 +2744,10 @@ function startExam(){
     const items=[];
     blocks.forEach(b=>{
       const lines=b.split('\n').map(l=>l.trim()).filter(Boolean);
-      let type='choice',q='',A='',B='',C='',D='',ans='',subj='',year='',src='',exp='',no=null;
+      let type='choice',q='',A='',B='',C='',D='',ans='',subj='',year='',src='',exp='',exam='',no=null;
       lines.forEach(l=>{
         if(l.startsWith('TYPE:')) type=l.slice(5).trim().toLowerCase();
+        else if(l.startsWith('EXAM:')) exam=l.slice(5).trim();
         else if(l.startsWith('Q:')) q=l.slice(2).trim();
         else if(l.startsWith('A:')) A=l.slice(2).trim();
         else if(l.startsWith('B:')) B=l.slice(2).trim();
@@ -2681,12 +2763,12 @@ function startExam(){
       const subjUse = subj || subjDefault;
       if(!q) return;
       if(type==='essay'){
-        items.push({q,opts:[],ans:-1,subject:subjUse,year,src,exp,type:'essay',no});
+        items.push({q,opts:[],ans:-1,subject:subjUse,year,src,exp,type:'essay',no,exam:exam||'社工師'});
       } else {
         if(!A || !B || !C || !D || !ans) return;
         const ansIdx = 'ABCD'.indexOf(ans.toUpperCase());
         if(ansIdx===-1) return;
-        items.push({q,opts:[A,B,C,D],ans:ansIdx,subject:subjUse,year,src,exp,type:'choice',no});
+        items.push({q,opts:[A,B,C,D],ans:ansIdx,subject:subjUse,year,src,exp,type:'choice',no,exam:exam||'社工師'});
       }
     });
     return items;
@@ -2735,7 +2817,8 @@ function startExam(){
         ans:it.ans,
         exp:it.exp,
         type:it.type||'choice',
-        no:it.no||null
+        no:it.no||null,
+        exam:it.exam||'社工師'
       });
     });
     save();
@@ -2883,8 +2966,24 @@ function startExam(){
   let S = {pool:[], idx:0, answered:false, kw:''};
 
   function populateSearchSelects(){
+    _buildCheckTags('searchExamChecks', _getExamList(), '_onSearchExamTagClick');
     _buildCheckTags('searchYearChecks', _getYearList(), '_onSearchYearTagClick');
     _buildCheckTags('searchSubjChecks', _getSubjList(), '_onSearchSubjTagClick');
+  }
+
+  function _onSearchExamTagClick(el){
+    _handleTagClick(el, 'searchExamChecks');
+  }
+
+  function _getExamList(){
+    const examSet = new Set(DB.questions.filter(q=>q.type!=='essay').map(q=>q.exam||'社工師').filter(Boolean));
+    const order = ['社工師','初等考試','普考','基層特考'];
+    return order.filter(e=>examSet.has(e)).concat([...examSet].filter(e=>!order.includes(e)));
+  }
+
+  function _getCheckedExams(wrapperId){
+    return [...document.querySelectorAll(`#${wrapperId} .check-tag.checked`)]
+      .map(el=>el.dataset.val).filter(v=>v!=='');
   }
 
   function _getYearList(){
@@ -2951,6 +3050,11 @@ function startExam(){
     // 科目篩選
     if(subjs.length > 0)
       pool = pool.filter(q=>subjs.includes(q.subject));
+    // 考試類別篩選
+    const searchExams = _getCheckedExams('searchExamChecks');
+    if(searchExams.length > 0)
+      pool = pool.filter(q=>searchExams.includes(q.exam||'社工師'));
+
     // 關鍵字篩選（題目 + 選項 + 解析）
     pool = pool.filter(q=>{
       const text = [(q.q||''), ...(q.opts||[]), (q.exp||'')].join(' ').toLowerCase();
